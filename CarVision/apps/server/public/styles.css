@@ -1,0 +1,37 @@
+:root{
+  --bg:#0f1220; --card:#161a2b; --text:#e6e9f5; --muted:#9aa4c7;
+  --green:#1fbf75; --yellow:#f5b73a; --red:#ff5d5d; --chip:#232946; --accent:#7c8cff;
+}
+*{box-sizing:border-box} body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto;
+  background:var(--bg); color:var(--text);}
+
+header{display:flex;align-items:center;gap:.6rem;padding:1rem 1.25rem;border-bottom:1px solid #22273f}
+header h1{margin:0;font-size:1.1rem;font-weight:700;letter-spacing:.4px}
+header .dot{width:.65rem;height:.65rem;border-radius:999px;box-shadow:0 0 0 2px rgba(0,0,0,.2) inset}
+header .dot.on{background:var(--green)} header .dot.off{background:#666}
+header span{color:var(--muted);font-size:.9rem}
+
+main{max-width:960px;margin:1.25rem auto;padding:0 1rem}
+.status-card{background:var(--card);border:1px solid #242a46;border-radius:16px;padding:1rem 1.25rem}
+.badge{display:inline-block;padding:.35rem .7rem;border-radius:999px;font-weight:700;letter-spacing:.3px}
+.badge-normal{background:rgba(31,191,117,.15);color:var(--green);border:1px solid rgba(31,191,117,.35)}
+.badge-warning{background:rgba(245,183,58,.15);color:var(--yellow);border:1px solid rgba(245,183,58,.35)}
+.badge-critical{background:rgba(255,93,93,.15);color:var(--red);border:1px solid rgba(255,93,93,.35)}
+
+.reason{margin-top:.4rem;color:var(--muted);font-size:.95rem}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.8rem;margin-top:1rem}
+.metric{background:#13182b;border:1px solid #232848;border-radius:12px;padding:.75rem}
+.metric span{display:block;color:var(--muted);font-size:.8rem;margin-bottom:.25rem}
+.metric strong{font-size:1.4rem}
+.metric small{color:var(--muted);margin-left:.25rem}
+
+.dtc{margin-top:1rem;background:var(--card);border:1px solid #242a46;border-radius:16px;padding:1rem 1.25rem}
+.dtc-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem}
+h2{margin:0;font-size:1rem}
+.btn{background:var(--accent);color:white;border:none;border-radius:10px;padding:.55rem .9rem;font-weight:600;cursor:pointer}
+.btn:disabled{opacity:.6;cursor:default}
+.chips{display:flex;gap:.5rem;flex-wrap:wrap;margin:0;padding:0;list-style:none}
+.chip{background:var(--chip);border:1px solid #2e3561;color:#cfd6ff;border-radius:999px;padding:.35rem .7rem;font-size:.9rem}
+
+footer{margin-top:1rem;color:var(--muted);font-size:.9rem}
+@media (max-width:700px){.grid{grid-template-columns:repeat(2,minmax(0,1fr));}}

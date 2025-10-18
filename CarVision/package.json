@@ -1,0 +1,21 @@
+{
+  "name": "carvision-app",
+  "version": "0.1.0",
+  "private": true,
+  "description": "CarVision dashboard (web) + TCP bridge to ELM327 simulator",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "expo-router": "^6.0.7",
+    "express": "^5.1.0",
+    "react-native-gesture-handler": "^2.28.0",
+    "react-native-safe-area-context": "^5.6.1",
+    "react-native-screens": "^4.16.0",
+    "ws": "^8.18.3"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

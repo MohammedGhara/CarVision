@@ -1,0 +1,44 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>CarVision Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header>
+    <h1>CarVision</h1>
+    <div id="linkDot" class="dot off"></div>
+    <span id="linkText">Connecting…</span>
+  </header>
+
+  <main>
+    <section class="status-card">
+      <div id="statusBadge" class="badge badge-normal">NORMAL</div>
+      <div id="statusReason" class="reason">All readings within range, no DTCs</div>
+      <div class="grid">
+        <div class="metric"><span>Battery</span><strong id="battery">—</strong></div>
+        <div class="metric"><span>RPM</span><strong id="rpm">—</strong></div>
+        <div class="metric"><span>Speed</span><strong id="speed">—</strong><small>km/h</small></div>
+        <div class="metric"><span>Coolant</span><strong id="coolant">—</strong><small>°C</small></div>
+      </div>
+    </section>
+
+    <section class="dtc">
+      <div class="dtc-header">
+        <h2>DTCs</h2>
+        <button id="btnClear" class="btn">Clear DTCs</button>
+      </div>
+      <ul id="dtcList" class="chips"></ul>
+    </section>
+
+    <footer>
+      <span id="updated">Updated: —</span>
+    </footer>
+  </main>
+
+  <script src="/app.js"></script>
+</body>
+</html>
