@@ -33,6 +33,13 @@ export default function HomeScreen() {
           subtitle="Connection & Units"
           onPress={() => router.push("/settings")}
         />
+        <Tile
+        emoji="🤖"
+        title="AI Chat"
+        subtitle="Ask CarVision"
+        onPress={() => router.push("/ai")}
+      />
+
       </View>
 
       {/* Footer */}
