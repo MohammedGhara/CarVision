@@ -1,15 +1,18 @@
-// server/server.js — CarVision web server + WS bridge to ELM327 (sequential polling, safe listeners)
+// Apps/server/server.js — CarVision web server + WS bridge to ELM327 + AI chat API
 "use strict";
+const fetch = require("node-fetch");
 
 /* ───────────── Optional: relax listener cap (avoid warnings) ───────────── */
 require("events").EventEmitter.defaultMaxListeners = 30;
 
 /* ───────────── Deps ───────────── */
+require("dotenv").config();                  // .env for OPENAI_API_KEY
 const http = require("http");
 const path = require("path");
 const fs = require("fs");
 const net = require("net");
 const WebSocket = require("ws");
+const express = require("express");
 
 /* ───────────── Config (env overridable) ───────────── */
 const HTTP_PORT        = parseInt(process.env.HTTP_PORT || "5173", 10);
@@ -20,23 +23,54 @@ const READ_TIMEOUT_MS  = parseInt(process.env.READ_TIMEOUT_MS || "2000", 10);
 const POLL_INTERVAL_MS = parseInt(process.env.POLL_INTERVAL_MS || "1000", 10);
 const DEBUG            = process.env.DEBUG === "1";
 
-/* ───────────── Tiny static server (serves ./public) ───────────── */
+/* ───────────── Express app (static + APIs) ───────────── */
+const app = express();
+app.use(express.json());
+
 const PUBLIC_DIR = path.join(__dirname, "public");
-const httpServer = http.createServer((req, res) => {
-  let filePath = req.url.split("?")[0] || "/";
-  if (filePath === "/" || filePath === "") filePath = "/index.html";
-  const full = path.join(PUBLIC_DIR, filePath);
-  if (!full.startsWith(PUBLIC_DIR)) { res.writeHead(404); return res.end("Not found"); }
-  fs.readFile(full, (err, data) => {
-    if (err) { res.writeHead(404); return res.end("Not found"); }
-    const ext = path.extname(full).toLowerCase();
-    const types = { ".html":"text/html", ".js":"text/javascript", ".css":"text/css", ".json":"application/json" };
-    res.writeHead(200, { "Content-Type": types[ext] || "text/plain" });
-    res.end(data);
-  });
+if (fs.existsSync(PUBLIC_DIR)) {
+  app.use(express.static(PUBLIC_DIR)); // optional; serves ./public/*
+}
+
+// health check
+app.get("/api/ping", (req, res) => res.json({ ok: true, t: Date.now() }));
+
+// AI chat API (OpenAI proxy)
+app.post("/api/chat", async (req, res) => {
+  const { message } = req.body || {};
+  if (!message) return res.status(400).json({ ok:false, error:"message required" });
+
+  const KEY = process.env.OPENAI_API_KEY;
+  const MODEL = process.env.OPENAI_MODEL || "gpt-4o-mini";
+  if (!KEY) return res.status(503).json({ ok:false, error:"missing OPENAI_API_KEY" });
+
+  try {
+    const r = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: MODEL,
+        temperature: 0.4,
+        max_tokens: 400,
+        messages: [
+          { role:"system", content:"You are CarVision AI. Help with OBD-II, DTCs and car symptoms." },
+          { role:"user", content: message }
+        ]
+      })
+    });
+    if (!r.ok) {
+      const detail = await r.text().catch(()=>"");
+      return res.status(502).json({ ok:false, error:`OpenAI ${r.status}`, detail });
+    }
+    const data = await r.json();
+    res.json({ ok:true, reply: data.choices?.[0]?.message?.content ?? "" });
+  } catch (e) {
+    res.status(500).json({ ok:false, error:String(e) });
+  }
 });
 
-/* ───────────── WebSocket (for web/mobile UIs) ───────────── */
+/* ───────────── HTTP + WebSocket server ───────────── */
+const httpServer = http.createServer(app);
 const wss = new WebSocket.Server({ server: httpServer, path: "/ws" });
 
 function wsBroadcast(obj) {
@@ -60,7 +94,7 @@ wss.on("connection", (ws) => {
   });
 });
 
-/* ───────────── ELM helpers ───────────── */
+/* ───────────── Helpers for ELM TCP polling ───────────── */
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 function hexByteToInt(h) { return parseInt(h, 16); }
 function parseTokens(line) { return line.trim().split(/\s+/).filter(Boolean); }
@@ -247,8 +281,7 @@ function classify({ rpm, speed, coolant, dtcs, connected }) {
         const fuelRateResp = await sendCmd(sock, "015E").catch(() => ["NO DATA"]); // Engine fuel rate (L/h)
         const cmVoltResp   = await sendCmd(sock, "0142").catch(() => ["NO DATA"]); // Control module voltage
         const o2NarrowResp = await sendCmd(sock, "0114").catch(() => ["NO DATA"]); // O2 B1S1 narrowband
-        // wideband (lambda) fallback
-        const o2WideResp   = await sendCmd(sock, "0124").catch(() => ["NO DATA"]); // O2 wideband: eq ratio
+        const o2WideResp   = await sendCmd(sock, "0124").catch(() => ["NO DATA"]); // Wideband (eq ratio)
 
         // DTCs + readiness
         const dtcCurrentResp   = await sendCmd(sock, "03").catch(() => ["NO DATA"]);

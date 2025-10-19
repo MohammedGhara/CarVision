@@ -3,3 +3,10 @@ apps/server/.env
 .env
 *.env
 
+
+# env files
+CarVision/apps/server/.env
+apps/server/.env
+.env
+*.env
+
