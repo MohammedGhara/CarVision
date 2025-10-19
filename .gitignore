@@ -1,0 +1,5 @@
+
+apps/server/.env
+.env
+*.env
+
