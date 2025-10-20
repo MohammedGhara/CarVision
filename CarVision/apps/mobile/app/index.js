@@ -22,23 +22,31 @@ export default function HomeScreen() {
           onPress={() => router.push("/cardata")}
         />
         <Tile
+          emoji="🕒"
+          title="Reparing"
+          subtitle="Find causes & steps"
+          onPress={() => router.push("/repairs")}
+        />
+
+        <Tile
           emoji="🛠️"
           title="Diagnostics"
           subtitle="Read & Clear DTCs"
           onPress={() => router.push("/diagnostics")}
         />
-        <Tile
-          emoji="⚙️"
-          title="Settings"
-          subtitle="Connection & Units"
-          onPress={() => router.push("/settings")}
-        />
+
         <Tile
         emoji="🤖"
         title="AI Chat"
         subtitle="Ask CarVision"
         onPress={() => router.push("/ai")}
       />
+       <Tile
+          emoji="⚙️"
+          title="Settings"
+          subtitle="Connection & Units"
+          onPress={() => router.push("/settings")}
+        />
 
       </View>
 
