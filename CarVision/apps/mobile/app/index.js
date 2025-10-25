@@ -1,108 +1,151 @@
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import React from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  StatusBar,
+} from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 
 export default function HomeScreen() {
   const router = useRouter();
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Hero */}
-      <View style={styles.hero}>
-        <Text style={styles.brand}>CarVision</Text>
-        <Text style={styles.sub}>OBD-II Telemetry • Diagnostics</Text>
-      </View>
+    <LinearGradient colors={["#0B0F19", "#11182A"]} style={styles.bg}>
+      <SafeAreaView style={{ flex: 1 }}>
+        <StatusBar barStyle="light-content" />
 
-      {/* Buttons grid */}
-      <View style={styles.grid}>
-        <Tile
-          emoji="📈"
-          title="Live Data"
-          subtitle="RPM • Speed • Temps"
-          onPress={() => router.push("/cardata")}
-        />
-        <Tile
-          emoji="🕒"
-          title="Reparing"
-          subtitle="Find causes & steps"
-          onPress={() => router.push("/repairs")}
-        />
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.logo}>🚗 CarVision</Text>
+          <Text style={styles.subtitle}>Smart Vehicle Diagnostics</Text>
+        </View>
 
-        <Tile
-          emoji="🛠️"
-          title="Diagnostics"
-          subtitle="Read & Clear DTCs"
-          onPress={() => router.push("/diagnostics")}
-        />
+        {/* Grid */}
+        <ScrollView contentContainerStyle={styles.grid}>
+          <Tile
+            icon="📊"
+            title="Live Data"
+            subtitle="RPM • Speed • Temperature"
+            onPress={() => router.push("/cardata")}
+          />
+          <Tile
+            icon="🧰"
+            title="Repairing"
+            subtitle="Find Causes & Fix Steps"
+            onPress={() => router.push("/repairs")}
+          />
+          <Tile
+            icon="🛠️"
+            title="Diagnostics"
+            subtitle="Read & Clear Error Codes"
+            onPress={() => router.push("/diagnostics")}
+          />
+          <Tile
+            icon="🤖"
+            title="AI Chat"
+            subtitle="Ask CarVision Assistant"
+            onPress={() => router.push("/ai")}
+          />
+          <Tile
+            icon="⚙️"
+            title="Settings"
+            subtitle="Connection & Preferences"
+            onPress={() => router.push("/settings")}
+          />
+        </ScrollView>
 
-        <Tile
-        emoji="🤖"
-        title="AI Chat"
-        subtitle="Ask CarVision"
-        onPress={() => router.push("/ai")}
-      />
-       <Tile
-          emoji="⚙️"
-          title="Settings"
-          subtitle="Connection & Units"
-          onPress={() => router.push("/settings")}
-        />
-
-      </View>
-
-      {/* Footer */}
-      <Text style={styles.footer}>Final Project • Expo Go (iOS)</Text>
-    </SafeAreaView>
+        {/* Footer */}
+        <Text style={styles.footer}>© 2025 CarVision Project</Text>
+      </SafeAreaView>
+    </LinearGradient>
   );
 }
 
-function Tile({ emoji, title, subtitle, onPress }) {
+function Tile({ icon, title, subtitle, onPress }) {
   return (
     <TouchableOpacity style={styles.tile} onPress={onPress} activeOpacity={0.85}>
-      <Text style={styles.emoji}>{emoji}</Text>
-      <View style={{ gap: 2 }}>
-        <Text style={styles.tileTitle}>{title}</Text>
-        <Text style={styles.tileSub}>{subtitle}</Text>
-      </View>
+      <LinearGradient
+        colors={["rgba(124,140,255,0.15)", "rgba(124,140,255,0.05)"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.tileGradient}
+      >
+        <Text style={styles.icon}>{icon}</Text>
+        <View style={styles.tileText}>
+          <Text style={styles.tileTitle}>{title}</Text>
+          <Text style={styles.tileSubtitle}>{subtitle}</Text>
+        </View>
+      </LinearGradient>
     </TouchableOpacity>
   );
 }
 
-const C = {
-  bg: "#0B0F19",
-  card: "rgba(22,26,36,0.9)",
-  border: "rgba(255,255,255,0.06)",
-  text: "#E6E9F5",
-  sub: "#A8B2D1",
-  primary: "#7C8CFF",
-};
-
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: C.bg, padding: 16, gap: 16 },
-  hero: {
-    padding: 16,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: C.border,
-    backgroundColor: "rgba(124,140,255,0.10)",
+  bg: { flex: 1 },
+  header: {
+    paddingTop: 20,
+    paddingHorizontal: 20,
+    alignItems: "center",
+    marginBottom: 10,
   },
-  brand: { color: C.text, fontSize: 32, fontWeight: "900", letterSpacing: 0.5 },
-  sub: { color: C.sub, marginTop: 6, fontSize: 14 },
-
-  grid: { gap: 12 },
+  logo: {
+    color: "#FFFFFF",
+    fontSize: 34,
+    fontWeight: "900",
+    letterSpacing: 0.5,
+  },
+  subtitle: {
+    color: "#A8B2D1",
+    fontSize: 14,
+    marginTop: 4,
+  },
+  grid: {
+    padding: 16,
+    gap: 16,
+  },
   tile: {
+    borderRadius: 20,
+    overflow: "hidden",
+    shadowColor: "#7C8CFF",
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+  },
+  tileGradient: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 14,
     padding: 16,
-    borderRadius: 16,
     borderWidth: 1,
-    borderColor: C.border,
-    backgroundColor: C.card,
+    borderColor: "rgba(255,255,255,0.08)",
+    borderRadius: 20,
+    backgroundColor: "rgba(22,26,36,0.85)",
   },
-  emoji: { fontSize: 26 },
-  tileTitle: { color: C.text, fontSize: 18, fontWeight: "800" },
-  tileSub: { color: C.sub, fontSize: 12 },
-
-  footer: { textAlign: "center", color: C.sub, marginTop: "auto", fontSize: 12 },
+  icon: {
+    fontSize: 32,
+    marginRight: 14,
+  },
+  tileText: {
+    flexShrink: 1,
+  },
+  tileTitle: {
+    color: "#E6E9F5",
+    fontSize: 18,
+    fontWeight: "800",
+  },
+  tileSubtitle: {
+    color: "#A8B2D1",
+    fontSize: 13,
+    marginTop: 2,
+  },
+  footer: {
+    color: "#A8B2D1",
+    textAlign: "center",
+    fontSize: 12,
+    marginBottom: 8,
+  },
 });

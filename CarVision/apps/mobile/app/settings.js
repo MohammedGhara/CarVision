@@ -1,4 +1,3 @@
-// app/settings.js
 import React, { useEffect, useState } from "react";
 import {
   View,
@@ -15,6 +14,29 @@ import { useRouter } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 
 import { getWsUrl, setWsUrl, DEFAULT_WS_URL } from "../lib/wsConfig";
+
+// --- Auto detect CarVision backend in local network ---
+async function autoDetectServer() {
+  const subnet = "192.168.1."; // most routers use this subnet
+  const port = 5173;
+  const path = "/ws";
+
+  for (let i = 2; i < 255; i++) {
+    const candidate = `ws://${subnet}${i}:${port}${path}`;
+    try {
+      const ws = new WebSocket(candidate);
+      const ok = await new Promise((resolve, reject) => {
+        const to = setTimeout(() => reject(), 500);
+        ws.onopen = () => { clearTimeout(to); ws.close(); resolve(true); };
+        ws.onerror = () => { clearTimeout(to); reject(); };
+      });
+      if (ok) return candidate;
+    } catch {
+      // ignore unreachable IPs
+    }
+  }
+  return null;
+}
 
 export default function Settings() {
   const router = useRouter();
@@ -33,23 +55,26 @@ export default function Settings() {
   }
 
   async function testAndSave() {
-    if (!validate(url)) {
-      Alert.alert(
-        "Invalid URL",
-        "Use ws://host:port/ws or wss://domain/ws\nExample: ws://192.168.1.23:5173/ws"
-      );
-      return;
-    }
     setTesting(true);
     try {
-      const ws = new WebSocket(url);
+      let target = url;
+      if (!validate(target)) {
+        Alert.alert("Scanning network...", "Trying to auto-detect CarVision server");
+        const found = await autoDetectServer();
+        if (!found) throw new Error("No CarVision server found on your network");
+        target = found;
+      }
+
+      const ws = new WebSocket(target);
       await new Promise((resolve, reject) => {
         const to = setTimeout(() => reject(new Error("Timeout")), 2500);
         ws.onopen = () => { clearTimeout(to); ws.close(); resolve(); };
         ws.onerror = (e) => { clearTimeout(to); reject(e?.message || e); };
       });
-      await setWsUrl(url.trim());
-      Alert.alert("Saved", "Connection successful ✔");
+
+      await setWsUrl(target.trim());
+      Alert.alert("Connected!", `Connected successfully to:\n${target}`);
+      setUrl(target);
     } catch (e) {
       Alert.alert("Could not connect", String(e));
     } finally {
@@ -64,11 +89,9 @@ export default function Settings() {
     setUrl(u);
   }
 
-  // ------- FIX: unique presets (ללא כפילויות) -------
   const presets = [
     DEFAULT_WS_URL,
     "ws://192.168.1.100:5173/ws",
-    // ה־"carvision.local" כבר קיים ב-DEFAULT_WS_URL, אין צורך להוסיף שוב
   ];
   const uniquePresets = Array.from(new Set(presets.filter(Boolean)));
 
@@ -96,18 +119,15 @@ export default function Settings() {
           />
 
           <View style={{ flexDirection: "row", gap: 10, marginTop: 12 }}>
-            <TouchableOpacity style={[s.btn, s.secondary]} onPress={useDefault}>
-              <Text style={s.btnText}>Use Default</Text>
-            </TouchableOpacity>
-
+            
             <TouchableOpacity style={s.btn} onPress={testAndSave} disabled={testing}>
-              <Text style={s.btnText}>{testing ? "Testing…" : "Test & Save"}</Text>
+              <Text style={s.btnText}>{testing ? "Testing…" : "Connect"}</Text>
             </TouchableOpacity>
           </View>
 
           <Text style={s.hint}>
-            Tip: prefer a hostname like <Text style={{ fontWeight: "800" }}>carvision.local</Text> so it
-            works across Wi-Fi networks. על iOS אי־אפשר להחליף רשת Wi-Fi מתוך האפליקציה – מגדירים כאן רק את כתובת השרת.
+            Tip: you can just press <Text style={{ fontWeight: "800" }}>Connect</Text> and it will
+            automatically find your CarVision server on the network. No IP typing needed.
           </Text>
         </View>
 
@@ -172,7 +192,6 @@ const s = StyleSheet.create({
   },
 });
 
-// small wrapper so שהמקלדת לא תסתיר את האינפוט ב-iOS
 function KeyboardAvoiding({ children, shimBehavior }) {
   if (Platform.OS !== "ios") return <>{children}</>;
   return (
