@@ -13,6 +13,8 @@ const fs = require("fs");
 const net = require("net");
 const WebSocket = require("ws");
 const express = require("express");
+const { PrismaClient } = require("@prisma/client");
+const cors = require("cors");
 
 /* ───────────── Config (env overridable) ───────────── */
 const HTTP_PORT        = parseInt(process.env.HTTP_PORT || "5173", 10);
@@ -22,16 +24,20 @@ const ELM_PORT         = parseInt(process.env.ELM_PORT || "35000", 10);
 const READ_TIMEOUT_MS  = parseInt(process.env.READ_TIMEOUT_MS || "2000", 10);
 const POLL_INTERVAL_MS = parseInt(process.env.POLL_INTERVAL_MS || "1000", 10);
 const DEBUG            = process.env.DEBUG === "1";
+const prisma = new PrismaClient();
 
 /* ───────────── Express app (static + APIs) ───────────── */
 const app = express();
+app.use(cors());
+
 app.use(express.json());
 
 const PUBLIC_DIR = path.join(__dirname, "public");
 if (fs.existsSync(PUBLIC_DIR)) {
   app.use(express.static(PUBLIC_DIR)); // optional; serves ./public/*
 }
-
+const { router: authRouter } = require("./src/auth");
+app.use("/api/auth", authRouter)
 // health check
 app.get("/api/ping", (req, res) => res.json({ ok: true, t: Date.now() }));
 
@@ -66,6 +72,50 @@ app.post("/api/chat", async (req, res) => {
     res.json({ ok:true, reply: data.choices?.[0]?.message?.content ?? "" });
   } catch (e) {
     res.status(500).json({ ok:false, error:String(e) });
+  }
+});
+// List all users
+app.get("/api/users", async (req, res) => {
+  try {
+    const users = await prisma.user.findMany({ orderBy: { createdAt: "desc" } });
+    res.json({ ok: true, users });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: String(e) });
+  }
+});
+
+// Create a user
+app.post("/api/users", async (req, res) => {
+  try {
+    const { email, name, role = "CLIENT" } = req.body || {};
+    if (!email) return res.status(400).json({ ok: false, error: "email required" });
+    const user = await prisma.user.create({ data: { email, name, role } });
+    res.json({ ok: true, user });
+  } catch (e) {
+    // handle unique email error
+    if (e.code === "P2002") return res.status(409).json({ ok: false, error: "email already exists" });
+    res.status(500).json({ ok: false, error: String(e) });
+  }
+});
+
+// Read one
+app.get("/api/users/:id", async (req, res) => {
+  try {
+    const user = await prisma.user.findUnique({ where: { id: req.params.id } });
+    if (!user) return res.status(404).json({ ok: false, error: "not found" });
+    res.json({ ok: true, user });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: String(e) });
+  }
+});
+
+// Delete one
+app.delete("/api/users/:id", async (req, res) => {
+  try {
+    await prisma.user.delete({ where: { id: req.params.id } });
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: String(e) });
   }
 });
 
