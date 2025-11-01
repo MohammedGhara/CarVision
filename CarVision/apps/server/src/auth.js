@@ -5,7 +5,10 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { PrismaClient } = require("@prisma/client");
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({
+  log: ["error", "warn"]  // helps you see DB errors in the console
+});
+
 const router = express.Router();
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-change-me";
@@ -40,19 +43,30 @@ router.post("/signup", async (req, res) => {
     if (!email || !password) {
       return res.status(400).json({ ok: false, error: "email and password required" });
     }
+
+    // is email already used?
     const exists = await prisma.user.findUnique({ where: { email } });
-    if (exists) return res.status(409).json({ ok: false, error: "Email already registered" });
+    if (exists) {
+      return res.status(409).json({ ok: false, error: "Email already registered" });
+    }
 
     const passwordHash = await bcrypt.hash(String(password), 10);
+
     const user = await prisma.user.create({
-      data: { email, name: name || null, role: role || "CLIENT", passwordHash },
+      data: {
+        email,
+        name: name || null,
+        role: role || "CLIENT",
+        passwordHash
+      },
       select: { id: true, email: true, name: true, role: true, createdAt: true }
     });
 
     const token = sign(user);
-    res.json({ ok: true, user, token });
+    return res.json({ ok: true, user, token });
   } catch (e) {
-    res.status(500).json({ ok: false, error: String(e.message || e) });
+    console.error("SIGNUP ERROR:", e);
+    return res.status(500).json({ ok: false, error: String(e.message || e) });
   }
 });
 
@@ -63,27 +77,48 @@ router.post("/login", async (req, res) => {
     if (!email || !password) {
       return res.status(400).json({ ok: false, error: "email and password required" });
     }
+
     const user = await prisma.user.findUnique({ where: { email } });
-    if (!user) return res.status(401).json({ ok: false, error: "Invalid credentials" });
+    if (!user) {
+      return res.status(401).json({ ok: false, error: "Invalid credentials" });
+    }
+
+    // this is the important guard 👇
+    if (!user.passwordHash) {
+      return res.status(400).json({
+        ok: false,
+        error: "This user has no password saved. Please sign up again."
+      });
+    }
 
     const ok = await bcrypt.compare(String(password), user.passwordHash);
-    if (!ok) return res.status(401).json({ ok: false, error: "Invalid credentials" });
+    if (!ok) {
+      return res.status(401).json({ ok: false, error: "Invalid credentials" });
+    }
 
-    const clean = { id: user.id, email: user.email, name: user.name, role: user.role, createdAt: user.createdAt };
+    const clean = {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      createdAt: user.createdAt
+    };
+
     const token = sign(clean);
-    res.json({ ok: true, user: clean, token });
+    return res.json({ ok: true, user: clean, token });
   } catch (e) {
-    res.status(500).json({ ok: false, error: String(e.message || e) });
+    console.error("LOGIN ERROR:", e);
+    return res.status(500).json({ ok: false, error: String(e.message || e) });
   }
 });
 
-/* GET /api/me (protected) */
+/* GET /api/auth/me */
 router.get("/me", authRequired, async (req, res) => {
   const user = await prisma.user.findUnique({
     where: { id: req.user.uid },
     select: { id: true, email: true, name: true, role: true, createdAt: true }
   });
-  res.json({ ok: true, user });
+  return res.json({ ok: true, user });
 });
 
 module.exports = { router, authRequired };

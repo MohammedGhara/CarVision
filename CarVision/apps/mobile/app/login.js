@@ -92,10 +92,19 @@ export default function Login() {
           behavior={Platform.OS === "ios" ? "padding" : undefined}
           style={{ flex: 1 }}
         >
-          <View style={styles.brandWrap}>
-            <Text style={styles.logo}> CarVision</Text>
-            <Text style={styles.tagline}>Drive smarter. Diagnose faster.</Text>
+          {/* ─── top bar with settings ─── */}
+          <View style={styles.topbar}>
+            <View style={{ width: 40 }} />
+            <Text style={styles.logo}>CarVision</Text>
+            <TouchableOpacity
+              style={styles.settingsBtn}
+              onPress={() => r.push("/settings")}
+            >
+              <Ionicons name="settings-outline" size={20} color={C.text} />
+            </TouchableOpacity>
           </View>
+
+          <Text style={styles.tagline}>Drive smarter. Diagnose faster.</Text>
 
           <View style={styles.cardWrap}>
             <View style={styles.card}>
@@ -116,7 +125,7 @@ export default function Login() {
                 />
               </View>
 
-              {/* Password (smaller height + font) */}
+              {/* Password */}
               <View style={styles.smallInputWrap}>
                 <Ionicons name="lock-closed-outline" size={20} color={C.sub} style={styles.iconLeft} />
                 <TextInput
@@ -143,7 +152,11 @@ export default function Login() {
                 </TouchableOpacity>
               </View>
 
-              <TouchableOpacity style={[styles.btn, busy && { opacity: 0.7 }]} onPress={onLogin} disabled={busy}>
+              <TouchableOpacity
+                style={[styles.btn, busy && { opacity: 0.7 }]}
+                onPress={onLogin}
+                disabled={busy}
+              >
                 {busy ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>Log in</Text>}
               </TouchableOpacity>
 
@@ -166,9 +179,26 @@ export default function Login() {
 }
 
 const styles = StyleSheet.create({
+  topbar: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingTop: 8,
+  },
+  settingsBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    backgroundColor: "rgba(0,0,0,0.25)",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+  },
   brandWrap: { paddingTop: 8, alignItems: "center" },
-  logo: { color: C.text, fontSize: 36, fontWeight: "900", letterSpacing: 0.5 },
-  tagline: { color: C.sub, marginTop: 4, fontSize: 13 },
+  logo: { color: C.text, fontSize: 26, fontWeight: "900", letterSpacing: 0.5 },
+  tagline: { color: C.sub, marginTop: 2, textAlign: "center", fontSize: 13 },
   cardWrap: { flex: 1, justifyContent: "center", paddingHorizontal: 16 },
   card: {
     borderRadius: 24,
@@ -201,7 +231,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.04)",
     flexDirection: "row",
     alignItems: "center",
-    height: 42, // smaller height
+    height: 42,
   },
   iconLeft: { paddingLeft: 12, paddingRight: 6 },
   iconRight: { paddingHorizontal: 12, height: "100%", justifyContent: "center" },
@@ -217,7 +247,7 @@ const styles = StyleSheet.create({
     color: C.text,
     paddingVertical: 6,
     paddingHorizontal: 10,
-    fontSize: 14, // smaller font
+    fontSize: 14,
   },
   row: {
     marginTop: 12,

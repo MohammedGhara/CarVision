@@ -15,7 +15,6 @@ const WebSocket = require("ws");
 const express = require("express");
 const { PrismaClient } = require("@prisma/client");
 const cors = require("cors");
-
 /* ───────────── Config (env overridable) ───────────── */
 const HTTP_PORT        = parseInt(process.env.HTTP_PORT || "5173", 10);
 const HTTP_HOST        = process.env.HTTP_HOST || "0.0.0.0";     // serve to LAN
@@ -455,6 +454,18 @@ function classify({ rpm, speed, coolant, dtcs, connected }) {
     }
   }
 })();
+app.post("/auth/register", (req, res) => {
+  const { name, email, password, role } = req.body || {};
+  if (!email || !password) {
+    return res.status(400).json({ ok:false, error:"email & password required" });
+  }
+  // just echo — real app should save to DB
+  res.json({
+    ok: true,
+    user: { id: 1, name: name || "User", email, role: role || "client" },
+    token: "dev-token"
+  });
+});
 
 /* ───────────── Start servers ───────────── */
 httpServer.listen(HTTP_PORT, HTTP_HOST, () => {
