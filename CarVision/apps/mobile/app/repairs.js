@@ -10,7 +10,10 @@ import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { getWsUrl } from "../lib/wsConfig";
-import { postJson } from "../lib/api";
+// ❌ removed old helper:
+// import { postJson } from "../lib/api";
+// ✅ new helper:
+import { api } from "../lib/api";
 import { describeDtc } from "../lib/dtcDescriptions";
 
 const C = {
@@ -36,6 +39,7 @@ export default function RepaiScreen() {
   const [answers, setAnswers] = useState({}); // id -> ai reply
 
   // Build base URL for REST from ws://host/ws → http://host
+  // (kept as-is in case you use it elsewhere, but not needed for askAI anymore)
   async function getApiBase() {
     const u = await getWsUrl();
     const m = u.match(/^wss?:\/\/([^/]+)\/ws$/i);
@@ -191,43 +195,42 @@ export default function RepaiScreen() {
     return [styles.badge, styles.badgeNormal];
   }
 
- async function askAI(item) {
-  try {
-    setBusyId(item.id);
-    const base = await getApiBase();
+  async function askAI(item) {
+    try {
+      setBusyId(item.id);
 
-    const s = item.snapshot || {};
-    const context = [
-      `Problem: ${item.title}`,
-      `Detail: ${item.detail}`,
-      `Time: ${new Date(item.ts).toLocaleString()}`,
-      `RPM=${s.rpm ?? "-"} | Speed=${s.speed ?? "-"} km/h | Coolant=${s.coolant ?? "-"}°C | OilTemp=${s.oilTemp ?? "-"}`,
-      `Battery=${s.battery ?? s.moduleVoltage ?? "-"}V | Load=${s.load ?? "-"}% | Throttle=${s.throttle ?? "-"}% | Fuel=${s.fuel ?? "-"}%`,
-      `MAF=${s.maf ?? "-"} g/s | MAP=${s.map ?? "-"} kPa | STFT=${s.stft ?? "-"}% | LTFT=${s.ltft ?? "-"}%`,
-      `DTCs: ${(s.dtcs || []).join(", ") || "none"} | Pending: ${(s.pending || []).join(", ") || "none"}`
-    ].join("\n");
+      const s = item.snapshot || {};
+      const context = [
+        `Problem: ${item.title}`,
+        `Detail: ${item.detail}`,
+        `Time: ${new Date(item.ts).toLocaleString()}`,
+        `RPM=${s.rpm ?? "-"} | Speed=${s.speed ?? "-"} km/h | Coolant=${s.coolant ?? "-"}°C | OilTemp=${s.oilTemp ?? "-"}`,
+        `Battery=${s.battery ?? s.moduleVoltage ?? "-"}V | Load=${s.load ?? "-"}% | Throttle=${s.throttle ?? "-"}% | Fuel=${s.fuel ?? "-"}%`,
+        `MAF=${s.maf ?? "-"} g/s | MAP=${s.map ?? "-"} kPa | STFT=${s.stft ?? "-"}% | LTFT=${s.ltft ?? "-"}%`,
+        `DTCs: ${(s.dtcs || []).join(", ") || "none"} | Pending: ${(s.pending || []).join(", ") || "none"}`
+      ].join("\n");
 
-    const prompt =
-      `You are a professional car technician assistant. Give detailed but clear help to a normal driver.\n` +
-      `Use about 200 words max. NO markdown (** or #). Write in clear lines and short paragraphs.\n` +
-      `Your answer must have these parts:\n` +
-      `1. PROBLEM SUMMARY: what this issue means in simple words.\n` +
-      `2. LIKELY CAUSES: 3–5 reasons for why it happens, practical not theoretical.\n` +
-      `3. FIX AND STEPS: what the driver should check or do (step by step, 4–6 steps max).\n` +
-      `4. WHEN TO STOP DRIVING: when this problem becomes dangerous and they should call a mechanic.\n` +
-      `Be professional and realistic — your goal is to guide the driver safely.\n\n` +
-      `Vehicle data:\n${context}`;
+      const prompt =
+        `You are a professional car technician assistant. Give detailed but clear help to a normal driver.\n` +
+        `Use about 200 words max. NO markdown (** or #). Write in clear lines and short paragraphs.\n` +
+        `Your answer must have these parts:\n` +
+        `1. PROBLEM SUMMARY: what this issue means in simple words.\n` +
+        `2. LIKELY CAUSES: 3–5 reasons for why it happens, practical not theoretical.\n` +
+        `3. FIX AND STEPS: what the driver should check or do (step by step, 4–6 steps max).\n` +
+        `4. WHEN TO STOP DRIVING: when this problem becomes dangerous and they should call a mechanic.\n` +
+        `Be professional and realistic — your goal is to guide the driver safely.\n\n` +
+        `Vehicle data:\n${context}`;
 
-    const data = await postJson(`${base}/api/chat`, { message: prompt });
-    const reply = data?.reply?.trim?.() || "No suggestion generated.";
-    setAnswers(a => ({ ...a, [item.id]: reply }));
-  } catch (e) {
-    Alert.alert("AI error", String(e?.message || e));
-  } finally {
-    setBusyId(null);
+      // ✅ call the new helper (it attaches base URL + Authorization and returns parsed JSON)
+      const data = await api.post("/api/chat", { message: prompt });
+      const reply = data?.reply?.trim?.() || "No suggestion generated.";
+      setAnswers(a => ({ ...a, [item.id]: reply }));
+    } catch (e) {
+      Alert.alert("AI error", String(e?.message || e));
+    } finally {
+      setBusyId(null);
+    }
   }
-}
-
 
   async function clearHistory() {
     issuesRef.current = [];
@@ -237,15 +240,14 @@ export default function RepaiScreen() {
     force(x => x + 1);
   }
 
- // Sort issues: CRITICAL first, then by newest timestamp
-const issues = useMemo(() =>
-  [...issuesRef.current].sort((a, b) =>
-    (a.severity === b.severity)
-      ? b.ts - a.ts
-      : (a.severity === "CRITICAL" ? -1 : b.severity === "CRITICAL" ? 1 : 0)
-  ),
-[link, answers]);
-
+  // Sort issues: CRITICAL first, then by newest timestamp
+  const issues = useMemo(() =>
+    [...issuesRef.current].sort((a, b) =>
+      (a.severity === b.severity)
+        ? b.ts - a.ts
+        : (a.severity === "CRITICAL" ? -1 : b.severity === "CRITICAL" ? 1 : 0)
+    ),
+  [link, answers]);
 
   return (
     <SafeAreaView style={{ flex:1, backgroundColor: C.bg }}>

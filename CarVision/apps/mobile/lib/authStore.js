@@ -1,4 +1,4 @@
-// Single source of truth for auth state
+// apps/mobile/lib/authStore.js
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const TOKEN_KEY = "auth_token";
@@ -17,6 +17,13 @@ export async function saveUser(user) {
 export async function getUser() {
   const raw = await AsyncStorage.getItem(USER_KEY);
   return raw ? JSON.parse(raw) : null;
+}
+
+export async function saveSession({ token, user }) {
+  await AsyncStorage.multiSet([
+    [TOKEN_KEY, token],
+    [USER_KEY, JSON.stringify(user)],
+  ]);
 }
 
 export async function clearAuth() {

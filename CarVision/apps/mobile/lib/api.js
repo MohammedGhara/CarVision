@@ -1,13 +1,38 @@
-export async function postJson(url, body) {
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
+// apps/mobile/lib/api.js
+import { getHttpBase } from "./httpBase";
+import { getToken, clearAuth } from "./authStore";
+
+async function request(path, { method = "GET", body, headers } = {}) {
+  const base = await getHttpBase();
+  const token = await getToken();
+
+  const res = await fetch(`${base}${path}`, {
+    method,
+    headers: {
+      "Content-Type": "application/json",
+      ...(headers || {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: body ? JSON.stringify(body) : undefined,
   });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok || data.ok === false) {
-    const msg = data?.error || `HTTP ${res.status}`;
+
+  let data = null;
+  try { data = await res.json(); } catch {}
+
+  if (!res.ok || (data && data.ok === false)) {
+    const msg = (data && data.error) || `HTTP ${res.status}`;
+    // Auto-logout on expired/invalid token:
+    if (res.status === 401) {
+      try { await clearAuth(); } catch {}
+    }
     throw new Error(msg);
   }
-  return data;
+  return data ?? {};
 }
+
+export const api = {
+  get:  (p)        => request(p),
+  post: (p, body)  => request(p, { method: "POST", body }),
+  put:  (p, body)  => request(p, { method: "PUT", body }),
+  del:  (p)        => request(p, { method: "DELETE" }),
+};

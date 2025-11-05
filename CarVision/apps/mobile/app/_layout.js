@@ -1,6 +1,11 @@
+// apps/mobile/app/_layout.js  (or App.js if you don’t use expo-router)
 import { Stack } from "expo-router";
-import { getWsUrl, setWsUrl, DEFAULT_WS_URL } from "../lib/wsConfig";
+import { AuthProvider } from "../context/AuthContext";
 
 export default function Layout() {
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return (
+    <AuthProvider>
+      <Stack screenOptions={{ headerShown: false }} />
+    </AuthProvider>
+  );
 }

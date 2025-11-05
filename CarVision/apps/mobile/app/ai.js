@@ -1,4 +1,3 @@
-// apps/mobile/app/AIChat.js
 import React, { useMemo, useRef, useState } from "react";
 import {
   View,
@@ -14,12 +13,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { getWsUrl } from "../lib/wsConfig";
-import { postJson } from "../lib/api";
-
-// If you're using Expo you can uncomment the next line
-// and wrap the SafeAreaView with <LinearGradient ...> for a subtle background.
-// import { LinearGradient } from "expo-linear-gradient";
+import { api } from "../lib/api"; // ⬅️ use the new helper
 
 const C = {
   bg: "#0a0e17",
@@ -32,6 +26,9 @@ const C = {
   danger: "#FF6B6B",
   success: "#5BE49B",
 };
+
+// If your server route is different, change this:
+const CHAT_PATH = "/api/chat"; // e.g. "/api/ai/chat" or "/ai/chat"
 
 export default function AIChat() {
   const router = useRouter();
@@ -46,7 +43,7 @@ export default function AIChat() {
   ]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
-  const [online, setOnline] = useState(true); // wire to your WS status if you have it
+  const [online, setOnline] = useState(true); // hook to WS/health if you have it
   const listRef = useRef(null);
 
   const placeholder =
@@ -56,13 +53,6 @@ export default function AIChat() {
     () => input.trim().length > 0 && !busy,
     [input, busy]
   );
-
-  async function getApiBase() {
-    const wsUrl = await getWsUrl();
-    const m = wsUrl.match(/^wss?:\/\/([^/]+)\/ws$/i);
-    if (!m) throw new Error("Bad WS URL in settings");
-    return `http://${m[1]}`; // switch to https:// if you serve TLS
-  }
 
   async function send() {
     const text = input.trim();
@@ -79,10 +69,12 @@ export default function AIChat() {
     setBusy(true);
 
     try {
-      const base = await getApiBase();
-      const data = await postJson(`${base}/api/chat`, { message: text });
+      // ⬇️ use api.post — it already attaches base URL + Authorization header and parses JSON
+      const data = await api.post(CHAT_PATH, { message: text });
+
       const reply =
         data?.reply?.trim?.() ||
+        data?.answer?.trim?.() ||
         "I couldn’t generate a reply. Check the server logs.";
       const aiMsg = {
         id: String(Date.now() + 1),
@@ -147,7 +139,6 @@ export default function AIChat() {
   }
 
   return (
-    // If you enabled LinearGradient, wrap with it and remove bg color below
     <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
       {/* Header */}
       <View style={styles.header}>
@@ -174,11 +165,7 @@ export default function AIChat() {
           </View>
         </View>
 
-        <TouchableOpacity
-          onPress={() => {}}
-          disabled
-          style={{ width: 40, height: 40 }}
-        />
+        <View style={{ width: 40, height: 40 }} />
       </View>
 
       {/* Messages (inverted list for “bottom-up” chat) */}
