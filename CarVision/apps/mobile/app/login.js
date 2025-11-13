@@ -18,7 +18,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { getHttpBase } from "../lib/httpBase";
 import { saveToken, saveUser, getToken } from "../lib/authStore";
-
+import { showCustomAlert } from "../components/CustomAlert";
 const C = {
   text: "#E6E9F5",
   sub: "#A8B2D1",
@@ -29,7 +29,7 @@ const C = {
 
 export default function Login() {
   const r = useRouter();
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState(""); // Changed from email to identifier
   const [password, setPassword] = useState("");
   const [showPwd, setShowPwd] = useState(false);
   const [remember, setRemember] = useState(true);
@@ -43,37 +43,135 @@ export default function Login() {
   }, []);
 
   function validate() {
-    if (!email || !password) {
-      Alert.alert("Missing", "Please fill email and password.");
+    if (!identifier || !password) {
+      showCustomAlert("Missing", "Please fill username/email and password.");
       return false;
     }
-    const ok = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-    if (!ok) {
-      Alert.alert("Invalid email", "Enter a valid email address.");
-      return false;
-    }
+    // No email validation - accept both username and email
     return true;
   }
-
   async function onLogin() {
-    if (!validate()) return;
+    // Validate first - these alerts should work immediately
+    if (!identifier || !password) {
+      showCustomAlert("Missing", "Please fill username/email and password.");
+      return;
+    }
+    
     setBusy(true);
+    
+    console.log("🔵 Starting login...", { identifier: identifier.substring(0, 5) + "***" });
+    
     try {
       const base = await getHttpBase();
+      
+      // Determine if it's an email or username
+      const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifier);
+      
       const resp = await fetch(`${base}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify(
+          isEmail 
+            ? { email: identifier, password } 
+            : { username: identifier, password }
+        ),
       });
-      const data = await resp.json();
-      if (!data.ok) throw new Error(data.error || "Login failed");
-      await saveToken(data.token);
-      await saveUser(data.user);
-      r.replace("/");
-    } catch (e) {
-      Alert.alert("Login error", String(e.message || e));
-    } finally {
+      
+      // Try to parse JSON response
+      let data;
+      let responseText = "";
+      try {
+        responseText = await resp.text();
+        data = responseText ? JSON.parse(responseText) : {};
+      } catch (parseError) {
+        console.error("❌ JSON parse error:", parseError);
+        setBusy(false);
+        showCustomAlert(
+          "Server Error", 
+          `Invalid response from server.\n\nStatus: ${resp.status}`
+        );
+        return;
+      }
+      
+      if (!resp.ok || !data.ok) {
+        // Show specific error message from server
+        const errorMsg = data.error || "Login failed. Please try again.";
+        setBusy(false);
+        
+        // Show specific alerts based on error type
+        if (errorMsg.toLowerCase().includes("password")) {
+          showCustomAlert("❌ Incorrect Password", "The password you entered is incorrect. Please try again.");
+        } else if (errorMsg.toLowerCase().includes("email") || errorMsg.toLowerCase().includes("username")) {
+          showCustomAlert("❌ Account Not Found", "No account found with this email/username. Please check and try again.");
+        } else if (errorMsg.toLowerCase().includes("required")) {
+          showCustomAlert("⚠️ Missing Information", errorMsg);
+        } else {
+          showCustomAlert("❌ Login Failed", errorMsg);
+        }
+        return;
+      }
+      
+      // Check if we have token and user
+      if (!data.token || !data.user) {
+        console.error("❌ Missing token or user in response:", data);
+        setBusy(false);
+        showCustomAlert("Login Error", "Server response is incomplete. Please try again.");
+        return;
+      }
+      
+      console.log("✅ Login successful!");
+      
+      // Save credentials
+      try {
+        await saveToken(data.token);
+        await saveUser(data.user);
+        console.log("✅ Credentials saved");
+      } catch (saveError) {
+        console.error("❌ Save error:", saveError);
+        setBusy(false);
+        showCustomAlert("Storage Error", "Login successful but failed to save credentials. Please try again.");
+        return;
+      }
+      
+      // Success - Show alert FIRST, then redirect after user presses OK
       setBusy(false);
+      
+      setTimeout(() => {
+        console.log("🟢 Showing success alert...");
+        showCustomAlert(
+          "✅ Login Successful!", 
+          `Welcome back, ${data.user.name || data.user.email.split("@")[0]}!`,
+          [
+            { 
+              text: "OK", 
+              onPress: () => {
+                console.log("User pressed OK, redirecting...");
+                setTimeout(() => {
+                  r.replace("/");
+                }, 300);
+              }
+            }
+          ]
+        );
+      }, 500);
+      
+    } catch (e) {
+      // Network or other errors
+      console.error("❌ Login exception:", e);
+      setBusy(false);
+      
+      let errorMsg = "Network error. Please check your connection and try again.";
+      if (e.message) {
+        if (e.message.includes("fetch") || e.message.includes("network") || e.message.includes("Failed to fetch")) {
+          errorMsg = "Cannot connect to the server.\n\nPlease check:\n• Your internet connection\n• Server settings\n• That the server is running";
+        } else if (e.message.includes("timeout")) {
+          errorMsg = "The request took too long. Please check your connection and try again.";
+        } else {
+          errorMsg = e.message;
+        }
+      }
+      
+      showCustomAlert("❌ Connection Error", errorMsg);
     }
   }
 
@@ -111,17 +209,17 @@ export default function Login() {
               <Text style={styles.h1}>Log in</Text>
               <Text style={styles.h2}>Welcome back! Please enter your details.</Text>
 
-              {/* Email */}
+              {/* Username or Email */}
               <View style={styles.inputWrap}>
-                <Ionicons name="mail-outline" size={20} color={C.sub} style={styles.iconLeft} />
+                <Ionicons name="person-outline" size={20} color={C.sub} style={styles.iconLeft} />
                 <TextInput
                   style={styles.input}
-                  placeholder="Email"
+                  placeholder="Username or Email"
                   placeholderTextColor={C.sub}
                   autoCapitalize="none"
-                  keyboardType="email-address"
-                  value={email}
-                  onChangeText={setEmail}
+                  keyboardType="default"
+                  value={identifier}
+                  onChangeText={setIdentifier}
                 />
               </View>
 
@@ -147,7 +245,7 @@ export default function Login() {
                   <Switch value={remember} onValueChange={setRemember} />
                   <Text style={styles.rememberText}>Remember me</Text>
                 </View>
-                <TouchableOpacity onPress={() => Alert.alert("Forgot Password", "Not implemented yet.")}>
+                <TouchableOpacity onPress={() => r.push("/forgotpassword")}>
                   <Text style={styles.link}>Forgot password?</Text>
                 </TouchableOpacity>
               </View>

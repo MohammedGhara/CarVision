@@ -17,6 +17,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { getHttpBase } from "../lib/httpBase";
 import { saveToken, saveUser } from "../lib/authStore";
+import { showCustomAlert } from "../components/CustomAlert";
 
 const C = {
   text: "#E6E9F5",
@@ -38,44 +39,188 @@ export default function Signup() {
   const [busy, setBusy] = useState(false);
 
   function validate() {
-    if (!email || !password) {
-      Alert.alert("Missing", "Please fill email and password.");
+    if (!email) {
+      Alert.alert("Email Required", "Please enter your email address.");
       return false;
     }
-    const ok = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-    if (!ok) {
-      Alert.alert("Invalid email", "Enter a valid email address.");
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      Alert.alert("Invalid Email", "Please enter a valid email address (e.g., name@example.com).");
       return false;
     }
+    
+    if (!password) {
+      Alert.alert("Password Required", "Please enter a password.");
+      return false;
+    }
+    
     if (password.length < 6) {
-      Alert.alert("Weak password", "Password must be at least 6 characters.");
+      Alert.alert("Weak Password", "Password must be at least 6 characters long.");
       return false;
     }
+    
     return true;
   }
 
-  async function onSignup() {
-    if (!validate()) return;
-    setBusy(true);
+// ... existing code ...
+
+async function onSignup() {
+  // First validate
+  if (!email) {
+    showCustomAlert("Email Required", "Please enter your email address.");
+    return;
+  }
+  
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    showCustomAlert("Invalid Email", "Please enter a valid email address (e.g., name@example.com).");
+    return;
+  }
+  
+  if (!password) {
+    showCustomAlert("Password Required", "Please enter a password.");
+    return;
+  }
+  
+  if (password.length < 6) {
+    showCustomAlert("Weak Password", "Password must be at least 6 characters long.");
+    return;
+  }
+  
+  setBusy(true);
+  
+  console.log("🔵 Starting signup...", { email, name, role, passwordLength: password.length });
+  
+  try {
+    let base;
     try {
-      const base = await getHttpBase();
-      const resp = await fetch(`${base}/api/auth/signup`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, name, role, password }),
-      });
-      const data = await resp.json();
-      if (!data.ok) throw new Error(data.error || "Signup failed");
+      base = await getHttpBase();
+      console.log("✅ Base URL:", base);
+    } catch (urlError) {
+      console.error("❌ URL Error:", urlError);
+      setBusy(false);
+      showCustomAlert(
+        "Connection Error", 
+        "Cannot get server URL. Please check your settings and make sure the server is running.\n\n" + urlError.message
+      );
+      return;
+    }
+  
+    const url = `${base}/api/auth/signup`;
+    console.log("📤 Sending request to:", url);
+    
+    const requestBody = { email, name: name.trim() || null, role, password };
+    console.log("📤 Request body:", { ...requestBody, password: "***" });
+    
+    const resp = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(requestBody),
+    });
+    
+    console.log("📥 Response status:", resp.status, resp.statusText);
+    
+    let data;
+    let responseText = "";
+    try {
+      responseText = await resp.text();
+      console.log("📥 Response text:", responseText);
+      data = responseText ? JSON.parse(responseText) : {};
+    } catch (parseError) {
+      console.error("❌ JSON parse error:", parseError);
+      setBusy(false);
+      showCustomAlert(
+        "Server Error", 
+        `Invalid response from server.\n\nStatus: ${resp.status}\nResponse: ${responseText.substring(0, 100)}`
+      );
+      return;
+    }
+    
+    console.log("📥 Parsed data:", data);
+    
+    if (!resp.ok || !data.ok) {
+      const errorMsg = data.error || `Server returned error (${resp.status})`;
+      console.error("❌ Signup failed:", errorMsg);
+      setBusy(false);
+      
+      if (errorMsg.toLowerCase().includes("email") && errorMsg.toLowerCase().includes("already")) {
+        showCustomAlert("Email Already Registered", "This email is already in use. Please use a different email or try logging in.");
+      } else if (errorMsg.toLowerCase().includes("email")) {
+        showCustomAlert("Email Error", errorMsg);
+      } else if (errorMsg.toLowerCase().includes("password")) {
+        showCustomAlert("Password Error", errorMsg);
+      } else if (resp.status === 500) {
+        showCustomAlert("Server Error", "The server encountered an error. Please try again later.\n\n" + errorMsg);
+      } else if (resp.status === 400) {
+        showCustomAlert("Invalid Data", errorMsg);
+      } else {
+        showCustomAlert("Signup Failed", errorMsg);
+      }
+      return;
+    }
+    
+    if (!data.token || !data.user) {
+      console.error("❌ Missing token or user in response:", data);
+      setBusy(false);
+      showCustomAlert("Signup Error", "Server response is incomplete. Please try again.");
+      return;
+    }
+    
+    console.log("✅ Signup successful!");
+    
+    try {
       await saveToken(data.token);
       await saveUser(data.user);
-      r.replace("/");
-    } catch (e) {
-      Alert.alert("Signup error", String(e.message || e));
-    } finally {
+      console.log("✅ Credentials saved");
+    } catch (saveError) {
+      console.error("❌ Save error:", saveError);
       setBusy(false);
+      showCustomAlert("Storage Error", "Account created but failed to save credentials. Please try logging in.");
+      return;
     }
+    
+    // Success
+    setBusy(false);
+    setTimeout(() => {
+      console.log("🟢 Showing success alert...");
+      showCustomAlert(
+        "✅ Success!", 
+        `Account created successfully!\n\nWelcome to CarVision, ${data.user.name || data.user.email.split("@")[0]}!`,
+        [
+          { 
+            text: "OK", 
+            onPress: () => {
+              console.log("User pressed OK, redirecting...");
+              setTimeout(() => r.replace("/"), 300);
+            }
+          }
+        ]
+      );
+    }, 300);
+    
+  } catch (e) {
+    console.error("❌ Signup exception:", e);
+    setBusy(false);
+    
+    let errorMsg = "An unexpected error occurred.";
+    let errorTitle = "Signup Error";
+    
+    if (e.message) {
+      if (e.message.includes("fetch") || e.message.includes("network") || e.message.includes("Failed to fetch")) {
+        errorTitle = "Connection Error";
+        errorMsg = "Cannot connect to the server.\n\nPlease check:\n• Your internet connection\n• Server settings\n• That the server is running";
+      } else if (e.message.includes("timeout")) {
+        errorTitle = "Timeout Error";
+        errorMsg = "The request took too long. Please check your connection and try again.";
+      } else {
+        errorMsg = e.message;
+      }
+    }
+    
+    showCustomAlert(errorTitle, errorMsg);
   }
-
+}
   return (
     <LinearGradient colors={["#07101F", "#0B0F19"]} style={{ flex: 1 }}>
       <ImageBackground
