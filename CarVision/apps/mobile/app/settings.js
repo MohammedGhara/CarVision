@@ -131,13 +131,32 @@ export default function Settings() {
           </Text>
         </View>
 
-        <Text style={s.section}>Quick presets</Text>
+          <Text style={s.section}>Quick presets</Text>
         <View style={s.chips}>
           {uniquePresets.map((p, i) => (
             <TouchableOpacity key={`${p}-${i}`} onPress={() => usePreset(p)}>
               <Text style={s.chip}>{p}</Text>
             </TouchableOpacity>
           ))}
+        </View>
+
+        {/* Account Settings */}
+        <Text style={s.section}>Account</Text>
+        <View style={s.card}>
+          <TouchableOpacity 
+            style={s.accountRow} 
+            onPress={() => router.push("/forgotpassword")}
+            activeOpacity={0.7}
+          >
+            <View style={s.accountLeft}>
+              <Ionicons name="key-outline" size={20} color={C.primary} />
+              <View style={{ marginLeft: 12 }}>
+                <Text style={s.accountTitle}>Reset Password</Text>
+                <Text style={s.accountSub}>Change your account password</Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={C.sub} />
+          </TouchableOpacity>
         </View>
       </KeyboardAvoiding>
     </SafeAreaView>
@@ -190,6 +209,19 @@ const s = StyleSheet.create({
     borderColor: "rgba(190,200,255,0.18)", borderWidth: 1,
     paddingVertical: 6, paddingHorizontal: 10, borderRadius: 999, overflow: "hidden",
   },
+  accountRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 12,
+  },
+  accountLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  accountTitle: { color: C.text, fontSize: 16, fontWeight: "700" },
+  accountSub: { color: C.sub, fontSize: 13, marginTop: 2 },
 });
 
 function KeyboardAvoiding({ children, shimBehavior }) {

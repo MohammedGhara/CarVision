@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -11,7 +11,7 @@ import {
   ImageBackground,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { getHttpBase } from "../lib/httpBase";
@@ -27,6 +27,7 @@ const C = {
 
 export default function ForgotPassword() {
   const r = useRouter();
+  const params = useLocalSearchParams();
   const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
   const [step, setStep] = useState("request"); // "request" or "reset"
@@ -34,73 +35,14 @@ export default function ForgotPassword() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
-  async function onRequestReset() {
-    if (!email) {
-      showCustomAlert("Email Required", "Please enter your email address.");
-      return;
+  // Check if token is provided in URL (from email link)
+  useEffect(() => {
+    if (params?.token) {
+      setResetToken(params.token);
+      setStep("reset");
+      console.log("🔐 Reset token received from URL");
     }
-    
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      showCustomAlert("Invalid Email", "Please enter a valid email address.");
-      return;
-    }
-    
-    setBusy(true);
-    
-    try {
-      const base = await getHttpBase();
-      const resp = await fetch(`${base}/api/auth/forgot-password`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-      
-      const data = await resp.json();
-      
-      if (!resp.ok || !data.ok) {
-        showCustomAlert("Error", data.error || "Failed to send reset link. Please try again.");
-        setBusy(false);
-        return;
-      }
-      
-      // If token is returned (for testing), show it and move to reset step
-      if (data.resetToken) {
-        setResetToken(data.resetToken);
-        setStep("reset");
-        showCustomAlert(
-          "Reset Token Generated",
-          `For testing, your reset token is:\n\n${data.resetToken}\n\nUse it to reset your password.`,
-          [
-            {
-              text: "OK",
-              onPress: () => {}
-            }
-          ]
-        );
-      } else {
-        showCustomAlert(
-          "Check Your Email",
-          "If an account exists with this email, a reset link has been sent. Please check your inbox.",
-          [
-            {
-              text: "OK",
-              onPress: () => r.back()
-            }
-          ]
-        );
-      }
-      
-      setBusy(false);
-    } catch (e) {
-      console.error("Request reset error:", e);
-      setBusy(false);
-      showCustomAlert(
-        "Connection Error",
-        "Cannot connect to the server. Please check your connection and try again."
-      );
-    }
-  }
+  }, [params?.token]);
 
   async function onRequestReset() {
     if (!email) {
@@ -154,16 +96,19 @@ export default function ForgotPassword() {
         return;
       }
       
-      // If token is returned (for testing), show it and move to reset step
-           // If token is returned (for testing), automatically move to reset step
+      // If token is returned (for testing/development when email is not configured)
       if (data.resetToken) {
         setResetToken(data.resetToken);
         setStep("reset");
-        // Don't show alert, just move to password reset form
+        showCustomAlert(
+          "Reset Token",
+          "Email service is not configured. Using token for testing:\n\n" + data.resetToken.substring(0, 20) + "...",
+          [{ text: "OK" }]
+        );
       } else {
         showCustomAlert(
           "Check Your Email",
-          "If an account exists with this email, a reset link has been sent. Please check your inbox.",
+          "If an account exists with this email, a reset link has been sent. Please check your inbox and click the link to reset your password.",
           [
             {
               text: "OK",
@@ -223,8 +168,6 @@ export default function ForgotPassword() {
     }
     
     setBusy(true);
-    
-    // ... rest of the function stays the same
     
     try {
       const base = await getHttpBase();

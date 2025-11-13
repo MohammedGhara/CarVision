@@ -5,6 +5,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { PrismaClient } = require("@prisma/client");
 const crypto = require("crypto");
+const { sendWelcomeEmail, sendPasswordResetEmail } = require("./email");
 
 const prisma = new PrismaClient({
   log: ["error", "warn"]  // helps you see DB errors in the console
@@ -103,6 +104,17 @@ router.post("/signup", async (req, res) => {
 
     const token = sign(user);
     console.log("✅ Token generated");
+    
+    // Send welcome email (non-blocking)
+    sendWelcomeEmail(user).then(result => {
+      if (result.ok) {
+        console.log("✅ Welcome email sent successfully");
+      } else {
+        console.log("⚠️  Welcome email failed:", result.error);
+      }
+    }).catch(err => {
+      console.error("❌ Welcome email error:", err);
+    });
     
     return res.json({ ok: true, user, token });
   } catch (e) {
@@ -246,13 +258,24 @@ router.post("/forgot-password", async (req, res) => {
     
     console.log(`🔐 Reset token generated for ${email}: ${resetToken.substring(0, 8)}...`);
     
-    // In production, send email here with reset link
-    // For now, return the token (remove this in production!)
-    return res.json({ 
+    // Send password reset email
+    const emailResult = await sendPasswordResetEmail(user, resetToken);
+    
+    // Always return success (security: don't reveal if email exists)
+    // Only return token if email service is not configured (development mode)
+    const response = { 
       ok: true, 
-      message: "If an account exists with this email, a reset link has been sent.",
-      resetToken // REMOVE THIS IN PRODUCTION - only for testing!
-    });
+      message: "If an account exists with this email, a reset link has been sent."
+    };
+    
+    // For development/testing: if email failed to send, return token
+    // REMOVE THIS IN PRODUCTION - only return token when email service is not configured
+    if (!emailResult.ok && emailResult.resetToken) {
+      console.warn("⚠️  Email service not configured. Returning token for testing.");
+      response.resetToken = resetToken;
+    }
+    
+    return res.json(response);
     
   } catch (e) {
     console.error("FORGOT PASSWORD ERROR:", e);
