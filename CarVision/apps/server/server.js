@@ -1,6 +1,6 @@
 // Apps/server/server.js — CarVision web server + WS bridge to ELM327 + AI chat API
 "use strict";
-const fetch = require("node-fetch");
+// Using native fetch (Node 18+) - no need for node-fetch
 
 /* ───────────── Optional: relax listener cap (avoid warnings) ───────────── */
 require("events").EventEmitter.defaultMaxListeners = 30;
