@@ -235,44 +235,41 @@ router.post("/forgot-password", async (req, res) => {
     // Find user
     const user = await prisma.user.findUnique({ where: { email } });
     
-    // Always return success (security: don't reveal if email exists)
+    // Show error if email doesn't exist - tell user to signup
     if (!user) {
-      return res.json({ 
-        ok: true, 
-        message: "If an account exists with this email, a reset link has been sent." 
+      return res.status(404).json({ 
+        ok: false, 
+        error: "Email not found. Please sign up to create an account." 
       });
     }
     
-    // Generate reset token (32 random bytes as hex)
-    const resetToken = crypto.randomBytes(32).toString("hex");
+    // Generate 6-digit reset code
+    const resetCode = Math.floor(100000 + Math.random() * 900000).toString(); // 6 digits
     const resetTokenExpiry = new Date(Date.now() + 3600000); // 1 hour from now
     
-    // Save token to database
+    // Save code to database (stored in resetToken field)
     await prisma.user.update({
       where: { id: user.id },
       data: {
-        resetToken,
+        resetToken: resetCode,
         resetTokenExpiry
       }
     });
     
-    console.log(`🔐 Reset token generated for ${email}: ${resetToken.substring(0, 8)}...`);
+    console.log(`🔐 Reset code generated for ${email}: ${resetCode}`);
     
-    // Send password reset email
-    const emailResult = await sendPasswordResetEmail(user, resetToken);
+    // Send password reset email with code
+    const emailResult = await sendPasswordResetEmail(user, resetCode);
     
-    // Always return success (security: don't reveal if email exists)
-    // Only return token if email service is not configured (development mode)
     const response = { 
       ok: true, 
-      message: "If an account exists with this email, a reset link has been sent."
+      message: "A 6-digit verification code has been sent to your email. Please check your inbox."
     };
     
-    // For development/testing: if email failed to send, return token
-    // REMOVE THIS IN PRODUCTION - only return token when email service is not configured
-    if (!emailResult.ok && emailResult.resetToken) {
-      console.warn("⚠️  Email service not configured. Returning token for testing.");
-      response.resetToken = resetToken;
+    // For development/testing: if email failed to send, return code
+    if (!emailResult.ok && emailResult.resetCode) {
+      console.warn("⚠️  Email service not configured. Returning code for testing.");
+      response.resetCode = resetCode;
     }
     
     return res.json(response);
@@ -306,13 +303,65 @@ router.post("/forgot-password", async (req, res) => {
   }
 });
 
-/* POST /api/auth/reset-password  {token, newPassword} */
+/* POST /api/auth/verify-reset-code  {email, code} */
+router.post("/verify-reset-code", async (req, res) => {
+  try {
+    const { email, code } = req.body || {};
+    
+    if (!email) {
+      return res.status(400).json({ ok: false, error: "Email is required" });
+    }
+    
+    if (!code) {
+      return res.status(400).json({ ok: false, error: "Verification code is required" });
+    }
+    
+    // Find user with matching email and code
+    const user = await prisma.user.findFirst({
+      where: {
+        email: email,
+        resetToken: code,
+        resetTokenExpiry: {
+          gt: new Date() // Code not expired
+        }
+      }
+    });
+    
+    if (!user) {
+      return res.status(400).json({ 
+        ok: false, 
+        error: "Invalid or expired verification code. Please request a new one." 
+      });
+    }
+    
+    console.log(`✅ Verification code validated for ${email}`);
+    
+    return res.json({ 
+      ok: true, 
+      message: "Verification code is valid. You can now reset your password.",
+      verified: true
+    });
+    
+  } catch (e) {
+    console.error("VERIFY RESET CODE ERROR:", e);
+    return res.status(500).json({ 
+      ok: false, 
+      error: "Failed to verify code. Please try again." 
+    });
+  }
+});
+
+/* POST /api/auth/reset-password  {email, code, newPassword} */
 router.post("/reset-password", async (req, res) => {
   try {
-    const { token, newPassword } = req.body || {};
+    const { email, code, newPassword } = req.body || {};
     
-    if (!token) {
-      return res.status(400).json({ ok: false, error: "Reset token is required" });
+    if (!email) {
+      return res.status(400).json({ ok: false, error: "Email is required" });
+    }
+    
+    if (!code) {
+      return res.status(400).json({ ok: false, error: "Verification code is required" });
     }
     
     if (!newPassword) {
@@ -323,12 +372,13 @@ router.post("/reset-password", async (req, res) => {
       return res.status(400).json({ ok: false, error: "Password must be at least 6 characters" });
     }
     
-    // Find user with valid token
+    // Find user with valid code
     const user = await prisma.user.findFirst({
       where: {
-        resetToken: token,
+        email: email,
+        resetToken: code,
         resetTokenExpiry: {
-          gt: new Date() // Token not expired
+          gt: new Date() // Code not expired
         }
       }
     });
@@ -336,14 +386,14 @@ router.post("/reset-password", async (req, res) => {
     if (!user) {
       return res.status(400).json({ 
         ok: false, 
-        error: "Invalid or expired reset token. Please request a new one." 
+        error: "Invalid or expired verification code. Please request a new one." 
       });
     }
     
     // Hash new password
     const passwordHash = await bcrypt.hash(String(newPassword), 10);
     
-    // Update password and clear reset token
+    // Update password and clear reset code
     await prisma.user.update({
       where: { id: user.id },
       data: {

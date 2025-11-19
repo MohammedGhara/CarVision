@@ -146,30 +146,22 @@ This is an automated email. Please do not reply.
   }
 }
 
-// Send password reset email
-async function sendPasswordResetEmail(user, resetToken) {
+// Send password reset email with 6-digit code
+async function sendPasswordResetEmail(user, resetCode) {
   try {
     const isConfigured = await verifyEmailConfig();
     if (!isConfigured) {
       console.log("📧 Password reset email skipped (email not configured)");
-      // For development, return token in response (remove in production)
-      return { ok: false, error: "Email service not configured", resetToken };
+      // For development, return code in response
+      return { ok: false, error: "Email service not configured", resetCode };
     }
 
     const transporter = getTransporter();
     
-    // Create reset link - use server route that redirects to app
-    // The link will be: http://your-server:5173/reset-password/:token
-    // This route redirects to the mobile app with the token
-    // For production, use your actual server URL (e.g., https://yourdomain.com)
-    const HTTP_PORT = process.env.HTTP_PORT || 5173;
-    const SERVER_URL = process.env.SERVER_URL || `http://localhost:${HTTP_PORT}`;
-    const resetLink = `${SERVER_URL}/reset-password/${resetToken}`;
-    
     const mailOptions = {
       from: `CarVision <${EMAIL_FROM}>`,
       to: user.email,
-      subject: "Reset Your CarVision Password",
+      subject: "Your CarVision Password Reset Code",
       html: `
         <!DOCTYPE html>
         <html>
@@ -179,34 +171,33 @@ async function sendPasswordResetEmail(user, resetToken) {
             .container { max-width: 600px; margin: 0 auto; padding: 20px; }
             .header { background: linear-gradient(135deg, #7C8CFF 0%, #6F7CFF 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
             .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
-            .button { display: inline-block; background: #7C8CFF; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+            .code-box { background: #ffffff; border: 3px solid #7C8CFF; border-radius: 12px; padding: 20px; text-align: center; margin: 20px 0; }
+            .code { font-size: 36px; font-weight: bold; color: #7C8CFF; letter-spacing: 8px; font-family: 'Courier New', monospace; }
             .warning { background: #fff3cd; border-left: 4px solid #ffc107; padding: 12px; margin: 20px 0; }
             .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
-            .token-box { background: #e9ecef; padding: 15px; border-radius: 6px; font-family: monospace; word-break: break-all; margin: 15px 0; }
           </style>
         </head>
         <body>
           <div class="container">
             <div class="header">
-              <h1>🔐 Password Reset Request</h1>
+              <h1>🔐 Password Reset Code</h1>
             </div>
             <div class="content">
               <h2>Hello ${user.name || user.email.split("@")[0]}!</h2>
               <p>We received a request to reset your password for your CarVision account.</p>
-              <p>Click the button below to reset your password:</p>
-              <div style="text-align: center;">
-                <a href="${resetLink}" class="button">Reset Password</a>
+              <p>Use the verification code below to reset your password:</p>
+              <div class="code-box">
+                <div class="code">${resetCode}</div>
               </div>
-              <p>Or copy and paste this link into your browser:</p>
-              <div class="token-box">${resetLink}</div>
               <div class="warning">
                 <strong>⚠️ Important:</strong>
                 <ul style="margin: 10px 0; padding-left: 20px;">
-                  <li>This link will expire in 1 hour</li>
+                  <li>This code will expire in 1 hour</li>
                   <li>If you didn't request this, please ignore this email</li>
-                  <li>For security, never share this link with anyone</li>
+                  <li>For security, never share this code with anyone</li>
                 </ul>
               </div>
+              <p>Enter this code in the CarVision app to complete your password reset.</p>
               <p>If you have any questions or concerns, please contact our support team.</p>
               <p style="margin-top: 30px;"><strong>The CarVision Team</strong></p>
             </div>
@@ -219,22 +210,20 @@ async function sendPasswordResetEmail(user, resetToken) {
         </html>
       `,
       text: `
-Password Reset Request
+Password Reset Code
 
 Hello ${user.name || user.email.split("@")[0]}!
 
 We received a request to reset your password for your CarVision account.
 
-Click the link below to reset your password:
-${resetLink}
+Your verification code is: ${resetCode}
 
-Or copy and paste this link into your browser:
-${resetLink}
+Enter this code in the CarVision app to complete your password reset.
 
 ⚠️ Important:
-- This link will expire in 1 hour
+- This code will expire in 1 hour
 - If you didn't request this, please ignore this email
-- For security, never share this link with anyone
+- For security, never share this code with anyone
 
 If you have any questions or concerns, please contact our support team.
 
@@ -247,7 +236,7 @@ This is an automated email. Please do not reply.
     };
 
     const info = await transporter.sendMail(mailOptions);
-    console.log(`📧 Password reset email sent to ${user.email}: ${info.messageId}`);
+    console.log(`📧 Password reset code sent to ${user.email}: ${info.messageId}`);
     return { ok: true, messageId: info.messageId };
   } catch (error) {
     console.error("❌ Failed to send password reset email:", error);

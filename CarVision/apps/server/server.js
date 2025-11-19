@@ -38,18 +38,7 @@ if (fs.existsSync(PUBLIC_DIR)) {
 const { router: authRouter } = require("./src/auth");
 app.use("/api/auth", authRouter);
 
-// Route to handle password reset link clicks (redirects to mobile app with token)
-app.get("/reset-password/:token", (req, res) => {
-  const { token } = req.params;
-  // Redirect to mobile app with token (using deep link or web URL)
-  const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:8081";
-  const resetUrl = `${FRONTEND_URL}/forgotpassword?token=${token}`;
-  
-  // For mobile apps, you might want to use a deep link like:
-  // carvision://forgotpassword?token=${token}
-  // For web, redirect directly
-  res.redirect(resetUrl);
-});
+// Password reset now uses 6-digit code sent via email (no redirect route needed)
 
 // health check
 app.get("/api/ping", (req, res) => res.json({ ok: true, t: Date.now() }));
