@@ -97,7 +97,7 @@ router.post("/signup", async (req, res) => {
         role: role || "CLIENT",
         passwordHash
       },
-      select: { id: true, email: true, name: true, role: true, createdAt: true }
+      select: { id: true, email: true, name: true, role: true, createdAt: true, updatedAt: true }
     });
 
     console.log("✅ User created:", user.id);
@@ -199,7 +199,8 @@ router.post("/login", async (req, res) => {
       email: user.email,
       name: user.name,
       role: user.role,
-      createdAt: user.createdAt
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt
     };
 
     const token = sign(clean);
@@ -212,11 +213,28 @@ router.post("/login", async (req, res) => {
 
 /* GET /api/auth/me */
 router.get("/me", authRequired, async (req, res) => {
-  const user = await prisma.user.findUnique({
-    where: { id: req.user.uid },
-    select: { id: true, email: true, name: true, role: true, createdAt: true }
-  });
-  return res.json({ ok: true, user });
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.uid },
+      select: { 
+        id: true, 
+        email: true, 
+        name: true, 
+        role: true, 
+        createdAt: true,
+        updatedAt: true
+      }
+    });
+    
+    if (!user) {
+      return res.status(404).json({ ok: false, error: "User not found" });
+    }
+    
+    return res.json({ ok: true, user });
+  } catch (e) {
+    console.error("GET /me error:", e);
+    return res.status(500).json({ ok: false, error: String(e.message || "Failed to fetch user") });
+  }
 });
 
 router.post("/forgot-password", async (req, res) => {

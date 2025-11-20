@@ -1,0 +1,136 @@
+// apps/mobile/styles/authStyles.js
+// Shared styles for login and signup screens
+import { StyleSheet } from "react-native";
+import { C } from "./theme";
+
+export const authStyles = StyleSheet.create({
+  topbar: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingTop: 8,
+  },
+  settingsBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    backgroundColor: "rgba(0,0,0,0.25)",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+  },
+  brandWrap: { paddingTop: 8, alignItems: "center" },
+  logo: { color: C.text, fontSize: 26, fontWeight: "900", letterSpacing: 0.5 },
+  tagline: { color: C.sub, marginTop: 2, textAlign: "center", fontSize: 13 },
+  cardWrap: { flex: 1, justifyContent: "center", paddingHorizontal: 16 },
+  card: {
+    borderRadius: 24,
+    padding: 18,
+    backgroundColor: C.glass,
+    borderWidth: 1,
+    borderColor: C.border,
+    shadowColor: "#000",
+    shadowOpacity: 0.35,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 12 },
+  },
+  h1: { color: C.text, fontSize: 24, fontWeight: "900" },
+  h2: { color: C.sub, marginTop: 6, marginBottom: 14 },
+  inputWrap: {
+    marginTop: 12,
+    borderWidth: 1,
+    borderColor: C.border,
+    borderRadius: 16,
+    backgroundColor: "rgba(255,255,255,0.04)",
+    flexDirection: "row",
+    alignItems: "center",
+    height: 52,
+  },
+  smallInputWrap: {
+    marginTop: 12,
+    borderWidth: 1,
+    borderColor: C.border,
+    borderRadius: 14,
+    backgroundColor: "rgba(255,255,255,0.04)",
+    flexDirection: "row",
+    alignItems: "center",
+    height: 42,
+  },
+  iconLeft: { paddingLeft: 12, paddingRight: 6 },
+  iconRight: { paddingHorizontal: 12, height: "100%", justifyContent: "center" },
+  input: {
+    flex: 1,
+    color: C.text,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    fontSize: 16,
+  },
+  smallInput: {
+    flex: 1,
+    color: C.text,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    fontSize: 14,
+  },
+  row: {
+    marginTop: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  rowLeft: { flexDirection: "row", alignItems: "center", gap: 8 },
+  rememberText: { color: C.sub },
+  link: {
+    color: C.primary,
+    fontWeight: "700",
+    fontSize: 13,
+  },
+  btn: {
+    marginTop: 16,
+    backgroundColor: C.primary,
+    paddingVertical: 14,
+    borderRadius: 16,
+    alignItems: "center",
+  },
+  btnText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "900",
+  },
+  btnDisabled: {
+    opacity: 0.5,
+  },
+  footer: { color: C.sub, textAlign: "center", marginBottom: 14, fontSize: 12 },
+  // Signup specific
+  label: { color: C.sub, marginTop: 12, marginBottom: 6, fontWeight: "700" },
+  roles: { flexDirection: "row", gap: 10 },
+  roleChip: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: C.border,
+    backgroundColor: "rgba(255,255,255,0.03)",
+  },
+  roleChipActive: {
+    backgroundColor: "rgba(124,140,255,0.18)",
+    borderColor: C.primary,
+  },
+  roleChipText: {
+    color: C.text,
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  roleChipTextActive: {
+    color: C.primary,
+  },
+  // Signup specific additions
+  brandWrap: { paddingTop: 8, alignItems: "center" },
+  logo: { color: C.text, fontSize: 36, fontWeight: "900", letterSpacing: 0.5 },
+  tagline: { color: C.sub, marginTop: 4, fontSize: 13 },
+  roleText: { color: C.sub, fontWeight: "700" },
+  roleTextActive: { color: C.text },
+});
+

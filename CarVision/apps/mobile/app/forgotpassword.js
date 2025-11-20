@@ -4,7 +4,6 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
@@ -18,6 +17,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { getHttpBase } from "../lib/httpBase";
 import { showCustomAlert } from "../components/CustomAlert";
+import { forgotpasswordStyles as styles } from "../styles/forgotpasswordStyles";
 
 const C = {
   text: "#E6E9F5",
@@ -343,7 +343,7 @@ export default function ForgotPassword() {
         pointerEvents="none"
       />
 
-      <SafeAreaView style={StyleSheet.absoluteFill}>
+      <SafeAreaView style={{ position: "absolute", top: 0, left: 0, bottom: 0, right: 0 }}>
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : undefined}
           keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
@@ -505,65 +505,3 @@ export default function ForgotPassword() {
     </LinearGradient>
   );
 }
-
-const styles = StyleSheet.create({
-  topbar: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingTop: 8,
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 14,
-    backgroundColor: "rgba(0,0,0,0.25)",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
-  },
-  logo: { color: C.text, fontSize: 26, fontWeight: "900", letterSpacing: 0.5 },
-  cardWrap: { flex: 1, justifyContent: "center", paddingHorizontal: 16 },
-  card: {
-    borderRadius: 24,
-    padding: 18,
-    backgroundColor: C.glass,
-    borderWidth: 1,
-    borderColor: C.border,
-    shadowColor: "#000",
-    shadowOpacity: 0.35,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 12 },
-  },
-  h1: { color: C.text, fontSize: 24, fontWeight: "900" },
-  h2: { color: C.sub, marginTop: 6, marginBottom: 14 },
-  inputWrap: {
-    marginTop: 12,
-    borderWidth: 1,
-    borderColor: C.border,
-    borderRadius: 16,
-    backgroundColor: "rgba(255,255,255,0.04)",
-    flexDirection: "row",
-    alignItems: "center",
-    height: 52,
-  },
-  iconLeft: { paddingLeft: 12, paddingRight: 6 },
-  input: {
-    flex: 1,
-    color: C.text,
-    paddingVertical: 10,
-    paddingHorizontal: 10,
-    fontSize: 16,
-  },
-  btn: {
-    marginTop: 16,
-    backgroundColor: C.primary,
-    borderRadius: 14,
-    alignItems: "center",
-    paddingVertical: 12,
-  },
-  btnText: { color: "#fff", fontWeight: "900", fontSize: 16 },
-  link: { color: C.primary, fontWeight: "800" },
-});

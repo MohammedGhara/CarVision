@@ -4,7 +4,6 @@ import {
   View,
   Text,
   TouchableOpacity,
-  StyleSheet,
   ScrollView,
   StatusBar,
   ActivityIndicator,
@@ -18,22 +17,8 @@ import FloatingChatButton from "../components/FloatingChatButton";
 
 import { api } from "../lib/api";
 import { getToken, getUser, saveUser, clearAuth } from "../lib/authStore";
-
-const C = {
-  bg1: "#020617", // slate-950
-  bg2: "#020617",
-  panel: "rgba(15,23,42,0.96)",
-  panelSoft: "rgba(15,23,42,0.85)",
-  border: "rgba(148,163,184,0.35)",
-  divider: "rgba(30,64,175,0.5)",
-  text: "#E5E7EB",
-  sub: "#9CA3AF",
-  primary: "#6366F1",
-  primarySoft: "rgba(99,102,241,0.18)",
-  green: "#22C55E",
-  amber: "#FACC15",
-  red: "#F97373",
-};
+import { C } from "../styles/theme";
+import { homeStyles as styles } from "../styles/homeStyles";
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -129,7 +114,7 @@ export default function HomeScreen() {
           uri: "https://images.unsplash.com/photo-1502877828070-33b167ad6860?q=80&w=1600&auto=format&fit=crop",
         }}
         imageStyle={{ opacity: 0.12 }}
-        style={StyleSheet.absoluteFill}
+        style={{ position: "absolute", top: 0, left: 0, bottom: 0, right: 0 }}
       />
 
       <SafeAreaView style={{ flex: 1 }}>
@@ -145,14 +130,22 @@ export default function HomeScreen() {
             </View>
           </View>
 
-          <TouchableOpacity
-            onPress={onLogout}
-            style={styles.logoutBtn}
-            activeOpacity={0.85}
-          >
-            <Ionicons name="log-out-outline" size={16} color={C.text} />
-            <Text style={styles.logoutText}>Logout</Text>
-          </TouchableOpacity>
+          <View style={{ flexDirection: "row", gap: 8 }}>
+            <TouchableOpacity
+              onPress={() => router.push("/profile")}
+              style={styles.profileBtn}
+              activeOpacity={0.85}
+            >
+              <Ionicons name="person-circle-outline" size={20} color={C.text} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={onLogout}
+              style={[styles.profileBtn, { backgroundColor: "rgba(249,115,115,0.12)", borderColor: "rgba(249,115,115,0.35)" }]}
+              activeOpacity={0.85}
+            >
+              <Ionicons name="log-out-outline" size={20} color={C.red} />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* —— MAIN CONTENT —— */}
@@ -259,7 +252,12 @@ export default function HomeScreen() {
             </View>
 
             <View style={styles.secondaryList}>
-          
+              <SecondaryRow
+                icon="person-outline"
+                title="Profile"
+                description="View your account information and statistics."
+                onPress={() => router.push("/profile")}
+              />
               <SecondaryRow
                 icon="chatbubbles-outline"
                 title="AI Assistant"
@@ -362,325 +360,3 @@ function TipLine({ text }) {
   );
 }
 
-/* ——— Styles ——— */
-
-const styles = StyleSheet.create({
-  bg: { flex: 1 },
-
-  header: {
-    paddingHorizontal: 18,
-    paddingTop: 6,
-    paddingBottom: 6,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  appIdentity: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  logoCircle: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: C.border,
-    backgroundColor: "rgba(15,23,42,0.95)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  appTitle: {
-    color: C.text,
-    fontSize: 18,
-    fontWeight: "900",
-    letterSpacing: 0.4,
-  },
-  appSubtitle: {
-    color: C.sub,
-    fontSize: 12,
-    marginTop: 2,
-  },
-
-  logoutBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: C.border,
-    backgroundColor: "rgba(15,23,42,0.96)",
-  },
-  logoutText: { color: C.text, fontWeight: "800", fontSize: 12 },
-
-  content: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 32,
-  },
-
-  greetingBlock: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 14,
-  },
-  greetingLabel: {
-    color: C.sub,
-    fontSize: 13,
-  },
-  greetingName: {
-    color: C.text,
-    fontSize: 22,
-    fontWeight: "900",
-    marginTop: 2,
-  },
-  greetingPills: {
-    alignItems: "flex-end",
-    gap: 6,
-  },
-
-  infoPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    backgroundColor: "rgba(15,23,42,0.94)",
-    borderWidth: 1,
-    borderColor: C.border,
-  },
-  infoPillLabel: {
-    fontSize: 11,
-    fontWeight: "700",
-  },
-  infoPillValue: {
-    fontSize: 11,
-    color: C.text,
-  },
-
-  sectionPanel: {
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: C.border,
-    backgroundColor: C.panel,
-    padding: 14,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  sectionTitle: {
-    color: C.text,
-    fontSize: 16,
-    fontWeight: "900",
-  },
-  sectionHeaderRight: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 999,
-    backgroundColor: C.green,
-  },
-  sectionStatusText: {
-    color: C.sub,
-    fontSize: 11,
-    fontWeight: "600",
-  },
-
-  overviewRow: {
-    flexDirection: "row",
-    gap: 12,
-    marginTop: 4,
-  },
-
-  metric: {
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: C.border,
-    padding: 10,
-    backgroundColor: C.panelSoft,
-    marginBottom: 6,
-  },
-  metricLabel: {
-    color: C.sub,
-    fontSize: 11,
-  },
-  metricValue: {
-    color: C.text,
-    fontSize: 16,
-    fontWeight: "800",
-    marginTop: 2,
-  },
-  metricHint: {
-    color: C.sub,
-    fontSize: 11,
-    marginTop: 2,
-  },
-
-  overviewCard: {
-    width: 150,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: C.border,
-    backgroundColor: "rgba(15,23,42,0.98)",
-    padding: 10,
-    justifyContent: "space-between",
-  },
-  overviewCardTitle: {
-    color: C.text,
-    fontSize: 14,
-    fontWeight: "800",
-  },
-  overviewCardText: {
-    color: C.sub,
-    fontSize: 11,
-    marginTop: 4,
-    marginBottom: 8,
-  },
-  overviewButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    alignSelf: "flex-start",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 999,
-    backgroundColor: C.primary,
-  },
-  overviewButtonText: {
-    color: "#fff",
-    fontWeight: "800",
-    fontSize: 12,
-  },
-
-  divider: {
-    height: 1,
-    backgroundColor: C.divider,
-    opacity: 0.5,
-    marginVertical: 14,
-  },
-
-  block: { marginBottom: 16 },
-  blockHeader: { marginBottom: 8 },
-  blockTitle: {
-    color: C.text,
-    fontSize: 15,
-    fontWeight: "900",
-  },
-  blockSubtitle: {
-    color: C.sub,
-    fontSize: 12,
-    marginTop: 2,
-  },
-
-  primaryGrid: {
-    gap: 10,
-  },
-  primaryCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: C.border,
-    backgroundColor: C.panel,
-    padding: 12,
-  },
-  primaryIconWrap: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-  },
-  primaryTitle: {
-    color: C.text,
-    fontSize: 15,
-    fontWeight: "900",
-  },
-  primarySubtitle: {
-    color: C.sub,
-    fontSize: 12,
-    marginTop: 2,
-  },
-
-  secondaryList: {
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: C.border,
-    backgroundColor: C.panel,
-    overflow: "hidden",
-  },
-  secondaryRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(15,23,42,0.9)",
-  },
-  secondaryIconWrap: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(15,23,42,0.98)",
-    borderWidth: 1,
-    borderColor: C.border,
-  },
-  secondaryTitle: {
-    color: C.text,
-    fontSize: 14,
-    fontWeight: "800",
-  },
-  secondaryDesc: {
-    color: C.sub,
-    fontSize: 11,
-    marginTop: 2,
-  },
-
-  tipsPanel: {
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: C.border,
-    backgroundColor: C.panel,
-    padding: 12,
-    gap: 6,
-  },
-  tipLineRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 8,
-  },
-  tipBullet: {
-    width: 6,
-    height: 6,
-    borderRadius: 999,
-    backgroundColor: C.primary,
-    marginTop: 5,
-  },
-  tipText: {
-    color: C.sub,
-    fontSize: 12,
-    flex: 1,
-  },
-
-  footer: {
-    color: C.sub,
-    fontSize: 11,
-    textAlign: "center",
-    marginTop: 10,
-  },
-});

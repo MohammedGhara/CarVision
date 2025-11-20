@@ -4,7 +4,6 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
   Alert,
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -18,14 +17,8 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { getHttpBase } from "../lib/httpBase";
 import { saveToken, saveUser } from "../lib/authStore";
 import { showCustomAlert } from "../components/CustomAlert";
-
-const C = {
-  text: "#E6E9F5",
-  sub: "#A8B2D1",
-  primary: "#7C8CFF",
-  border: "rgba(255,255,255,.12)",
-  glass: "rgba(18,22,33,.72)",
-};
+import { C } from "../styles/theme";
+import { authStyles as styles } from "../styles/authStyles";
 
 const ROLES = ["CLIENT", "GARAGE"];
 
@@ -231,7 +224,7 @@ async function onSignup() {
         style={{ flex: 1, opacity: 0.22 }}
       />
 
-      <SafeAreaView style={StyleSheet.absoluteFill}>
+      <SafeAreaView style={{ position: "absolute", top: 0, left: 0, bottom: 0, right: 0 }}>
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : undefined}
           style={{ flex: 1 }}
@@ -329,84 +322,3 @@ async function onSignup() {
   );
 }
 
-const styles = StyleSheet.create({
-  brandWrap: { paddingTop: 8, alignItems: "center" },
-  logo: { color: C.text, fontSize: 36, fontWeight: "900", letterSpacing: 0.5 },
-  tagline: { color: C.sub, marginTop: 4, fontSize: 13 },
-  cardWrap: { flex: 1, justifyContent: "center", paddingHorizontal: 16 },
-  card: {
-    borderRadius: 24,
-    padding: 18,
-    backgroundColor: C.glass,
-    borderWidth: 1,
-    borderColor: C.border,
-    shadowColor: "#000",
-    shadowOpacity: 0.35,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 12 },
-  },
-  h1: { color: C.text, fontSize: 24, fontWeight: "900" },
-  h2: { color: C.sub, marginTop: 6, marginBottom: 14 },
-  inputWrap: {
-    marginTop: 12,
-    borderWidth: 1,
-    borderColor: C.border,
-    borderRadius: 16,
-    backgroundColor: "rgba(255,255,255,0.04)",
-    flexDirection: "row",
-    alignItems: "center",
-    height: 52,
-  },
-  smallInputWrap: {
-    marginTop: 12,
-    borderWidth: 1,
-    borderColor: C.border,
-    borderRadius: 14,
-    backgroundColor: "rgba(255,255,255,0.04)",
-    flexDirection: "row",
-    alignItems: "center",
-    height: 42, // smaller password field
-  },
-  iconLeft: { paddingLeft: 12, paddingRight: 6 },
-  iconRight: { paddingHorizontal: 12, height: "100%", justifyContent: "center" },
-  input: {
-    flex: 1,
-    color: C.text,
-    paddingVertical: 10,
-    paddingHorizontal: 10,
-    fontSize: 16,
-  },
-  smallInput: {
-    flex: 1,
-    color: C.text,
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    fontSize: 14, // smaller font
-  },
-  label: { color: C.sub, marginTop: 12, marginBottom: 6, fontWeight: "700" },
-  roles: { flexDirection: "row", gap: 10 },
-  roleChip: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: C.border,
-    backgroundColor: "rgba(255,255,255,0.03)",
-  },
-  roleChipActive: {
-    backgroundColor: "rgba(124,140,255,0.18)",
-    borderColor: "rgba(124,140,255,0.45)",
-  },
-  roleText: { color: C.sub, fontWeight: "700" },
-  roleTextActive: { color: C.text },
-  btn: {
-    marginTop: 16,
-    backgroundColor: C.primary,
-    borderRadius: 14,
-    alignItems: "center",
-    paddingVertical: 12,
-  },
-  btnText: { color: "#fff", fontWeight: "900", fontSize: 16 },
-  link: { color: C.primary, fontWeight: "800" },
-  footer: { color: C.sub, textAlign: "center", marginBottom: 14, fontSize: 12 },
-});

@@ -1,7 +1,7 @@
 // apps/mobile/app/repairs.js
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
-  View, Text, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator, Alert, AppState
+  View, Text, TouchableOpacity, FlatList, ActivityIndicator, Alert, AppState
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -10,17 +10,12 @@ import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { getWsUrl, forceReDetect, checkNetworkChange } from "../lib/wsConfig";
-// ❌ removed old helper:
-// import { postJson } from "../lib/api";
-// ✅ new helper:
 import { api } from "../lib/api";
 import { describeDtc } from "../lib/dtcDescriptions";
+import { colors } from "../styles/theme";
+import { repairsStyles as styles } from "../styles/repairsStyles";
 
-const C = {
-  bg:"#0B0F19", card:"rgba(22,26,36,0.85)", border:"rgba(255,255,255,0.06)",
-  text:"#E6E9F5", sub:"#A8B2D1", primary:"#7C8CFF",
-  ok:"#1FBF75", warn:"#F5B73A", crit:"#FF5D5D"
-};
+const C = colors.repairs;
 
 const STORAGE_KEY = "carvision.history.v1";
 const DEDUP_COOLDOWN_MS = 60 * 1000; // re-log same key only after 60s
@@ -407,34 +402,3 @@ export default function RepaiScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  topbar:{ paddingHorizontal:12, paddingTop:6, paddingBottom:6, flexDirection:"row", alignItems:"center", justifyContent:"space-between" },
-  backBtn:{ width:40, height:40, borderRadius:12, alignItems:"center", justifyContent:"center",
-            borderWidth:1, borderColor:C.border, backgroundColor:"rgba(255,255,255,0.03)" },
-  topTitle:{ color:C.text, fontSize:18, fontWeight:"800" },
-
-  dot:{ width:10, height:10, borderRadius:99, backgroundColor:"#666" },
-  dotOn:{ backgroundColor:C.ok }, dotOff:{ backgroundColor:"#666" },
-
-  ghostBtn:{ borderWidth:1, borderColor:C.border, paddingHorizontal:10, paddingVertical:8, borderRadius:10, backgroundColor:"rgba(255,255,255,0.03)" },
-  ghostText:{ color:C.text, fontWeight:"700" },
-
-  card:{ backgroundColor:C.card, borderColor:C.border, borderWidth:1, borderRadius:16, padding:12 },
-  iconWrap:{ width:36, height:36, borderRadius:12, alignItems:"center", justifyContent:"center", borderWidth:1 },
-  badge:{ paddingVertical:4, paddingHorizontal:10, borderRadius:999, fontWeight:"800" },
-  badgeNormal:{ backgroundColor:"rgba(31,191,117,.14)", color:C.ok, borderWidth:1, borderColor:"rgba(31,191,117,.28)" },
-  badgeWarning:{ backgroundColor:"rgba(245,183,58,.14)", color:C.warn, borderWidth:1, borderColor:"rgba(245,183,58,.28)" },
-  badgeCritical:{ backgroundColor:"rgba(255,93,93,.14)", color:C.crit, borderWidth:1, borderColor:"rgba(255,93,93,.28)" },
-
-  badgeTs:{ color:C.sub, fontSize:12, marginLeft:2 },
-
-  title:{ color:C.text, fontSize:16, fontWeight:"900" },
-  detail:{ color:C.sub, marginTop:6, lineHeight:20 },
-
-  btn:{ backgroundColor:C.primary, paddingHorizontal:12, paddingVertical:10, borderRadius:12, alignItems:"center", justifyContent:"center" },
-  btnText:{ color:"#fff", fontWeight:"800" },
-
-  aiBox:{ marginTop:10, borderTopWidth:1, borderTopColor:C.border, paddingTop:10 },
-  aiTitle:{ color:C.text, fontWeight:"800", marginBottom:6 },
-  aiText:{ color:C.sub, lineHeight:20 },
-});

@@ -4,7 +4,6 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
   FlatList,
   KeyboardAvoidingView,
   Platform,
@@ -13,7 +12,8 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { api } from "../lib/api"; // ⬅️ use the new helper
+import { api } from "../lib/api";
+import { aiStyles as styles } from "../styles/aiStyles";
 
 const C = {
   bg: "#0a0e17",
@@ -215,97 +215,3 @@ export default function AIChat() {
   );
 }
 
-const styles = StyleSheet.create({
-  header: {
-    paddingHorizontal: 12,
-    paddingTop: 6,
-    paddingBottom: 10,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: C.border,
-    backgroundColor: "rgba(10,12,18,0.85)",
-  },
-  back: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: C.border,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  titleWrap: { flex: 1 },
-  title: { color: C.text, fontSize: 18, fontWeight: "800" },
-  statusRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 2 },
-  dot: { width: 8, height: 8, borderRadius: 4 },
-  statusText: { color: C.sub, fontSize: 12 },
-
-  row: { flexDirection: "row", gap: 8, alignItems: "flex-end", marginVertical: 6 },
-  avatar: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: C.border,
-  },
-  bubble: {
-    maxWidth: "76%",
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: C.border,
-  },
-  bubbleAI: {
-    backgroundColor: "rgba(124,140,255,0.08)",
-  },
-  bubbleMe: {
-    backgroundColor: "rgba(255,255,255,0.06)",
-  },
-  text: { color: C.text, fontSize: 15, lineHeight: 20 },
-  time: { color: C.sub, fontSize: 11, marginTop: 6 },
-
-  composerWrap: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    gap: 10,
-    padding: 12,
-    borderTopWidth: 1,
-    borderTopColor: C.border,
-    backgroundColor: "rgba(10,12,18,0.9)",
-  },
-  inputOuter: {
-    flex: 1,
-    minHeight: 44,
-    maxHeight: 140,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: C.border,
-    backgroundColor: "rgba(255,255,255,0.04)",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  input: {
-    color: C.text,
-    fontSize: 15,
-  },
-  typing: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginTop: 6,
-  },
-  typingText: { color: C.sub, fontSize: 12 },
-  send: {
-    backgroundColor: C.primary,
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-});
