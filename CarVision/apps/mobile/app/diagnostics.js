@@ -7,6 +7,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
+  AppState,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -14,7 +15,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 
-import { getWsUrl } from "../lib/wsConfig";
+import { getWsUrl, forceReDetect, checkNetworkChange } from "../lib/wsConfig";
 import { describeDtc } from "../lib/dtcDescriptions";
 
 const C = {
@@ -47,10 +48,65 @@ export default function Diagnostics() {
   // Load WS URL
   useEffect(() => {
     (async () => {
-      const url = await getWsUrl();
+      // Check network change on startup - this will auto-detect if WiFi changed
+      const url = await getWsUrl(false, true);
+      const oldUrl = wsUrl;
       setWsUrl(url);
+      if (url !== oldUrl) {
+        console.log("📡 WebSocket URL updated (WiFi changed):", url);
+      } else {
+        console.log("📡 WebSocket URL loaded:", url);
+      }
     })();
-  }, []);
+  }, []); // Empty deps - only run once on mount
+
+  // Monitor network changes when app comes to foreground and periodically
+  useEffect(() => {
+    if (!wsUrl) return; // Don't monitor if no URL set yet
+    
+    let intervalId;
+    
+    // Check network change periodically (every 15 seconds - less frequent to save battery)
+    intervalId = setInterval(async () => {
+      try {
+        const changed = await checkNetworkChange();
+        if (changed) {
+          console.log("Network change detected during runtime, re-detecting...");
+          const newUrl = await forceReDetect();
+          if (newUrl && newUrl !== wsUrl) {
+            setWsUrl(newUrl);
+          }
+        }
+      } catch (e) {
+        // Silent fail
+      }
+    }, 15000); // Check every 15 seconds
+
+    // Also check when app comes to foreground (with delay to not block UI)
+    const subscription = AppState.addEventListener("change", async (nextAppState) => {
+      if (nextAppState === "active") {
+        // Delay check slightly so app can render first
+        setTimeout(async () => {
+          try {
+            const changed = await checkNetworkChange();
+            if (changed) {
+              const newUrl = await forceReDetect();
+              if (newUrl && newUrl !== wsUrl) {
+                setWsUrl(newUrl);
+              }
+            }
+          } catch (e) {
+            // Silent fail
+          }
+        }, 500); // 500ms delay so UI can render first
+      }
+    });
+
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+      subscription?.remove();
+    };
+  }, [wsUrl]);
 
   // Connect WebSocket
   useEffect(() => {
@@ -58,13 +114,34 @@ export default function Diagnostics() {
 
     let ws;
     let timer;
+    let failureCount = 0;
+    const MAX_FAILURES_BEFORE_REDETECT = 3;
 
-    function connect() {
+    async function connect() {
+      // Check if we need to re-detect after multiple failures
+      if (failureCount >= MAX_FAILURES_BEFORE_REDETECT) {
+        failureCount = 0; // Reset counter
+        setLink({ status: "down", message: "Network changed, re-detecting server..." });
+        
+        try {
+          // Force re-detection
+          const newUrl = await forceReDetect();
+          if (newUrl && newUrl !== wsUrl) {
+            // URL changed, update state to trigger reconnect
+            setWsUrl(newUrl);
+            return; // Exit, will reconnect with new URL
+          }
+        } catch (e) {
+          console.log("Re-detection failed:", e);
+        }
+      }
+
       ws = new WebSocket(wsUrl);
       wsRef.current = ws;
 
       ws.onopen = () => {
         setLink({ status: "up", message: "Connected to adapter" });
+        failureCount = 0; // Reset on successful connection
       };
 
       ws.onmessage = (ev) => {
@@ -95,6 +172,7 @@ export default function Diagnostics() {
       };
 
       ws.onerror = () => {
+        failureCount++;
         setLink({ status: "down", message: "Connection error" });
         try {
           ws.close();
@@ -102,14 +180,19 @@ export default function Diagnostics() {
       };
 
       ws.onclose = () => {
-        setLink({ status: "down", message: "Disconnected – retrying…" });
-        timer = setTimeout(connect, 1500);
+        failureCount++;
+        if (failureCount < MAX_FAILURES_BEFORE_REDETECT) {
+          setLink({ status: "down", message: "Disconnected – retrying…" });
+        } else {
+          setLink({ status: "down", message: "Network changed – re-detecting…" });
+        }
+        timer = setTimeout(connect, 2000);
       };
     }
 
     connect();
     return () => {
-      clearTimeout(timer);
+      if (timer) clearTimeout(timer);
       try {
         ws && ws.close();
       } catch {}

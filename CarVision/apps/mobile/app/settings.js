@@ -13,7 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 
-import { getWsUrl, setWsUrl, DEFAULT_WS_URL } from "../lib/wsConfig";
+import { getWsUrl, setWsUrl, forceReDetect, checkNetworkChange, DEFAULT_WS_URL } from "../lib/wsConfig";
 
 // --- Auto detect CarVision backend in local network ---
 async function autoDetectServer() {
@@ -45,8 +45,49 @@ export default function Settings() {
 
   useEffect(() => {
     (async () => {
-      const saved = await getWsUrl();
-      setUrl(saved || DEFAULT_WS_URL);
+      // Always check network and get current URL (validated)
+      // This ensures we always show the correct URL for current network
+      console.log("⚙️ Settings: Checking network and loading WebSocket URL...");
+      
+      // Check if network changed when settings opens
+      const changed = await checkNetworkChange();
+      if (changed) {
+        // Network changed, auto-detect new URL
+        console.log("🔄 WiFi changed detected in Settings, auto-detecting...");
+        try {
+          const newUrl = await forceReDetect();
+          setUrl(newUrl);
+          console.log("✅ Settings: New URL detected:", newUrl);
+          if (newUrl !== DEFAULT_WS_URL) {
+            Alert.alert("WiFi Changed", `Detected network change. New server: ${newUrl}`);
+          }
+        } catch (e) {
+          console.log("Auto-detect failed:", e);
+          // Still try to get saved URL
+          const saved = await getWsUrl(false, false); // Don't skip validation in settings
+          setUrl(saved || "");
+        }
+      } else {
+        // No change, use saved URL (with validation to ensure it's current)
+        const saved = await getWsUrl(false, false); // Validate to ensure it's current
+        // Don't show default URL - show empty or actual detected URL
+        if (saved && saved !== DEFAULT_WS_URL) {
+          setUrl(saved);
+        } else {
+          // No valid saved URL, try to detect
+          console.log("⚙️ Settings: No valid saved URL, attempting detection...");
+          try {
+            const detected = await forceReDetect();
+            if (detected && detected !== DEFAULT_WS_URL) {
+              setUrl(detected);
+            } else {
+              setUrl(""); // Show empty instead of default
+            }
+          } catch {
+            setUrl(""); // Show empty if detection fails
+          }
+        }
+      }
     })();
   }, []);
 

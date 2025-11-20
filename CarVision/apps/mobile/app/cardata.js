@@ -10,6 +10,7 @@ import {
   RefreshControl,
   ImageBackground,
   Alert,
+  AppState,
 } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -19,7 +20,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import * as Sharing from "expo-sharing";
 import * as Print from "expo-print";
 
-import { getWsUrl } from "../lib/wsConfig";
+import { getWsUrl, forceReDetect, checkNetworkChange } from "../lib/wsConfig";
 
 // ===== CONFIG =====
 const MAX_SAMPLES = 300; // limit per logging session
@@ -77,13 +78,67 @@ export default function CarData() {
   useEffect(() => {
     let mounted = true;
     (async () => {
-      const url = await getWsUrl();
-      if (mounted) setWsUrl(url);
+      // Network change check happens synchronously in getWsUrl
+      // If WiFi changed, it will automatically detect and return new URL
+      const url = await getWsUrl(false, true);
+      if (mounted) {
+        setWsUrl(url);
+        console.log("📡 WebSocket URL loaded:", url);
+      }
     })();
     return () => {
       mounted = false;
     };
-  }, []);
+  }, []); // Empty deps - only run once on mount
+
+  // ----- Monitor network changes when app comes to foreground and periodically -----
+  useEffect(() => {
+    if (!wsUrl) return; // Don't monitor if no URL set yet
+    
+    let intervalId;
+    
+    // Check network change periodically (every 15 seconds - less frequent to save battery)
+    intervalId = setInterval(async () => {
+      try {
+        const changed = await checkNetworkChange();
+        if (changed) {
+          console.log("Network change detected during runtime, re-detecting...");
+          const newUrl = await forceReDetect();
+          if (newUrl && newUrl !== wsUrl) {
+            setWsUrl(newUrl);
+          }
+        }
+      } catch (e) {
+        // Silent fail - don't log errors during periodic checks
+      }
+    }, 15000); // Check every 15 seconds
+
+    // Also check when app comes to foreground (with delay to not block UI)
+    const subscription = AppState.addEventListener("change", async (nextAppState) => {
+      if (nextAppState === "active") {
+        // Delay check slightly so app can render first
+        setTimeout(async () => {
+          try {
+            const changed = await checkNetworkChange();
+            if (changed) {
+              // Network changed, re-detect and update URL
+              const newUrl = await forceReDetect();
+              if (newUrl && newUrl !== wsUrl) {
+                setWsUrl(newUrl);
+              }
+            }
+          } catch (e) {
+            // Silent fail
+          }
+        }, 500); // 500ms delay so UI can render first
+      }
+    });
+
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+      subscription?.remove();
+    };
+  }, [wsUrl]);
 
   // ----- WebSocket connection -----
   useEffect(() => {
@@ -91,13 +146,34 @@ export default function CarData() {
 
     let ws;
     let retryTimer;
+    let failureCount = 0;
+    const MAX_FAILURES_BEFORE_REDETECT = 3;
 
-    function connect() {
+    async function connect() {
+      // Check if we need to re-detect after multiple failures
+      if (failureCount >= MAX_FAILURES_BEFORE_REDETECT) {
+        failureCount = 0; // Reset counter
+        setLink({ status: "down", message: "Network changed, re-detecting server..." });
+        
+        try {
+          // Force re-detection
+          const newUrl = await forceReDetect();
+          if (newUrl && newUrl !== wsUrl) {
+            // URL changed, update state to trigger reconnect
+            setWsUrl(newUrl);
+            return; // Exit, will reconnect with new URL
+          }
+        } catch (e) {
+          console.log("Re-detection failed:", e);
+        }
+      }
+
       ws = new WebSocket(wsUrl);
       wsRef.current = ws;
 
       ws.onopen = () => {
         setLink({ status: "up", message: "Connected" });
+        failureCount = 0; // Reset on successful connection
         if (retryTimer) {
           clearTimeout(retryTimer);
           retryTimer = null;
@@ -152,21 +228,28 @@ export default function CarData() {
       };
 
       ws.onerror = () => {
-        setLink({ status: "down", message: "Error" });
+        failureCount++;
+        setLink({ status: "down", message: "Connection error" });
         try {
           ws.close();
         } catch {}
       };
 
       ws.onclose = () => {
-        setLink({ status: "down", message: "Disconnected" });
-        if (!retryTimer) retryTimer = setTimeout(connect, 1800);
+        failureCount++;
+        if (failureCount < MAX_FAILURES_BEFORE_REDETECT) {
+          setLink({ status: "down", message: "Disconnected - retrying..." });
+        } else {
+          setLink({ status: "down", message: "Network changed - re-detecting..." });
+        }
+        if (!retryTimer) retryTimer = setTimeout(connect, 2000);
       };
     }
 
     connect();
 
     return () => {
+      if (retryTimer) clearTimeout(retryTimer);
       try {
         ws && ws.close();
       } catch {}

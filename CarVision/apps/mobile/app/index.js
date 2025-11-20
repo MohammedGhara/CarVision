@@ -40,7 +40,7 @@ export default function HomeScreen() {
   const [checking, setChecking] = useState(true);
   const [user, setUser] = useState(null);
 
-  // Validate token + load user
+  // Validate token + load user (with timeout to prevent hanging)
   useEffect(() => {
     (async () => {
       const t = await getToken();
@@ -49,12 +49,42 @@ export default function HomeScreen() {
         router.replace("/login");
         return;
       }
+      
+      // Try to get user from cache first (instant)
+      const cachedUser = await getUser();
+      if (cachedUser) {
+        setUser(cachedUser);
+        setChecking(false);
+        // Validate token in background (non-blocking)
+        api.get("/api/auth/me").then((me) => {
+          if (me?.user) {
+            saveUser(me.user);
+            setUser(me.user);
+          }
+        }).catch(() => {
+          // If validation fails, clear auth on next attempt
+          clearAuth().catch(() => {});
+        });
+        return;
+      }
+      
+      // No cached user - try API with timeout
       try {
-        const me = await api.get("/api/auth/me");
-        if (me?.user) await saveUser(me.user);
-        const u = await getUser();
-        setUser(u);
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error("Timeout")), 3000)
+        );
+        
+        const me = await Promise.race([
+          api.get("/api/auth/me"),
+          timeoutPromise
+        ]);
+        
+        if (me?.user) {
+          await saveUser(me.user);
+          setUser(me.user);
+        }
       } catch (e) {
+        // Timeout or error - clear auth and go to login
         await clearAuth();
         router.replace("/login");
       } finally {
