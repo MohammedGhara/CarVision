@@ -15,6 +15,7 @@ import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
+import { useLanguage } from "../context/LanguageContext";
 import { colors } from "../styles/theme";
 import { historyStyles as styles } from "../styles/historyStyles";
 
@@ -26,6 +27,7 @@ const STORAGE_KEY = "carvision.history.v1";
 
 export default function HistoryScreen() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
@@ -243,14 +245,14 @@ export default function HistoryScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="chevron-back" size={24} color="#E6E9F5" />
         </TouchableOpacity>
-        <Text style={styles.topTitle}>History</Text>
+        <Text style={styles.topTitle}>{t("history.title")}</Text>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
           <TouchableOpacity
             onPress={clearHistory}
             style={styles.ghostBtn}
             disabled={!items.length}
           >
-            <Text style={styles.ghostText}>Clear</Text>
+            <Text style={styles.ghostText}>{t("common.delete")}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={exportPdf}
@@ -260,7 +262,7 @@ export default function HistoryScreen() {
             {exporting ? (
               <ActivityIndicator size="small" color={C.text} />
             ) : (
-              <Text style={styles.ghostText}>Export PDF</Text>
+              <Text style={styles.ghostText}>{t("history.export")}</Text>
             )}
           </TouchableOpacity>
         </View>
@@ -269,11 +271,11 @@ export default function HistoryScreen() {
       {loading ? (
         <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
           <ActivityIndicator size="large" color={C.primary} />
-          <Text style={{ color: C.sub, marginTop: 8 }}>Loading history…</Text>
+          <Text style={{ color: C.sub, marginTop: 8 }}>{t("common.loading")}</Text>
         </View>
       ) : !items.length ? (
         <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-          <Text style={{ color: C.sub }}>No diagnostic events yet.</Text>
+          <Text style={{ color: C.sub }}>{t("history.noHistory")}</Text>
         </View>
       ) : (
         <FlatList

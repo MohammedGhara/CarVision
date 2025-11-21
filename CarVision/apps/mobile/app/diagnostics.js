@@ -16,6 +16,7 @@ import * as Sharing from "expo-sharing";
 
 import { getWsUrl, forceReDetect, checkNetworkChange } from "../lib/wsConfig";
 import { describeDtc } from "../lib/dtcDescriptions";
+import { useLanguage } from "../context/LanguageContext";
 import { diagnosticsStyles as styles } from "../styles/diagnosticsStyles";
 
 const C = {
@@ -32,6 +33,7 @@ const C = {
 
 export default function Diagnostics() {
   const router = useRouter();
+  const { t } = useLanguage();
   const wsRef = useRef(null);
 
   const [wsUrl, setWsUrl] = useState(null);
@@ -209,16 +211,16 @@ export default function Diagnostics() {
 
   function onClear() {
     if (!data.dtcs?.length && !data.pending?.length && !data.permanent?.length) {
-      Alert.alert("No codes", "There are no stored fault codes to clear.");
+      Alert.alert(t("diagnostics.noCodesToClear"), t("diagnostics.noCodesToClearMessage"));
       return;
     }
 
     Alert.alert(
-      "Clear fault codes?",
-      "This will clear stored trouble codes and may turn off the Check Engine Light if no active faults remain. Only do this after fixing the issue.",
+      t("diagnostics.clearCodesConfirm"),
+      t("diagnostics.clearCodesMessage"),
       [
-        { text: "Cancel", style: "cancel" },
-        { text: "Clear", style: "destructive", onPress: sendClear },
+        { text: t("common.cancel"), style: "cancel" },
+        { text: t("common.delete"), style: "destructive", onPress: sendClear },
       ]
     );
   }
@@ -329,7 +331,7 @@ export default function Diagnostics() {
       });
     } catch (e) {
       console.log("exportPdfReport failed:", e);
-      Alert.alert("Export failed", "Could not generate PDF report. Please try again.");
+      Alert.alert(t("common.error"), t("diagnostics.exportFailed") || "Could not generate PDF report. Please try again.");
     }
   }
 
@@ -343,16 +345,14 @@ export default function Diagnostics() {
       (data.permanent?.length || 0) >
     0;
 
-  let statusLevel = "OK";
-  let statusText = "No active trouble codes reported.";
+  let statusLevel = t("diagnostics.ok");
+  let statusText = t("diagnostics.noActiveCodes");
   if (milOn && dtcCount > 0) {
-    statusLevel = "ATTENTION";
-    statusText =
-      "Your Check Engine Light is ON and there are active trouble codes. We recommend having the vehicle checked.";
+    statusLevel = t("diagnostics.attention");
+    statusText = t("diagnostics.checkEngineOn");
   } else if (!milOn && hasCodes) {
-    statusLevel = "HISTORY";
-    statusText =
-      "There are stored or historical codes. If the car drives normally, you can monitor and clear if needed.";
+    statusLevel = t("diagnostics.historyStatus");
+    statusText = t("diagnostics.storedCodes");
   }
 
   const ign = data.monitors?.ignition || "Unknown";
@@ -370,8 +370,8 @@ export default function Diagnostics() {
         </TouchableOpacity>
 
         <View style={{ flex: 1, alignItems: "center" }}>
-          <Text style={styles.topTitle}>Diagnostics</Text>
-          <Text style={styles.topSubtitle}>Understand your Check Engine Light</Text>
+          <Text style={styles.topTitle}>{t("diagnostics.title")}</Text>
+          <Text style={styles.topSubtitle}>{t("diagnostics.subtitle")}</Text>
         </View>
 
         <View style={styles.rightWrap}>
@@ -382,7 +382,7 @@ export default function Diagnostics() {
             activeOpacity={0.85}
           >
             <Ionicons name="time-outline" size={14} color={C.text} />
-            <Text style={styles.historyText}>History</Text>
+            <Text style={styles.historyText}>{t("diagnostics.history")}</Text>
           </TouchableOpacity>
 
           {data.adapter ? (
@@ -415,17 +415,17 @@ export default function Diagnostics() {
             >
               {statusLevel}
             </Text>
-            <Text style={styles.pill}>MIL: {milOn ? "ON" : "OFF"}</Text>
-            <Text style={styles.pill}>Codes: {dtcCount}</Text>
-            <Text style={styles.pill}>Ignition: {ign}</Text>
+            <Text style={styles.pill}>{t("diagnostics.mil")}: {milOn ? t("diagnostics.on") : t("diagnostics.off")}</Text>
+            <Text style={styles.pill}>{t("diagnostics.codes")}: {dtcCount}</Text>
+            <Text style={styles.pill}>{t("diagnostics.ignition")}: {ign === "Unknown" ? t("diagnostics.unknown") : ign}</Text>
           </View>
 
           <Text style={styles.summaryText}>{statusText}</Text>
 
           <Text style={styles.helpText}>
-            • <Text style={styles.helpStrong}>Current</Text>: active issues now {"\n"}
-            • <Text style={styles.helpStrong}>Pending</Text>: ECU is still checking these {"\n"}
-            • <Text style={styles.helpStrong}>Permanent</Text>: stored until several clean drive cycles
+            • <Text style={styles.helpStrong}>{t("diagnostics.currentHelp")}</Text>: {t("diagnostics.currentHelpDesc")} {"\n"}
+            • <Text style={styles.helpStrong}>{t("diagnostics.pendingHelp")}</Text>: {t("diagnostics.pendingHelpDesc")} {"\n"}
+            • <Text style={styles.helpStrong}>{t("diagnostics.permanentHelp")}</Text>: {t("diagnostics.permanentHelpDesc")}
           </Text>
 
           <View style={styles.actionsRow}>
@@ -434,7 +434,7 @@ export default function Diagnostics() {
               onPress={exportPdfReport}
             >
               <Ionicons name="document-text-outline" size={18} color="#fff" />
-              <Text style={styles.mainBtnText}>Export PDF report</Text>
+              <Text style={styles.mainBtnText}>{t("diagnostics.export")} PDF</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -446,38 +446,37 @@ export default function Diagnostics() {
             >
               <Ionicons name="trash-outline" size={18} color={C.crit} />
               <Text style={[styles.mainBtnText, { color: C.crit }]}>
-                Clear codes
+                {t("diagnostics.clearCodes")}
               </Text>
             </TouchableOpacity>
           </View>
         </View>
 
         {/* Trouble Codes card */}
-        <Text style={styles.sectionLabel}>Trouble codes</Text>
+        <Text style={styles.sectionLabel}>{t("cardata.troubleCodes")}</Text>
         <View style={styles.card}>
           <CodeSection
-            title="Current codes"
-            description="Active problems that can turn on the Check Engine Light."
+            title={t("diagnostics.currentCodes")}
+            description={t("diagnostics.currentCodesDesc")}
             values={data.dtcs}
           />
           <CodeSection
-            title="Pending codes"
-            description="Problems the ECU is still verifying. If they repeat, they become current."
+            title={t("diagnostics.pendingCodes")}
+            description={t("diagnostics.pendingCodesDesc")}
             values={data.pending}
           />
           <CodeSection
-            title="Permanent codes"
-            description="Historical/emission-related codes stored until the ECU sees several clean drive cycles."
+            title={t("diagnostics.permanentCodes")}
+            description={t("diagnostics.permanentCodesDesc")}
             values={data.permanent}
           />
         </View>
 
         {/* Readiness Snapshot */}
-        <Text style={styles.sectionLabel}>Readiness snapshot</Text>
+        <Text style={styles.sectionLabel}>{t("diagnostics.readinessSnapshot")}</Text>
         <View style={styles.card}>
           <Text style={styles.bodyText}>
-            Raw readiness bytes (PID 01) from the ECU. These indicate which
-            emission and system monitors have completed since the last reset.
+            {t("diagnostics.readinessDescription")}
           </Text>
           <Text style={styles.rawBox}>
             {Array.isArray(data.monitors?.bytes) &&
@@ -486,13 +485,11 @@ export default function Diagnostics() {
                 .map((b) => "0x" + b.toString(16).padStart(2, "0"))
                 .join(" ")
             ) : (
-              <>Not available from this vehicle.</>
+              <>{t("diagnostics.notAvailable")}</>
             )}
           </Text>
           <Text style={[styles.bodyText, { fontSize: 11, opacity: 0.75 }]}>
-            Note: Interpretation of these bits varies slightly between
-            manufacturers. A mechanic can use them to verify if the vehicle is
-            ready for an emissions or inspection test.
+            {t("diagnostics.readinessNote")}
           </Text>
         </View>
       </ScrollView>
@@ -503,6 +500,7 @@ export default function Diagnostics() {
 // ----- Subcomponents -----
 
 function CodeSection({ title, description, values }) {
+  const { t } = useLanguage();
   const list = values && values.length ? values : [];
 
   return (
@@ -512,12 +510,12 @@ function CodeSection({ title, description, values }) {
 
       {list.length === 0 ? (
         <View style={styles.emptyChip}>
-          <Text style={styles.emptyChipText}>No codes in this category</Text>
+          <Text style={styles.emptyChipText}>{t("diagnostics.noCodesInCategory")}</Text>
         </View>
       ) : (
         <View style={{ marginTop: 8, gap: 8 }}>
           {list.map((code, idx) => {
-            const desc = describeDtc(code) || "No description available.";
+            const desc = describeDtc(code) || t("diagnostics.noDescription");
             return (
               <View key={`${code}-${idx}`} style={styles.codeRow}>
                 <View style={{ flexDirection: "row", alignItems: "center" }}>
@@ -527,9 +525,7 @@ function CodeSection({ title, description, values }) {
                   <Text style={styles.codeTitle}>{desc}</Text>
                 </View>
                 <Text style={styles.codeHint}>
-                  If the light is on or the car drives unusually (loss of
-                  power, shaking, noises), avoid heavy driving and contact a
-                  mechanic as soon as possible.
+                  {t("diagnostics.codeHint")}
                 </Text>
               </View>
             );

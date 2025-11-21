@@ -17,6 +17,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { getHttpBase } from "../lib/httpBase";
 import { saveToken, saveUser } from "../lib/authStore";
 import { showCustomAlert } from "../components/CustomAlert";
+import { useLanguage } from "../context/LanguageContext";
 import { C } from "../styles/theme";
 import { authStyles as styles } from "../styles/authStyles";
 
@@ -24,6 +25,7 @@ const ROLES = ["CLIENT", "GARAGE"];
 
 export default function Signup() {
   const r = useRouter();
+  const { t } = useLanguage();
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [role, setRole] = useState("CLIENT");
@@ -236,15 +238,15 @@ async function onSignup() {
 
           <View style={styles.cardWrap}>
             <View style={styles.card}>
-              <Text style={styles.h1}>Create account</Text>
-              <Text style={styles.h2}>Sign up to get started with CarVision</Text>
+              <Text style={styles.h1}>{t("signup.title")}</Text>
+              <Text style={styles.h2}>{t("signup.subtitle")}</Text>
 
               {/* Name */}
               <View style={styles.inputWrap}>
                 <Ionicons name="person-outline" size={20} color={C.sub} style={styles.iconLeft} />
                 <TextInput
                   style={styles.input}
-                  placeholder="Full name (optional)"
+                  placeholder={t("signup.name")}
                   placeholderTextColor={C.sub}
                   value={name}
                   onChangeText={setName}
@@ -256,7 +258,7 @@ async function onSignup() {
                 <Ionicons name="mail-outline" size={20} color={C.sub} style={styles.iconLeft} />
                 <TextInput
                   style={styles.input}
-                  placeholder="Email"
+                  placeholder={t("signup.email")}
                   placeholderTextColor={C.sub}
                   autoCapitalize="none"
                   keyboardType="email-address"
@@ -266,7 +268,7 @@ async function onSignup() {
               </View>
 
               {/* Role Selector */}
-              <Text style={styles.label}>Role</Text>
+              <Text style={styles.label}>{t("signup.role")}</Text>
               <View style={styles.roles}>
                 {ROLES.map((opt) => {
                   const active = role === opt;
@@ -276,7 +278,9 @@ async function onSignup() {
                       onPress={() => setRole(opt)}
                       style={[styles.roleChip, active && styles.roleChipActive]}
                     >
-                      <Text style={[styles.roleText, active && styles.roleTextActive]}>{opt}</Text>
+                      <Text style={[styles.roleText, active && styles.roleTextActive]}>
+                        {opt === "CLIENT" ? t("signup.client") : t("signup.garage")}
+                      </Text>
                     </TouchableOpacity>
                   );
                 })}
@@ -287,7 +291,7 @@ async function onSignup() {
                 <Ionicons name="lock-closed-outline" size={20} color={C.sub} style={styles.iconLeft} />
                 <TextInput
                   style={styles.smallInput}
-                  placeholder="Password (min 6 chars)"
+                  placeholder={t("signup.password")}
                   placeholderTextColor={C.sub}
                   secureTextEntry={!showPwd}
                   value={password}
@@ -300,15 +304,15 @@ async function onSignup() {
 
               {/* Sign Up Button */}
               <TouchableOpacity style={[styles.btn, busy && { opacity: 0.7 }]} onPress={onSignup} disabled={busy}>
-                {busy ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>Sign up</Text>}
+                {busy ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>{t("signup.signupButton")}</Text>}
               </TouchableOpacity>
 
               {/* Link to login */}
               <View style={{ alignItems: "center", marginTop: 14 }}>
                 <Text style={{ color: C.sub }}>
-                  Already have an account?{" "}
+                  {t("signup.haveAccount")}{" "}
                   <Text onPress={() => r.push("/login")} style={styles.link}>
-                    Log in
+                    {t("signup.login")}
                   </Text>
                 </Text>
               </View>

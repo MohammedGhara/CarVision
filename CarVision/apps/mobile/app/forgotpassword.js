@@ -17,6 +17,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { getHttpBase } from "../lib/httpBase";
 import { showCustomAlert } from "../components/CustomAlert";
+import { useLanguage } from "../context/LanguageContext";
 import { forgotpasswordStyles as styles } from "../styles/forgotpasswordStyles";
 
 const C = {
@@ -29,6 +30,7 @@ const C = {
 
 export default function ForgotPassword() {
   const r = useRouter();
+  const { t } = useLanguage();
   const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
   const [step, setStep] = useState("request"); // "request", "verify", or "reset"
@@ -366,18 +368,18 @@ export default function ForgotPassword() {
             <View style={styles.cardWrap}>
             <View style={styles.card}>
               <Text style={styles.h1}>
-                {step === "request" ? "Forgot Password" : step === "verify" ? "Verify Code" : "Reset Password"}
+                {step === "request" ? t("forgotPassword.title") : step === "verify" ? t("forgotPassword.verifyCode") : t("forgotPassword.resetPassword")}
               </Text>
               {step === "request" ? (
                 <>
                   <Text style={styles.h2}>
-                    Enter your email to receive a verification code.
+                    {t("forgotPassword.enterEmail")}
                   </Text>
                   <View style={styles.inputWrap}>
                     <Ionicons name="mail-outline" size={20} color={C.sub} style={styles.iconLeft} />
                     <TextInput
                       style={styles.input}
-                      placeholder="Email"
+                      placeholder={t("forgotPassword.email")}
                       placeholderTextColor={C.sub}
                       autoCapitalize="none"
                       keyboardType="email-address"
@@ -394,20 +396,20 @@ export default function ForgotPassword() {
                     {busy ? (
                       <ActivityIndicator color="#fff" />
                     ) : (
-                      <Text style={styles.btnText}>Send Code</Text>
+                      <Text style={styles.btnText}>{t("forgotPassword.sendCode")}</Text>
                     )}
                   </TouchableOpacity>
                 </>
               ) : step === "verify" ? (
                 <>
                   <Text style={styles.h2}>
-                    Enter the 6-digit code sent to your email.
+                    {t("forgotPassword.enterCode")}
                   </Text>
                   <View style={styles.inputWrap}>
                     <Ionicons name="keypad-outline" size={20} color={C.sub} style={styles.iconLeft} />
                     <TextInput
                       style={styles.input}
-                      placeholder="Enter 6-digit code"
+                      placeholder={t("forgotPassword.code")}
                       placeholderTextColor={C.sub}
                       keyboardType="number-pad"
                       maxLength={6}
@@ -424,7 +426,7 @@ export default function ForgotPassword() {
                     {busy ? (
                       <ActivityIndicator color="#fff" />
                     ) : (
-                      <Text style={styles.btnText}>Verify Code</Text>
+                      <Text style={styles.btnText}>{t("forgotPassword.verifyCodeButton")}</Text>
                     )}
                   </TouchableOpacity>
 
@@ -436,21 +438,21 @@ export default function ForgotPassword() {
                     }}
                   >
                     <Text style={[styles.link, { textAlign: "center" }]}>
-                      Didn't receive code? Request again
+                      {t("forgotPassword.requestAgain")}
                     </Text>
                   </TouchableOpacity>
                 </>
               ) : (
                 <>
                   <Text style={styles.h2}>
-                    Enter your new password.
+                    {t("forgotPassword.enterNewPassword")}
                   </Text>
                   
                   <View style={styles.inputWrap} key="new-password-field">
                     <Ionicons name="lock-closed-outline" size={20} color={C.sub} style={styles.iconLeft} />
                     <TextInput
                       style={styles.input}
-                      placeholder="New Password"
+                      placeholder={t("forgotPassword.newPassword")}
                       placeholderTextColor={C.sub}
                       secureTextEntry={true}
                       value={newPassword}
@@ -464,7 +466,7 @@ export default function ForgotPassword() {
                     <Ionicons name="lock-closed-outline" size={20} color={C.sub} style={styles.iconLeft} />
                     <TextInput
                       style={styles.input}
-                      placeholder="Confirm Password"
+                      placeholder={t("forgotPassword.confirmPassword")}
                       placeholderTextColor={C.sub}
                       secureTextEntry={true}
                       value={confirmPassword}
@@ -483,7 +485,7 @@ export default function ForgotPassword() {
                     {busy ? (
                       <ActivityIndicator color="#fff" />
                     ) : (
-                      <Text style={styles.btnText}>Reset Password</Text>
+                      <Text style={styles.btnText}>{t("forgotPassword.resetPasswordButton")}</Text>
                     )}
                   </TouchableOpacity>
                 </>
@@ -491,9 +493,9 @@ export default function ForgotPassword() {
 
               <View style={{ alignItems: "center", marginTop: 14 }}>
                 <Text style={{ color: C.sub }}>
-                  Remember your password?{" "}
+                  {t("forgotPassword.rememberPassword")}{" "}
                   <Text onPress={() => r.replace("/login")} style={styles.link}>
-                    Log in
+                    {t("forgotPassword.backToLogin")}
                   </Text>
                 </Text>
               </View>

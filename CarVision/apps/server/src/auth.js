@@ -437,4 +437,59 @@ router.post("/reset-password", async (req, res) => {
   }
 });
 
+/* PUT /api/auth/update-profile  { name?, email? } */
+router.put("/update-profile", authRequired, async (req, res) => {
+  try {
+    const { name, email } = req.body || {};
+    const updates = {};
+
+    if (name !== undefined) {
+      if (!name || !name.trim()) {
+        return res.status(400).json({ ok: false, error: "Name is required" });
+      }
+      updates.name = name.trim();
+    }
+
+    if (email !== undefined) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!email || !emailRegex.test(email)) {
+        return res.status(400).json({ ok: false, error: "Invalid email format" });
+      }
+      updates.email = email.trim().toLowerCase();
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ ok: false, error: "Nothing to update" });
+    }
+
+    if (updates.email) {
+      const existing = await prisma.user.findUnique({ where: { email: updates.email } });
+      if (existing && existing.id !== req.user.uid) {
+        return res.status(409).json({ ok: false, error: "Email already registered" });
+      }
+    }
+
+    const user = await prisma.user.update({
+      where: { id: req.user.uid },
+      data: updates,
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    return res.json({ ok: true, user });
+  } catch (e) {
+    console.error("UPDATE PROFILE ERROR:", e);
+    if (e.code === "P2002" && e.meta?.target?.includes("email")) {
+      return res.status(409).json({ ok: false, error: "Email already registered" });
+    }
+    return res.status(500).json({ ok: false, error: "Failed to update profile" });
+  }
+});
+
 module.exports = { router, authRequired };

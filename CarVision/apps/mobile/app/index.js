@@ -14,16 +14,20 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import FloatingChatButton from "../components/FloatingChatButton";
+import LanguagePickerModal from "../components/LanguagePickerModal";
 
 import { api } from "../lib/api";
 import { getToken, getUser, saveUser, clearAuth } from "../lib/authStore";
+import { useLanguage } from "../context/LanguageContext";
 import { C } from "../styles/theme";
 import { homeStyles as styles } from "../styles/homeStyles";
 
 export default function HomeScreen() {
   const router = useRouter();
+  const { t, language, languages, changeLanguage } = useLanguage();
   const [checking, setChecking] = useState(true);
   const [user, setUser] = useState(null);
+  const [showLanguagePicker, setShowLanguagePicker] = useState(false);
 
   // Validate token + load user (with timeout to prevent hanging)
   useEffect(() => {
@@ -125,12 +129,22 @@ export default function HomeScreen() {
               <Ionicons name="car-sport-outline" size={20} color={C.primary} />
             </View>
             <View>
-              <Text style={styles.appTitle}>CarVision</Text>
-              <Text style={styles.appSubtitle}>Vehicle Health Dashboard</Text>
+              <Text style={styles.appTitle}>{t("home.title")}</Text>
+              <Text style={styles.appSubtitle}>{t("home.subtitle")}</Text>
             </View>
           </View>
 
           <View style={{ flexDirection: "row", gap: 8 }}>
+            <TouchableOpacity
+              onPress={() => setShowLanguagePicker(true)}
+              style={styles.langChip}
+              activeOpacity={0.85}
+            >
+              <Ionicons name="language-outline" size={18} color={C.text} />
+              <Text style={styles.langChipText}>
+                {languages[language]?.nativeName || language.toUpperCase()}
+              </Text>
+            </TouchableOpacity>
             <TouchableOpacity
               onPress={() => router.push("/profile")}
               style={styles.profileBtn}
@@ -156,45 +170,45 @@ export default function HomeScreen() {
           {/* Greeting + small pills */}
           <View style={styles.greetingBlock}>
             <View>
-              <Text style={styles.greetingLabel}>Welcome back,</Text>
+              <Text style={styles.greetingLabel}>{t("home.greeting")}</Text>
               <Text style={styles.greetingName}>{displayName}</Text>
             </View>
 
             <View style={styles.greetingPills}>
-              <InfoPill icon="radio-outline" label="OBD Status" value="Ready" color={C.green} />
-              <InfoPill icon="document-text-outline" label="History" value="Available" color={C.primary} />
+              <InfoPill icon="radio-outline" label={t("home.obdStatus")} value={t("home.ready")} color={C.green} />
+              <InfoPill icon="document-text-outline" label={t("home.history")} value={t("home.available")} color={C.primary} />
             </View>
           </View>
 
           {/* Vehicle Overview Panel */}
           <View style={styles.sectionPanel}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Vehicle Overview</Text>
+              <Text style={styles.sectionTitle}>{t("home.vehicleOverview")}</Text>
               <View style={styles.sectionHeaderRight}>
                 <View style={styles.statusDot} />
-                <Text style={styles.sectionStatusText}>Awaiting connection</Text>
+                <Text style={styles.sectionStatusText}>{t("home.awaitingConnection")}</Text>
               </View>
             </View>
 
             <View style={styles.overviewRow}>
               <View style={{ flex: 1 }}>
                 <OverviewMetric
-                  label="Engine Health"
+                  label={t("home.engineHealth")}
                   value="—"
-                  hint="Run a scan to analyze"
+                  hint={t("home.runScanToAnalyze")}
                 />
                 <View style={{ height: 10 }} />
                 <OverviewMetric
-                  label="Active DTC Codes"
+                  label={t("home.activeDTCCodes")}
                   value="—"
-                  hint="Shown after first scan"
+                  hint={t("home.shownAfterFirstScan")}
                 />
               </View>
 
               <View style={styles.overviewCard}>
-                <Text style={styles.overviewCardTitle}>Quick Scan</Text>
+                <Text style={styles.overviewCardTitle}>{t("home.quickScan")}</Text>
                 <Text style={styles.overviewCardText}>
-                  Start a diagnostic scan to read error codes and system status.
+                  {t("home.quickScanDescription")}
                 </Text>
                 <TouchableOpacity
                   style={styles.overviewButton}
@@ -202,7 +216,7 @@ export default function HomeScreen() {
                   activeOpacity={0.9}
                 >
                   <Ionicons name="flash-outline" size={18} color="#fff" />
-                  <Text style={styles.overviewButtonText}>Run Scan</Text>
+                  <Text style={styles.overviewButtonText}>{t("home.startScan")}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -214,30 +228,30 @@ export default function HomeScreen() {
           {/* PRIMARY ACTIONS */}
           <View style={styles.block}>
             <View style={styles.blockHeader}>
-              <Text style={styles.blockTitle}>Primary Actions</Text>
+              <Text style={styles.blockTitle}>{t("home.primaryActions")}</Text>
               <Text style={styles.blockSubtitle}>
-                Start with one of the main tools below.
+                {t("home.primaryActionsSubtitle")}
               </Text>
             </View>
 
             <View style={styles.primaryGrid}>
               <PrimaryCard
-                title="Diagnostics"
-                subtitle="Read & clear DTC codes"
+                title={t("home.diagnostics")}
+                subtitle={t("home.diagnosticsSubtitle")}
                 icon="construct-outline"
                 accent={C.red}
                 onPress={() => router.push("/diagnostics")}
               />
               <PrimaryCard
-                title="Live Data"
-                subtitle="RPM, speed, temperature"
+                title={t("home.liveData")}
+                subtitle={t("home.liveDataSubtitle")}
                 icon="pulse-outline"
                 accent={C.green}
                 onPress={() => router.push("/cardata")}
               />
               <PrimaryCard
-                title="Repair Guidance"
-                subtitle="Causes and fix steps"
+                title={t("home.repairGuidance")}
+                subtitle={t("home.repairGuidanceSubtitle")}
                 icon="hammer-outline"
                 accent={C.amber}
                 onPress={() => router.push("/repairs")}
@@ -248,26 +262,26 @@ export default function HomeScreen() {
           {/* SECONDARY TOOLS */}
           <View style={styles.block}>
             <View style={styles.blockHeader}>
-              <Text style={styles.blockTitle}>Tools & Reports</Text>
+              <Text style={styles.blockTitle}>{t("home.toolsReports")}</Text>
             </View>
 
             <View style={styles.secondaryList}>
               <SecondaryRow
                 icon="person-outline"
-                title="Profile"
-                description="View your account information and statistics."
+                title={t("common.profile")}
+                description={t("home.profileDescription")}
                 onPress={() => router.push("/profile")}
               />
               <SecondaryRow
                 icon="chatbubbles-outline"
-                title="AI Assistant"
-                description="Ask questions about codes, symptoms and possible causes."
+                title={t("home.aiAssistant")}
+                description={t("home.aiAssistantDescription")}
                 onPress={() => router.push("/ai")}
               />
               <SecondaryRow
                 icon="settings-outline"
-                title="Settings"
-                description="OBD connection, preferences, account details."
+                title={t("common.settings")}
+                description={t("home.settingsDescription")}
                 onPress={() => router.push("/settings")}
               />
             </View>
@@ -276,23 +290,32 @@ export default function HomeScreen() {
           {/* HELP & TIPS */}
           <View style={styles.block}>
             <View style={styles.blockHeader}>
-              <Text style={styles.blockTitle}>Best Practices</Text>
+              <Text style={styles.blockTitle}>{t("home.bestPractices")}</Text>
             </View>
 
             <View style={styles.tipsPanel}>
-              <TipLine text="Keep the engine running at idle when capturing live data." />
-              <TipLine text="Always read codes before disconnecting the OBD adapter." />
-              <TipLine text="Clear codes only after repairs, then re-scan to confirm." />
-              <TipLine text="Low battery voltage can cause random or false error codes." />
+              <TipLine text={t("home.tip1")} />
+              <TipLine text={t("home.tip2")} />
+              <TipLine text={t("home.tip3")} />
+              <TipLine text={t("home.tip4")} />
             </View>
           </View>
 
-          <Text style={styles.footer}>© 2025 CarVision — Senior Project</Text>
+          <Text style={styles.footer}>{t("home.footer")}</Text>
         </ScrollView>
       </SafeAreaView>
 
       {/* Global floating AI button */}
       <FloatingChatButton onPress={() => router.push("/ai")} />
+
+      <LanguagePickerModal
+        visible={showLanguagePicker}
+        onClose={() => setShowLanguagePicker(false)}
+        onSelect={async (code) => {
+          await changeLanguage(code);
+          setShowLanguagePicker(false);
+        }}
+      />
     </LinearGradient>
   );
 }

@@ -12,6 +12,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getWsUrl, forceReDetect, checkNetworkChange } from "../lib/wsConfig";
 import { api } from "../lib/api";
 import { describeDtc } from "../lib/dtcDescriptions";
+import { useLanguage } from "../context/LanguageContext";
 import { colors } from "../styles/theme";
 import { repairsStyles as styles } from "../styles/repairsStyles";
 
@@ -22,6 +23,7 @@ const DEDUP_COOLDOWN_MS = 60 * 1000; // re-log same key only after 60s
 
 export default function RepaiScreen() {
   const router = useRouter();
+  const { t, locale } = useLanguage();
   const [wsUrl, setWsUrl] = useState(null);
   const wsRef = useRef(null);
 
@@ -193,7 +195,15 @@ export default function RepaiScreen() {
                   severity: it.severity,
                   title: it.title,
                   detail: it.detail,
-                  snapshot: t
+                  snapshot: t,
+                  translation: {
+                    titleKey: it.titleKey,
+                    titleParams: it.titleParams,
+                    titleFallback: it.titleFallback || it.title,
+                    detailKey: it.detailKey,
+                    detailParams: it.detailParams,
+                    detailFallback: it.detailFallback || it.detail,
+                  },
                 };
                 issuesRef.current.push(entry);
                 added = true;
@@ -218,6 +228,42 @@ export default function RepaiScreen() {
     };
   }, [wsUrl]);
 
+  const getLocalizedText = (item, field) => {
+    const translation = item.translation;
+    if (translation && translation[`${field}Key`]) {
+      const text = t(translation[`${field}Key`], translation[`${field}Params`] || {});
+      if (text && text !== translation[`${field}Key`]) {
+        return text;
+      }
+      if (translation[`${field}Fallback`]) {
+        return translation[`${field}Fallback`];
+      }
+    }
+    return item[field] || "";
+  };
+
+  const buildIssue = ({
+    key,
+    severity,
+    titleKey,
+    detailKey,
+    titleParams = {},
+    detailParams = {},
+    titleFallback,
+    detailFallback,
+  }) => ({
+    key,
+    severity,
+    titleKey,
+    detailKey,
+    titleParams,
+    detailParams,
+    titleFallback,
+    detailFallback,
+    title: titleFallback,
+    detail: detailFallback,
+  });
+
   // --- rules to turn telemetry into human issues ---
   function detectIssues(t) {
     const out = [];
@@ -225,53 +271,83 @@ export default function RepaiScreen() {
     // Low ECU/battery voltage
     const vb = parseFloat(t.battery ?? t.moduleVoltage);
     if (!Number.isNaN(vb) && vb < 12.2) {
-      out.push({
-        key:"low_batt", severity:"WARNING", title:"Battery/ECU voltage low",
-        detail:`Measured ${vb.toFixed(2)}V (<12.2V)`
-      });
+      out.push(buildIssue({
+        key: "low_batt",
+        severity: "WARNING",
+        titleKey: "repairs.issues.low_batt.title",
+        detailKey: "repairs.issues.low_batt.detail",
+        detailParams: { voltage: vb.toFixed(2) },
+        titleFallback: "Battery/ECU voltage low",
+        detailFallback: `Measured ${vb.toFixed(2)}V (<12.2V)`,
+      }));
     }
 
     // Overheat
     if (t.coolant != null && t.coolant >= 110) {
-      out.push({
-        key:"overheat_coolant", severity:"CRITICAL", title:"Coolant overheat",
-        detail:`Coolant ${t.coolant}°C (≥110°C)`
-      });
+      out.push(buildIssue({
+        key: "overheat_coolant",
+        severity: "CRITICAL",
+        titleKey: "repairs.issues.overheat_coolant.title",
+        detailKey: "repairs.issues.overheat_coolant.detail",
+        detailParams: { temperature: t.coolant },
+        titleFallback: "Coolant overheat",
+        detailFallback: `Coolant ${t.coolant}°C (≥110°C)`,
+      }));
     }
 
     // Oil temperature high (if present)
     if (t.oilTemp != null && t.oilTemp >= 125) {
-      out.push({
-        key:"overheat_oil", severity:"WARNING", title:"High oil temperature",
-        detail:`Oil ${t.oilTemp}°C (≥125°C)`
-      });
+      out.push(buildIssue({
+        key: "overheat_oil",
+        severity: "WARNING",
+        titleKey: "repairs.issues.overheat_oil.title",
+        detailKey: "repairs.issues.overheat_oil.detail",
+        detailParams: { temperature: t.oilTemp },
+        titleFallback: "High oil temperature",
+        detailFallback: `Oil ${t.oilTemp}°C (≥125°C)`,
+      }));
     }
 
     // MIL / DTC count
     if (t.monitors?.milOn) {
-      out.push({
-        key:"mil_on", severity:"WARNING", title:"MIL is ON",
-        detail:`Engine light ON; DTC count ${t.monitors?.dtcCount ?? 0}`
-      });
+      out.push(buildIssue({
+        key: "mil_on",
+        severity: "WARNING",
+        titleKey: "repairs.issues.mil_on.title",
+        detailKey: "repairs.issues.mil_on.detail",
+        detailParams: { count: t.monitors?.dtcCount ?? 0 },
+        titleFallback: "MIL is ON",
+        detailFallback: `Engine light ON; DTC count ${t.monitors?.dtcCount ?? 0}`,
+      }));
     }
 
     // DTC lists
     const allCodes = [...(t.dtcs||[]), ...(t.pending||[]), ...(t.permanent||[])];
     for (const code of allCodes) {
-      out.push({
-        key:`dtc_${code}`,
-        severity:"WARNING",
-        title:`DTC ${code}`,
-        detail: describeDtc(code) || "Trouble code detected"
-      });
+      const description = describeDtc(code) || "Trouble code detected";
+      out.push(buildIssue({
+        key: `dtc_${code}`,
+        severity: "WARNING",
+        titleKey: "repairs.issues.dtc.title",
+        detailKey: "repairs.issues.dtc.detail",
+        titleParams: { code },
+        detailParams: { description },
+        titleFallback: `DTC ${code}`,
+        detailFallback: description,
+      }));
     }
 
     // MAF impossible when engine running
     if ((t.rpm ?? 0) > 800 && (t.maf ?? 0) === 0) {
-      out.push({
-        key:"maf_zero", severity:"WARNING", title:"MAF reads 0 while engine running",
-        detail:`RPM ${t.rpm}, MAF ${t.maf}`
-      });
+      out.push(buildIssue({
+        key: "maf_zero",
+        severity: "WARNING",
+        titleKey: "repairs.issues.maf_zero.title",
+        detailKey: "repairs.issues.maf_zero.detail",
+        detailParams: { rpm: t.rpm ?? 0, maf: t.maf ?? 0 },
+        titleFallback: "MAF reads 0 while engine running",
+        detailFallback: `RPM ${t.rpm}, MAF ${t.maf}`,
+      }));
     }
 
     return out;
@@ -288,9 +364,17 @@ export default function RepaiScreen() {
       setBusyId(item.id);
 
       const s = item.snapshot || {};
+      const localeMap = {
+        ar: "Arabic",
+        he: "Hebrew",
+        en: "English",
+      };
+      const responseLanguage = localeMap[locale] || "English";
+      const localizedTitle = getLocalizedText(item, "title");
+      const localizedDetail = getLocalizedText(item, "detail");
       const context = [
-        `Problem: ${item.title}`,
-        `Detail: ${item.detail}`,
+        `Problem: ${localizedTitle}`,
+        `Detail: ${localizedDetail}`,
         `Time: ${new Date(item.ts).toLocaleString()}`,
         `RPM=${s.rpm ?? "-"} | Speed=${s.speed ?? "-"} km/h | Coolant=${s.coolant ?? "-"}°C | OilTemp=${s.oilTemp ?? "-"}`,
         `Battery=${s.battery ?? s.moduleVoltage ?? "-"}V | Load=${s.load ?? "-"}% | Throttle=${s.throttle ?? "-"}% | Fuel=${s.fuel ?? "-"}%`,
@@ -307,14 +391,14 @@ export default function RepaiScreen() {
         `3. FIX AND STEPS: what the driver should check or do (step by step, 4–6 steps max).\n` +
         `4. WHEN TO STOP DRIVING: when this problem becomes dangerous and they should call a mechanic.\n` +
         `Be professional and realistic — your goal is to guide the driver safely.\n\n` +
-        `Vehicle data:\n${context}`;
+        `Respond in ${responseLanguage}. If ${responseLanguage} is not possible, respond in English.\n\nVehicle data:\n${context}`;
 
       // ✅ call the new helper (it attaches base URL + Authorization and returns parsed JSON)
       const data = await api.post("/api/chat", { message: prompt });
-      const reply = data?.reply?.trim?.() || "No suggestion generated.";
+      const reply = data?.reply?.trim?.() || t("repairs.noSuggestion");
       setAnswers(a => ({ ...a, [item.id]: reply }));
     } catch (e) {
-      Alert.alert("AI error", String(e?.message || e));
+      Alert.alert(t("repairs.aiError"), String(e?.message || e));
     } finally {
       setBusyId(null);
     }
@@ -344,15 +428,20 @@ export default function RepaiScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="chevron-back" size={24} color="#E6E9F5" />
         </TouchableOpacity>
-        <Text style={styles.topTitle}>Reparing</Text>
+        <Text style={styles.topTitle}>{t("repairs.title")}</Text>
         <View style={{flexDirection:"row", alignItems:"center", gap:8}}>
           <TouchableOpacity onPress={clearHistory} style={styles.ghostBtn}>
-            <Text style={styles.ghostText}>Clear</Text>
+            <Text style={styles.ghostText}>{t("common.delete")}</Text>
           </TouchableOpacity>
           <View style={[styles.dot, link.status==="up"? styles.dotOn: styles.dotOff]} />
         </View>
       </View>
 
+      {issues.length === 0 ? (
+        <View style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 20 }}>
+          <Text style={{ color: C.sub, fontSize: 16 }}>{t("repairs.noIssues")}</Text>
+        </View>
+      ) : (
       <FlatList
         data={issues}
         keyExtractor={(it)=>it.id}
@@ -370,11 +459,15 @@ export default function RepaiScreen() {
               <Text style={styles.badgeTs}>
                 {new Date(item.ts).toLocaleString()}
               </Text>
-              <Text style={severityBadgeStyle(item.severity)}>{item.severity}</Text>
+              <Text style={severityBadgeStyle(item.severity)}>
+                {item.severity === "CRITICAL" ? t("repairs.critical") : 
+                 item.severity === "WARNING" ? t("repairs.warning") : 
+                 t("repairs.normal")}
+              </Text>
             </View>
 
-            <Text style={styles.title}>{item.title}</Text>
-            <Text style={styles.detail}>{item.detail}</Text>
+            <Text style={styles.title}>{getLocalizedText(item, "title")}</Text>
+            <Text style={styles.detail}>{getLocalizedText(item, "detail")}</Text>
 
             <View style={{ flexDirection:"row", gap:10, marginTop:10 }}>
               <TouchableOpacity
@@ -385,19 +478,19 @@ export default function RepaiScreen() {
               >
                 {busyId === item.id
                   ? <ActivityIndicator size="small" color="#fff" />
-                  : <Text style={styles.btnText}>Ask AI</Text>}
+                  : <Text style={styles.btnText}>{t("repairs.askAI")}</Text>}
               </TouchableOpacity>
             </View>
 
             {answers[item.id] ? (
               <View style={styles.aiBox}>
-                <Text style={styles.aiTitle}>AI Suggestion</Text>
+                <Text style={styles.aiTitle}>{t("repairs.aiSuggestion")}</Text>
                 <Text style={styles.aiText}>{answers[item.id]}</Text>
               </View>
             ) : null}
           </View>
         )}
-      />
+      />)}
     </SafeAreaView>
   );
 }

@@ -2,8 +2,12 @@ import React, { useRef, useEffect } from "react";
 import { TouchableOpacity, View, Text, StyleSheet, Animated } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { useLanguage } from "../context/LanguageContext";
 
-export default function FloatingChatButton({ onPress, label = "ChatBot" }) {
+export default function FloatingChatButton({ onPress, label }) {
+  const { t } = useLanguage();
+  const message = t("chatbot.tooltip");
+  const buttonLabel = label || t("chatbot.label");
   // soft pulse behind the button (professional feel)
   const pulse = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -23,7 +27,7 @@ export default function FloatingChatButton({ onPress, label = "ChatBot" }) {
       {/* message bubble (always visible) */}
       <View style={styles.msgWrap} pointerEvents="none">
         <View style={styles.messageBubble}>
-          <Text style={styles.messageText}>Do you want help?</Text>
+          <Text style={styles.messageText}>{message}</Text>
           {/* bubble tail */}
           <View style={styles.tail} />
         </View>
@@ -51,7 +55,7 @@ export default function FloatingChatButton({ onPress, label = "ChatBot" }) {
           style={styles.circle}
         >
           <Ionicons name="chatbubbles-outline" size={26} color="#FFFFFF" />
-          <Text style={styles.label}>{label}</Text>
+          <Text style={styles.label}>{buttonLabel}</Text>
         </LinearGradient>
       </TouchableOpacity>
     </View>

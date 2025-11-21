@@ -38,6 +38,22 @@ export const homeStyles = StyleSheet.create({
     fontSize: 12,
     marginTop: 2,
   },
+  langChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: C.border,
+    backgroundColor: "rgba(15,23,42,0.9)",
+    gap: 6,
+  },
+  langChipText: {
+    color: C.text,
+    fontSize: 12,
+    fontWeight: "700",
+  },
   profileBtn: {
     width: 40,
     height: 40,

@@ -8,6 +8,8 @@ import {
   ActivityIndicator,
   ImageBackground,
   Alert,
+  Modal,
+  TextInput,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -17,8 +19,10 @@ import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { api } from "../lib/api";
-import { getUser, clearAuth, getToken } from "../lib/authStore";
+import { getUser, clearAuth, getToken, saveUser } from "../lib/authStore";
 import { showCustomAlert } from "../components/CustomAlert";
+import { useLanguage } from "../context/LanguageContext";
+import LanguagePickerModal from "../components/LanguagePickerModal";
 import { C } from "../styles/theme";
 import { profileStyles as styles } from "../styles/profileStyles";
 
@@ -26,8 +30,14 @@ const STORAGE_KEY = "carvision.history.v1";
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const { t, language, languages, changeLanguage } = useLanguage();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showLanguageModal, setShowLanguageModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+  const [savingProfile, setSavingProfile] = useState(false);
   const [stats, setStats] = useState({
     totalScans: 0,
     dtcsCleared: 0,
@@ -39,9 +49,9 @@ export default function ProfileScreen() {
     loadProfile();
   }, []);
 
-  async function loadProfile() {
+  async function loadProfile(showLoader = true) {
     try {
-      setLoading(true);
+      if (showLoader) setLoading(true);
       
       // Load user from cache first (instant display)
       const cachedUser = await getUser();
@@ -63,7 +73,6 @@ export default function ProfileScreen() {
         try {
           const me = await api.get("/api/auth/me");
           if (me?.user) {
-            console.log("✅ User data from database:", me.user);
             setUser(me.user);
             
             // Set memberSince from database
@@ -73,24 +82,16 @@ export default function ProfileScreen() {
                 memberSince: me.user.createdAt,
               }));
             }
-          } else {
-            console.log("⚠️ No user data in response");
           }
         } catch (e) {
           // Silently handle missing token or auth errors - use cached data instead
-          if (e.message?.includes("token") || e.message?.includes("Missing")) {
-            console.log("⚠️ No token available, using cached user data");
-          } else {
+          if (!e.message?.includes("token") && !e.message?.includes("Missing") && !e.message?.includes("401") && !e.message?.includes("Unauthorized")) {
             console.error("❌ Failed to fetch user from API:", e);
-            // Only show alert for non-auth errors
-            if (!e.message?.includes("401") && !e.message?.includes("Unauthorized")) {
-              showCustomAlert("Error", "Failed to load profile data. Please try again.");
-            }
+            showCustomAlert("Error", "Failed to load profile data. Please try again.");
           }
         }
-      } else {
-        console.log("⚠️ No token found, using cached user data only");
       }
+      // If no token, silently use cached data (no warning needed)
 
       // Calculate statistics from local history (AsyncStorage)
       try {
@@ -127,18 +128,18 @@ export default function ProfileScreen() {
       console.error("Profile load error:", e);
       showCustomAlert("Error", "Failed to load profile. Please try again.");
     } finally {
-      setLoading(false);
+      if (showLoader) setLoading(false);
     }
   }
 
   async function handleLogout() {
     Alert.alert(
-      "Logout",
-      "Are you sure you want to logout?",
+      t("profile.logout"),
+      t("profile.logoutConfirm"),
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t("common.cancel"), style: "cancel" },
         {
-          text: "Logout",
+          text: t("profile.logout"),
           style: "destructive",
           onPress: async () => {
             await clearAuth();
@@ -147,6 +148,67 @@ export default function ProfileScreen() {
         },
       ]
     );
+  }
+
+  async function handleLanguageSelect(langCode) {
+    const success = await changeLanguage(langCode);
+    if (success) {
+      setShowLanguageModal(false);
+      showCustomAlert(t("common.success"), t("language.languageChanged"));
+    }
+  }
+
+  async function handleSaveProfile() {
+    const trimmedName = (editName || "").trim();
+    const trimmedEmail = (editEmail || "").trim();
+    if (!trimmedName) {
+      showCustomAlert(t("common.error"), t("profile.nameRequired"));
+      return;
+    }
+    if (!trimmedEmail) {
+      showCustomAlert(t("common.error"), t("profile.emailRequired"));
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmedEmail)) {
+      showCustomAlert(t("common.error"), t("profile.invalidEmail"));
+      return;
+    }
+    const payload = {};
+    if (!user || trimmedName !== user.name) payload.name = trimmedName;
+    if (!user || trimmedEmail.toLowerCase() !== (user.email || "").toLowerCase()) {
+      payload.email = trimmedEmail.toLowerCase();
+    }
+    if (Object.keys(payload).length === 0) {
+      showCustomAlert(t("common.error"), t("profile.noChanges"));
+      return;
+    }
+    setSavingProfile(true);
+    try {
+      const result = await api.put("/api/auth/update-profile", payload);
+      if (result?.user) {
+        setUser(result.user);
+        await saveUser(result.user);
+        await loadProfile(false);
+        showCustomAlert(t("common.success"), t("profile.updateSuccess"));
+        setShowEditModal(false);
+      } else {
+        throw new Error(t("profile.updateError"));
+      }
+    } catch (e) {
+      console.error("Profile update failed:", e);
+      showCustomAlert(t("common.error"), e.message || t("profile.updateError"));
+    } finally {
+      setSavingProfile(false);
+    }
+  }
+
+  function getLanguageName() {
+    return languages[language]?.nativeName || languages[language]?.name || "English";
+  }
+
+  function getLanguageName() {
+    return languages[language]?.nativeName || languages[language]?.name || "English";
   }
 
   function getInitials(name, email) {
@@ -204,7 +266,7 @@ export default function ProfileScreen() {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: C.bg1, justifyContent: "center", alignItems: "center" }}>
         <Ionicons name="person-outline" size={48} color={C.sub} />
-        <Text style={{ color: C.sub, marginTop: 12, fontSize: 16 }}>No user data found</Text>
+        <Text style={{ color: C.sub, marginTop: 12, fontSize: 16 }}>{t("profile.noUserData")}</Text>
         <TouchableOpacity
           style={{
             marginTop: 20,
@@ -215,7 +277,7 @@ export default function ProfileScreen() {
           }}
           onPress={() => router.replace("/login")}
         >
-          <Text style={{ color: "#fff", fontWeight: "700" }}>Go to Login</Text>
+          <Text style={{ color: "#fff", fontWeight: "700" }}>{t("profile.goToLogin")}</Text>
         </TouchableOpacity>
       </SafeAreaView>
     );
@@ -225,7 +287,7 @@ export default function ProfileScreen() {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: C.bg1, justifyContent: "center", alignItems: "center" }}>
         <ActivityIndicator size="large" color={C.primary} />
-        <Text style={{ color: C.sub, marginTop: 12 }}>Loading profile...</Text>
+        <Text style={{ color: C.sub, marginTop: 12 }}>{t("profile.loadingProfile")}</Text>
       </SafeAreaView>
     );
   }
@@ -252,7 +314,7 @@ export default function ProfileScreen() {
           </TouchableOpacity>
 
           <View style={{ flex: 1, alignItems: "center" }}>
-            <Text style={styles.headerTitle}>Profile</Text>
+            <Text style={styles.headerTitle}>{t("profile.title")}</Text>
           </View>
 
           <View style={{ flexDirection: "row", gap: 8 }}>
@@ -300,7 +362,7 @@ export default function ProfileScreen() {
               <View style={styles.memberSince}>
                 <Ionicons name="calendar-outline" size={14} color={C.sub} />
                 <Text style={styles.memberSinceText}>
-                  Member since {formatDate(user.createdAt)}
+                  {t("profile.memberSince")} {formatDate(user.createdAt)}
                 </Text>
               </View>
             )}
@@ -310,50 +372,54 @@ export default function ProfileScreen() {
           <View style={styles.statsGrid}>
             <StatCard
               icon="scan-outline"
-              label="Total Scans"
+              label={t("profile.totalScans")}
               value={stats.totalScans}
               color={C.blue}
             />
             <StatCard
               icon="bug-outline"
-              label="Issues Found"
+              label={t("profile.issuesDetected")}
               value={stats.issuesDetected}
               color={C.amber}
             />
             <StatCard
               icon="checkmark-circle-outline"
-              label="DTCs Cleared"
+              label={t("profile.dtcsCleared")}
               value={stats.dtcsCleared}
               color={C.green}
             />
             <StatCard
               icon="time-outline"
-              label="Active Sessions"
-              value="1"
+              label={t("profile.memberSince")}
+              value={stats.memberSince ? formatDate(stats.memberSince) : "—"}
               color={C.primary}
             />
           </View>
 
           {/* Quick Actions */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Quick Actions</Text>
+            <Text style={styles.sectionTitle}>{t("profile.quickActions")}</Text>
             <View style={styles.actionsCard}>
               <ActionRow
                 icon="create-outline"
-                title="Edit Profile"
-                subtitle="Update your name and information"
-                onPress={() => showCustomAlert("Coming Soon", "Profile editing will be available soon!")}
+                title={t("profile.editProfile")}
+                subtitle={t("profile.editProfileSubtitle")}
+                onPress={() => {
+                  setEditName(user?.name || "");
+                  setEditEmail(user?.email || "");
+                  setShowEditModal(true);
+                }}
               />
               <ActionRow
                 icon="key-outline"
-                title="Change Password"
-                subtitle="Update your account password"
+                title={t("profile.resetPassword")}
+                subtitle={t("profile.resetPasswordSubtitle")}
                 onPress={() => router.push("/forgotpassword")}
               />
               <ActionRow
                 icon="notifications-outline"
-                title="Notifications"
-                subtitle="Manage notification preferences"
+                title={t("profile.notifications")}
+                subtitle={t("profile.notificationsSubtitle")}
                 onPress={() => showCustomAlert("Coming Soon", "Notification settings coming soon!")}
               />
             </View>
@@ -361,31 +427,31 @@ export default function ProfileScreen() {
 
           {/* Account Information */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Account Information</Text>
+            <Text style={styles.sectionTitle}>{t("profile.accountInformation")}</Text>
             <View style={styles.infoCard}>
-              <InfoRow icon="mail-outline" label="Email" value={user?.email || "—"} />
-              <InfoRow icon="person-outline" label="Name" value={user?.name || "—"} />
+              <InfoRow icon="mail-outline" label={t("profile.email")} value={user?.email || "—"} />
+              <InfoRow icon="person-outline" label={t("profile.name")} value={user?.name || "—"} />
               <InfoRow
                 icon="shield-checkmark-outline"
-                label="Account Type"
+                label={t("profile.accountType")}
                 value={user?.role || "CLIENT"}
               />
               <InfoRow
                 icon="id-card-outline"
-                label="User ID"
+                label={t("profile.userId")}
                 value={user?.id ? user.id.substring(0, 8) + "..." : "—"}
               />
               {user?.createdAt && (
                 <InfoRow
                   icon="calendar-outline"
-                  label="Account Created"
+                  label={t("profile.accountCreated")}
                   value={formatFullDate(user.createdAt)}
                 />
               )}
               {user?.updatedAt && (
                 <InfoRow
                   icon="time-outline"
-                  label="Last Updated"
+                  label={t("profile.lastUpdated")}
                   value={formatFullDate(user.updatedAt)}
                 />
               )}
@@ -394,24 +460,24 @@ export default function ProfileScreen() {
 
           {/* Preferences */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Preferences</Text>
+            <Text style={styles.sectionTitle}>{t("profile.preferences")}</Text>
             <View style={styles.preferencesCard}>
               <PreferenceRow
                 icon="language-outline"
-                title="Language"
-                value="English"
-                onPress={() => showCustomAlert("Coming Soon", "Language selection coming soon!")}
+                title={t("profile.language")}
+                value={getLanguageName()}
+                onPress={() => setShowLanguageModal(true)}
               />
               <PreferenceRow
                 icon="color-palette-outline"
-                title="Theme"
-                value="Dark"
+                title={t("profile.theme")}
+                value={t("profile.dark")}
                 onPress={() => showCustomAlert("Coming Soon", "Theme selection coming soon!")}
               />
               <PreferenceRow
                 icon="speedometer-outline"
-                title="Units"
-                value="Metric"
+                title={t("profile.units")}
+                value={t("profile.metric")}
                 onPress={() => showCustomAlert("Coming Soon", "Unit preferences coming soon!")}
               />
             </View>
@@ -424,12 +490,32 @@ export default function ProfileScreen() {
             activeOpacity={0.8}
           >
             <Ionicons name="log-out-outline" size={20} color={C.red} />
-            <Text style={styles.logoutText}>Logout</Text>
+            <Text style={styles.logoutText}>{t("profile.logout")}</Text>
           </TouchableOpacity>
 
-          <Text style={styles.footer}>© 2025 CarVision — Senior Project</Text>
+          <Text style={styles.footer}>{t("home.footer")}</Text>
         </ScrollView>
       </SafeAreaView>
+
+      <LanguagePickerModal
+        visible={showLanguageModal}
+        onClose={() => setShowLanguageModal(false)}
+        onSelect={async (code) => {
+          await handleLanguageSelect(code);
+        }}
+      />
+
+      <EditProfileModal
+        visible={showEditModal}
+        value={editName}
+        emailValue={editEmail}
+        onChangeName={setEditName}
+        onChangeEmail={setEditEmail}
+        onCancel={() => setShowEditModal(false)}
+        onSave={handleSaveProfile}
+        saving={savingProfile}
+        t={t}
+      />
     </LinearGradient>
   );
 }
@@ -491,6 +577,55 @@ function PreferenceRow({ icon, title, value, onPress }) {
         <Ionicons name="chevron-forward" size={16} color={C.sub} />
       </View>
     </TouchableOpacity>
+  );
+}
+
+function EditProfileModal({ visible, value, emailValue, onChangeName, onChangeEmail, onCancel, onSave, saving, t }) {
+  return (
+    <Modal transparent animationType="fade" visible={visible} onRequestClose={onCancel}>
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalCard}>
+          <Text style={styles.modalTitle}>{t("profile.editProfileTitle")}</Text>
+          <Text style={styles.modalSubtitle}>{t("profile.editProfileDescription")}</Text>
+          <TextInput
+            style={styles.modalInput}
+            value={value}
+            onChangeText={onChangeName}
+            placeholder={t("profile.namePlaceholder")}
+            placeholderTextColor="rgba(148,163,184,0.8)"
+          />
+          <TextInput
+            style={[styles.modalInput, { marginTop: 12 }]}
+            value={emailValue}
+            onChangeText={onChangeEmail}
+            placeholder={t("profile.emailPlaceholder")}
+            placeholderTextColor="rgba(148,163,184,0.8)"
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+          <View style={styles.modalActions}>
+            <TouchableOpacity
+              style={[styles.modalButton, styles.modalButtonGhost]}
+              onPress={onCancel}
+              disabled={saving}
+            >
+              <Text style={styles.modalButtonGhostText}>{t("common.cancel")}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.modalButton}
+              onPress={onSave}
+              disabled={saving}
+            >
+              {saving ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.modalButtonText}>{t("profile.saveChanges")}</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
   );
 }
 

@@ -1,10 +1,11 @@
 import React from "react";
 import { Modal, View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { useLanguage } from "../context/LanguageContext";
 
 let alertCallback = null;
 
-export function showCustomAlert(title, message, buttons = [{ text: "OK" }]) {
+export function showCustomAlert(title, message, buttons = []) {
   if (alertCallback) {
     alertCallback({ title, message, buttons, visible: true });
   }
@@ -12,6 +13,7 @@ export function showCustomAlert(title, message, buttons = [{ text: "OK" }]) {
 
 export function CustomAlertProvider() {
   const [alert, setAlert] = React.useState({ visible: false, title: "", message: "", buttons: [] });
+  const { t } = useLanguage();
 
   React.useEffect(() => {
     alertCallback = setAlert;
@@ -29,14 +31,19 @@ export function CustomAlertProvider() {
 
   if (!alert.visible) return null;
 
+  const resolvedButtons =
+    alert.buttons && alert.buttons.length > 0
+      ? alert.buttons
+      : [{ text: t("common.ok") }];
+
   return (
     <Modal
       transparent
       visible={alert.visible}
       animationType="fade"
       onRequestClose={() => {
-        if (alert.buttons.length === 0 || alert.buttons[0].text === "OK") {
-          handlePress(alert.buttons[0] || {});
+        if (resolvedButtons.length === 0 || !resolvedButtons[0].onPress) {
+          handlePress(resolvedButtons[0] || {});
         }
       }}
     >
@@ -51,7 +58,7 @@ export function CustomAlertProvider() {
               <Text style={styles.message}>{alert.message}</Text>
               
               <View style={styles.buttonContainer}>
-                {alert.buttons.map((button, index) => (
+                {resolvedButtons.map((button, index) => (
                   <TouchableOpacity
                     key={index}
                     style={[
@@ -65,7 +72,7 @@ export function CustomAlertProvider() {
                       styles.buttonText,
                       index === 0 && alert.buttons.length > 1 && styles.buttonTextPrimary
                     ]}>
-                      {button.text}
+                      {button.text || t("common.ok")}
                     </Text>
                   </TouchableOpacity>
                 ))}

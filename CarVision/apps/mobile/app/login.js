@@ -18,16 +18,20 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { getHttpBase } from "../lib/httpBase";
 import { saveToken, saveUser, getToken } from "../lib/authStore";
 import { showCustomAlert } from "../components/CustomAlert";
+import LanguagePickerModal from "../components/LanguagePickerModal";
+import { useLanguage } from "../context/LanguageContext";
 import { C } from "../styles/theme";
 import { authStyles as styles } from "../styles/authStyles";
 
 export default function Login() {
   const r = useRouter();
+  const { t, language, languages, changeLanguage } = useLanguage();
   const [identifier, setIdentifier] = useState(""); // Changed from email to identifier
   const [password, setPassword] = useState("");
   const [showPwd, setShowPwd] = useState(false);
   const [remember, setRemember] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [showLanguagePicker, setShowLanguagePicker] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -38,7 +42,7 @@ export default function Login() {
 
   function validate() {
     if (!identifier || !password) {
-      showCustomAlert("Missing", "Please fill username/email and password.");
+      showCustomAlert(t("common.error"), t("login.missingFields"));
       return false;
     }
     // No email validation - accept both username and email
@@ -47,7 +51,7 @@ export default function Login() {
   async function onLogin() {
     // Validate first - these alerts should work immediately
     if (!identifier || !password) {
-      showCustomAlert("Missing", "Please fill username/email and password.");
+      showCustomAlert(t("common.error"), t("login.missingFields"));
       return;
     }
     
@@ -81,8 +85,8 @@ export default function Login() {
         console.error("❌ JSON parse error:", parseError);
         setBusy(false);
         showCustomAlert(
-          "Server Error", 
-          `Invalid response from server.\n\nStatus: ${resp.status}`
+          t("alerts.serverErrorTitle"), 
+          `${t("alerts.invalidResponse")}\n\n${t("alerts.statusLabel")}: ${resp.status}`
         );
         return;
       }
@@ -94,13 +98,13 @@ export default function Login() {
         
         // Show specific alerts based on error type
         if (errorMsg.toLowerCase().includes("password")) {
-          showCustomAlert("❌ Incorrect Password", "The password you entered is incorrect. Please try again.");
+          showCustomAlert("❌ " + t("common.error"), t("login.incorrectPassword"));
         } else if (errorMsg.toLowerCase().includes("email") || errorMsg.toLowerCase().includes("username")) {
-          showCustomAlert("❌ Account Not Found", "No account found with this email/username. Please check and try again.");
+          showCustomAlert("❌ " + t("common.error"), t("login.accountNotFound"));
         } else if (errorMsg.toLowerCase().includes("required")) {
-          showCustomAlert("⚠️ Missing Information", errorMsg);
+          showCustomAlert("⚠️ " + t("login.missingInfo"), errorMsg);
         } else {
-          showCustomAlert("❌ Login Failed", errorMsg);
+          showCustomAlert("❌ " + t("login.loginFailed"), errorMsg);
         }
         return;
       }
@@ -109,7 +113,7 @@ export default function Login() {
       if (!data.token || !data.user) {
         console.error("❌ Missing token or user in response:", data);
         setBusy(false);
-        showCustomAlert("Login Error", "Server response is incomplete. Please try again.");
+        showCustomAlert(t("alerts.loginErrorTitle"), t("alerts.loginIncomplete"));
         return;
       }
       
@@ -123,7 +127,7 @@ export default function Login() {
       } catch (saveError) {
         console.error("❌ Save error:", saveError);
         setBusy(false);
-        showCustomAlert("Storage Error", "Login successful but failed to save credentials. Please try again.");
+        showCustomAlert(t("alerts.storageErrorTitle"), t("alerts.loginStorageFailed"));
         return;
       }
       
@@ -132,12 +136,13 @@ export default function Login() {
       
       setTimeout(() => {
         console.log("🟢 Showing success alert...");
+        const displayName = data.user.name || data.user.email.split("@")[0];
         showCustomAlert(
-          "✅ Login Successful!", 
-          `Welcome back, ${data.user.name || data.user.email.split("@")[0]}!`,
+          `✅ ${t("alerts.loginSuccessTitle")}`, 
+          `${t("alerts.welcomeBackPrefix")} ${displayName}${t("alerts.welcomeBackSuffix")}`,
           [
             { 
-              text: "OK", 
+              text: t("common.ok"), 
               onPress: () => {
                 console.log("User pressed OK, redirecting...");
                 setTimeout(() => {
@@ -154,18 +159,18 @@ export default function Login() {
       console.error("❌ Login exception:", e);
       setBusy(false);
       
-      let errorMsg = "Network error. Please check your connection and try again.";
+      let errorMsg = t("alerts.networkError");
       if (e.message) {
         if (e.message.includes("fetch") || e.message.includes("network") || e.message.includes("Failed to fetch")) {
-          errorMsg = "Cannot connect to the server.\n\nPlease check:\n• Your internet connection\n• Server settings\n• That the server is running";
+          errorMsg = t("alerts.cannotConnect");
         } else if (e.message.includes("timeout")) {
-          errorMsg = "The request took too long. Please check your connection and try again.";
+          errorMsg = t("alerts.timeoutError");
         } else {
           errorMsg = e.message;
         }
       }
       
-      showCustomAlert("❌ Connection Error", errorMsg);
+      showCustomAlert("❌ " + t("alerts.connectionErrorTitle"), errorMsg);
     }
   }
 
@@ -186,7 +191,15 @@ export default function Login() {
         >
           {/* ─── top bar with settings ─── */}
           <View style={styles.topbar}>
-            <View style={{ width: 40 }} />
+            <TouchableOpacity
+              style={styles.langBtn}
+              onPress={() => setShowLanguagePicker(true)}
+            >
+              <Ionicons name="language-outline" size={16} color={C.text} />
+              <Text style={styles.langBtnText}>
+                {languages[language]?.nativeName || language.toUpperCase()}
+              </Text>
+            </TouchableOpacity>
             <Text style={styles.logo}>CarVision</Text>
             <TouchableOpacity
               style={styles.settingsBtn}
@@ -200,15 +213,15 @@ export default function Login() {
 
           <View style={styles.cardWrap}>
             <View style={styles.card}>
-              <Text style={styles.h1}>Log in</Text>
-              <Text style={styles.h2}>Welcome back! Please enter your details.</Text>
+              <Text style={styles.h1}>{t("login.title")}</Text>
+              <Text style={styles.h2}>{t("login.subtitle")}</Text>
 
               {/* Username or Email */}
               <View style={styles.inputWrap}>
                 <Ionicons name="person-outline" size={20} color={C.sub} style={styles.iconLeft} />
                 <TextInput
                   style={styles.input}
-                  placeholder="Username or Email"
+                  placeholder={t("login.emailUsername")}
                   placeholderTextColor={C.sub}
                   autoCapitalize="none"
                   keyboardType="default"
@@ -222,7 +235,7 @@ export default function Login() {
                 <Ionicons name="lock-closed-outline" size={20} color={C.sub} style={styles.iconLeft} />
                 <TextInput
                   style={styles.smallInput}
-                  placeholder="Password"
+                  placeholder={t("login.password")}
                   placeholderTextColor={C.sub}
                   secureTextEntry={!showPwd}
                   value={password}
@@ -237,10 +250,10 @@ export default function Login() {
               <View style={styles.row}>
                 <View style={styles.rowLeft}>
                   <Switch value={remember} onValueChange={setRemember} />
-                  <Text style={styles.rememberText}>Remember me</Text>
+                  <Text style={styles.rememberText}>{t("login.rememberMe")}</Text>
                 </View>
                 <TouchableOpacity onPress={() => r.push("/forgotpassword")}>
-                  <Text style={styles.link}>Forgot password?</Text>
+                  <Text style={styles.link}>{t("login.forgotPassword")}</Text>
                 </TouchableOpacity>
               </View>
 
@@ -249,14 +262,14 @@ export default function Login() {
                 onPress={onLogin}
                 disabled={busy}
               >
-                {busy ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>Log in</Text>}
+                {busy ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>{t("login.loginButton")}</Text>}
               </TouchableOpacity>
 
               <View style={{ alignItems: "center", marginTop: 14 }}>
                 <Text style={{ color: C.sub }}>
-                  No account?{" "}
+                  {t("login.noAccount")}{" "}
                   <Text onPress={() => r.push("/signup")} style={styles.link}>
-                    Sign up
+                    {t("login.signUp")}
                   </Text>
                 </Text>
               </View>
@@ -266,6 +279,15 @@ export default function Login() {
           <Text style={styles.footer}>© 2025 CarVision</Text>
         </KeyboardAvoidingView>
       </SafeAreaView>
+
+      <LanguagePickerModal
+        visible={showLanguagePicker}
+        onClose={() => setShowLanguagePicker(false)}
+        onSelect={async (code) => {
+          await changeLanguage(code);
+          setShowLanguagePicker(false);
+        }}
+      />
     </LinearGradient>
   );
 }

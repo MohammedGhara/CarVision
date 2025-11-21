@@ -13,6 +13,7 @@ import { useRouter } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 
 import { getWsUrl, setWsUrl, forceReDetect, checkNetworkChange, DEFAULT_WS_URL } from "../lib/wsConfig";
+import { useLanguage } from "../context/LanguageContext";
 import { settingsStyles as s } from "../styles/settingsStyles";
 import { colors } from "../styles/theme";
 
@@ -43,6 +44,7 @@ async function autoDetectServer() {
 
 export default function Settings() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [url, setUrl] = useState("");
   const [testing, setTesting] = useState(false);
 
@@ -117,10 +119,10 @@ export default function Settings() {
       });
 
       await setWsUrl(target.trim());
-      Alert.alert("Connected!", `Connected successfully to:\n${target}`);
+      Alert.alert(t("settings.connected"), `${t("settings.connected")}:\n${target}`);
       setUrl(target);
     } catch (e) {
-      Alert.alert("Could not connect", String(e));
+      Alert.alert(t("settings.couldNotConnect"), String(e));
     } finally {
       setTesting(false);
     }
@@ -146,12 +148,12 @@ export default function Settings() {
           <TouchableOpacity style={s.backBtn} onPress={() => router.back()}>
             <Ionicons name="chevron-back" size={24} color="#E6E9F5" />
           </TouchableOpacity>
-          <Text style={s.h1}>Settings</Text>
+          <Text style={s.h1}>{t("settings.title")}</Text>
           <View style={{ width: 40 }} />
         </View>
 
         <View style={s.card}>
-          <Text style={s.label}>WebSocket URL</Text>
+          <Text style={s.label}>{t("settings.websocketUrl")}</Text>
           <TextInput
             style={s.input}
             value={url}
@@ -165,17 +167,16 @@ export default function Settings() {
           <View style={{ flexDirection: "row", gap: 10, marginTop: 12 }}>
             
             <TouchableOpacity style={s.btn} onPress={testAndSave} disabled={testing}>
-              <Text style={s.btnText}>{testing ? "Testing…" : "Connect"}</Text>
+              <Text style={s.btnText}>{testing ? t("settings.testing") : t("settings.connect")}</Text>
             </TouchableOpacity>
           </View>
 
           <Text style={s.hint}>
-            Tip: you can just press <Text style={{ fontWeight: "800" }}>Connect</Text> and it will
-            automatically find your CarVision server on the network. No IP typing needed.
+            {t("settings.tip")}
           </Text>
         </View>
 
-          <Text style={s.section}>Quick presets</Text>
+          <Text style={s.section}>{t("settings.quickPresets")}</Text>
         <View style={s.chips}>
           {uniquePresets.map((p, i) => (
             <TouchableOpacity key={`${p}-${i}`} onPress={() => usePreset(p)}>
@@ -185,7 +186,7 @@ export default function Settings() {
         </View>
 
         {/* Account Settings */}
-        <Text style={s.section}>Account</Text>
+        <Text style={s.section}>{t("settings.account")}</Text>
         <View style={s.card}>
           <TouchableOpacity 
             style={s.accountRow} 
@@ -195,8 +196,8 @@ export default function Settings() {
             <View style={s.accountLeft}>
               <Ionicons name="key-outline" size={20} color={C.primary} />
               <View style={{ marginLeft: 12 }}>
-                <Text style={s.accountTitle}>Reset Password</Text>
-                <Text style={s.accountSub}>Change your account password</Text>
+                <Text style={s.accountTitle}>{t("settings.resetPassword")}</Text>
+                <Text style={s.accountSub}>{t("settings.resetPasswordSubtitle")}</Text>
               </View>
             </View>
             <Ionicons name="chevron-forward" size={20} color={C.sub} />

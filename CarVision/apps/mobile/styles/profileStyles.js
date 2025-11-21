@@ -301,5 +301,64 @@ export const profileStyles = StyleSheet.create({
     textAlign: "center",
     marginTop: 10,
   },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.65)",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 24,
+  },
+  modalCard: {
+    width: "100%",
+    backgroundColor: "rgba(15,23,42,0.97)",
+    borderRadius: 20,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
+  },
+  modalTitle: {
+    color: C.text,
+    fontSize: 20,
+    fontWeight: "900",
+  },
+  modalSubtitle: {
+    color: C.sub,
+    fontSize: 13,
+    marginTop: 6,
+    marginBottom: 14,
+  },
+  modalInput: {
+    borderWidth: 1,
+    borderColor: C.border,
+    borderRadius: 14,
+    backgroundColor: "rgba(255,255,255,0.03)",
+    color: C.text,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 15,
+  },
+  modalActions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: 12,
+    marginTop: 16,
+  },
+  modalButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: C.primary,
+  },
+  modalButtonText: {
+    color: "#fff",
+    fontWeight: "800",
+  },
+  modalButtonGhost: {
+    backgroundColor: "rgba(255,255,255,0.08)",
+  },
+  modalButtonGhostText: {
+    color: C.text,
+    fontWeight: "700",
+  },
 });
 

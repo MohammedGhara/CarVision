@@ -20,6 +20,7 @@ import * as Sharing from "expo-sharing";
 import * as Print from "expo-print";
 
 import { getWsUrl, forceReDetect, checkNetworkChange } from "../lib/wsConfig";
+import { useLanguage } from "../context/LanguageContext";
 import { colors } from "../styles/theme";
 import { cardataStyles as styles } from "../styles/cardataStyles";
 
@@ -31,6 +32,7 @@ const C = colors.cardata;
 
 export default function CarData() {
   const router = useRouter();
+  const { t } = useLanguage();
   const wsRef = useRef(null);
   const samplesRef = useRef([]); // logged samples (current session only)
 
@@ -674,8 +676,8 @@ export default function CarData() {
             </TouchableOpacity>
 
             <View style={{ alignItems: "center" }}>
-              <Text style={styles.topTitle}>Live Data</Text>
-              <Text style={styles.topSubtitle}>Real-time engine & sensor info</Text>
+              <Text style={styles.topTitle}>{t("cardata.title")}</Text>
+              <Text style={styles.topSubtitle}>{t("cardata.subtitle")}</Text>
             </View>
 
             <View style={styles.linkPill}>
@@ -686,7 +688,7 @@ export default function CarData() {
                 ]}
               />
               <Text style={styles.linkText}>
-                {link.status === "up" ? "Online" : "Offline"}
+                {link.status === "up" ? t("cardata.online") : t("cardata.offline")}
               </Text>
             </View>
           </View>
@@ -739,18 +741,18 @@ export default function CarData() {
                 color={C.text}
               />
               <Text style={styles.actionText}>
-                {isLogging ? "Stop Log" : "Start Log"}
+                {isLogging ? t("cardata.stopLog") : t("cardata.startLog")}
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.actionBtn} onPress={exportPdf}>
               <Ionicons name="download-outline" size={18} color={C.text} />
-              <Text style={styles.actionText}>Export PDF</Text>
+              <Text style={styles.actionText}>{t("cardata.exportPDF")}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.actionBtn} onPress={onReconnect}>
               <Ionicons name="refresh-outline" size={18} color={C.text} />
-              <Text style={styles.actionText}>Reconnect</Text>
+              <Text style={styles.actionText}>{t("cardata.reconnect")}</Text>
             </TouchableOpacity>
           </View>
 
@@ -767,7 +769,7 @@ export default function CarData() {
             showsVerticalScrollIndicator={false}
           >
             {/* Key Vitals */}
-            <Text style={styles.groupLabel}>Key vitals</Text>
+            <Text style={styles.groupLabel}>{t("cardata.keyVitals")}</Text>
             <View style={styles.vitalsRow}>
               {primaryMetricDefs.map((m) => (
                 <View key={m.label} style={styles.vitalCard}>
@@ -785,7 +787,7 @@ export default function CarData() {
             </View>
 
             {/* Engine & fuel */}
-            <Text style={styles.groupLabel}>Engine & fuel</Text>
+            <Text style={styles.groupLabel}>{t("cardata.engineFuel")}</Text>
             <View style={styles.tiles}>
               {engineMetricDefs.map((m) => (
                 <MetricTile key={m.label} {...m} />
@@ -793,7 +795,7 @@ export default function CarData() {
             </View>
 
             {/* Sensors */}
-            <Text style={styles.groupLabel}>Sensors</Text>
+            <Text style={styles.groupLabel}>{t("cardata.sensors")}</Text>
             <View style={styles.tilesSmall}>
               {secondaryMetricDefs.map((m) => (
                 <MetricTile key={m.label} {...m} />
@@ -801,10 +803,10 @@ export default function CarData() {
             </View>
 
             {/* DTCs */}
-            <Text style={styles.groupLabel}>Trouble codes</Text>
+            <Text style={styles.groupLabel}>{t("cardata.troubleCodes")}</Text>
             <View style={styles.card}>
               <View style={styles.rowBetween}>
-                <Text style={styles.h2}>Current</Text>
+                <Text style={styles.h2}>{t("cardata.current")}</Text>
                 <TouchableOpacity
                   style={[
                     styles.clearBtn,
@@ -814,17 +816,17 @@ export default function CarData() {
                   disabled={queued || link.status !== "up"}
                 >
                   <Text style={styles.clearBtnText}>
-                    {queued ? "Clearing…" : "Clear DTCs"}
+                    {queued ? t("common.loading") : t("cardata.clearDTCs")}
                   </Text>
                 </TouchableOpacity>
               </View>
-              <Chips values={telemetry?.dtcs} fallback="None" />
+              <Chips values={telemetry?.dtcs} fallback={t("cardata.none")} />
 
-              <Text style={[styles.h2, { marginTop: 12 }]}>Pending</Text>
-              <Chips values={telemetry?.pending} fallback="None" />
+              <Text style={[styles.h2, { marginTop: 12 }]}>{t("cardata.pending")}</Text>
+              <Chips values={telemetry?.pending} fallback={t("cardata.none")} />
 
-              <Text style={[styles.h2, { marginTop: 12 }]}>Permanent</Text>
-              <Chips values={telemetry?.permanent} fallback="None" />
+              <Text style={[styles.h2, { marginTop: 12 }]}>{t("cardata.permanent")}</Text>
+              <Chips values={telemetry?.permanent} fallback={t("cardata.none")} />
             </View>
           </ScrollView>
 
@@ -837,7 +839,7 @@ export default function CarData() {
               ]}
             />
             <Text style={styles.footerText}>
-              {link.status === "up" ? "Live" : "Offline"} · {link.message}
+              {link.status === "up" ? t("cardata.live") : t("cardata.offline")} · {link.message}
             </Text>
           </View>
         </LinearGradient>

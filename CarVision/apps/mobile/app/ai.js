@@ -13,6 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { api } from "../lib/api";
+import { useLanguage } from "../context/LanguageContext";
 import { aiStyles as styles } from "../styles/aiStyles";
 
 const C = {
@@ -32,12 +33,12 @@ const CHAT_PATH = "/api/chat"; // e.g. "/api/ai/chat" or "/ai/chat"
 
 export default function AIChat() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [items, setItems] = useState([
     {
       id: "sys",
       role: "assistant",
-      content:
-        "Hi! I’m CarVision AI. Ask me about car issues, OBD-II codes, or your live telemetry.",
+      content: t("ai.subtitle"),
       ts: Date.now(),
     },
   ]);
@@ -46,8 +47,7 @@ export default function AIChat() {
   const [online, setOnline] = useState(true); // hook to WS/health if you have it
   const listRef = useRef(null);
 
-  const placeholder =
-    "Describe a symptom (e.g. “rough idle”), paste a DTC (P0420), or ask for next diagnostic step…";
+  const placeholder = t("ai.placeholder");
 
   const canSend = useMemo(
     () => input.trim().length > 0 && !busy,
@@ -75,7 +75,7 @@ export default function AIChat() {
       const reply =
         data?.reply?.trim?.() ||
         data?.answer?.trim?.() ||
-        "I couldn’t generate a reply. Check the server logs.";
+        t("ai.noReply");
       const aiMsg = {
         id: String(Date.now() + 1),
         role: "assistant",
@@ -89,7 +89,7 @@ export default function AIChat() {
         role: "assistant",
         content:
           "⚠️ " +
-          (e?.message?.toString?.() || "Failed to reach CarVision AI server"),
+          (e?.message?.toString?.() || t("ai.serverError")),
         ts: Date.now(),
         error: true,
       };
@@ -151,7 +151,7 @@ export default function AIChat() {
         </TouchableOpacity>
 
         <View style={styles.titleWrap}>
-          <Text style={styles.title}>CarVision AI</Text>
+          <Text style={styles.title}>{t("ai.title")}</Text>
           <View style={styles.statusRow}>
             <View
               style={[
@@ -160,7 +160,7 @@ export default function AIChat() {
               ]}
             />
             <Text style={styles.statusText}>
-              {online ? "Connected" : "Offline"}
+              {online ? t("diagnostics.online") : t("diagnostics.offline")}
             </Text>
           </View>
         </View>
@@ -197,7 +197,7 @@ export default function AIChat() {
             {busy && (
               <View style={styles.typing}>
                 <ActivityIndicator size="small" color={C.primary} />
-                <Text style={styles.typingText}>Thinking…</Text>
+                <Text style={styles.typingText}>{t("ai.typing")}</Text>
               </View>
             )}
           </View>

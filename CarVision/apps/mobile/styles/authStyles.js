@@ -11,6 +11,22 @@ export const authStyles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 8,
   },
+  langBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.12)",
+    backgroundColor: "rgba(0,0,0,0.25)",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  langBtnText: {
+    color: C.text,
+    fontWeight: "700",
+    fontSize: 13,
+  },
   settingsBtn: {
     width: 40,
     height: 40,
