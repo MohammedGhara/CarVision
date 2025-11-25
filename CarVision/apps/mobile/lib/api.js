@@ -41,4 +41,8 @@ export const api = {
   post: (p, body)  => request(p, { method: "POST", body }),
   put:  (p, body)  => request(p, { method: "PUT", body }),
   del:  (p)        => request(p, { method: "DELETE" }),
+  // Upload file with FormData
+  postFile: async (path, formData) => {
+    return request(path, { method: "POST", body: formData, isFormData: true });
+  },
 };

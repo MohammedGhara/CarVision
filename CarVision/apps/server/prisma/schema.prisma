@@ -56,6 +56,9 @@ model Vehicle {
 
 enum MessageType {
   TEXT
+  IMAGE
+  VIDEO
+  DOCUMENT
 }
 
 model Message {
@@ -67,6 +70,10 @@ model Message {
   content     String
   type        MessageType @default(TEXT)
   read        Boolean     @default(false)
+  fileName    String?
+  fileUrl     String?
+  mimeType    String?     // MIME type (e.g., image/jpeg, video/mp4, application/pdf)
+  fileSize    Int?        // File size in bytes
   createdAt   DateTime    @default(now())
 }
 

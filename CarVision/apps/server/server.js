@@ -25,11 +25,18 @@ const POLL_INTERVAL_MS = parseInt(process.env.POLL_INTERVAL_MS || "1000", 10);
 const DEBUG            = process.env.DEBUG === "1";
 const prisma = new PrismaClient();
 
+/* ───────────── File Upload Directory ───────────── */
+const UPLOADS_DIR = path.join(__dirname, "uploads");
+if (!fs.existsSync(UPLOADS_DIR)) {
+  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+}
+
 /* ───────────── Express app (static + APIs) ───────────── */
 const app = express();
 app.use(cors());
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 const PUBLIC_DIR = path.join(__dirname, "public");
 if (fs.existsSync(PUBLIC_DIR)) {
@@ -44,6 +51,9 @@ app.use("/api/vehicles", vehiclesRouter);
 
 const messagesRouter = require("./src/routes/messages");
 app.use("/api/messages", messagesRouter);
+
+// Serve uploaded files
+app.use("/uploads", express.static(UPLOADS_DIR));
 
 // Password reset now uses 6-digit code sent via email (no redirect route needed)
 

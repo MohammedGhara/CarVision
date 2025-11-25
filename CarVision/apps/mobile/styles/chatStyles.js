@@ -1,6 +1,8 @@
 // apps/mobile/styles/chatStyles.js
-import { StyleSheet } from "react-native";
+import { StyleSheet, Dimensions } from "react-native";
 import { C } from "./theme";
+
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 export const chatStyles = StyleSheet.create({
   bg: {
@@ -43,6 +45,12 @@ export const chatStyles = StyleSheet.create({
     fontSize: 12,
     color: C.sub,
     marginTop: 2,
+  },
+  deleteConversationBtn: {
+    width: 40,
+    height: 40,
+    justifyContent: "center",
+    alignItems: "center",
   },
   messagesList: {
     padding: 20,
@@ -228,6 +236,167 @@ export const chatStyles = StyleSheet.create({
   },
   fileSizeMe: {
     color: "rgba(255,255,255,0.7)",
+  },
+  filePreview: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    backgroundColor: "rgba(15,23,42,0.95)",
+    borderTopWidth: 1,
+    borderTopColor: "rgba(148,163,184,0.15)",
+  },
+  filePreviewContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(124,140,255,0.1)",
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "rgba(124,140,255,0.3)",
+  },
+  filePreviewName: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: C.text,
+  },
+  filePreviewType: {
+    fontSize: 12,
+    color: C.sub,
+    marginTop: 2,
+  },
+  filePreviewClose: {
+    marginLeft: 12,
+  },
+  fileBubble: {
+    marginBottom: 8,
+    borderRadius: 12,
+    overflow: "hidden",
+  },
+  fileImage: {
+    width: 250,
+    height: 200,
+    borderRadius: 12,
+  },
+  fileDocumentName: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: C.text,
+  },
+  fileDocumentSize: {
+    fontSize: 12,
+    color: C.sub,
+    marginTop: 4,
+  },
+  fileViewerModal: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.95)",
+  },
+  fileViewerHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(255,255,255,0.1)",
+  },
+  fileViewerTitle: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: "700",
+    color: C.text,
+    marginRight: 12,
+  },
+  fileViewerClose: {
+    width: 40,
+    height: 40,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  fileViewerContent: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  fileViewerImage: {
+    width: SCREEN_WIDTH - 40,
+    height: SCREEN_WIDTH - 40,
+    borderRadius: 12,
+  },
+  fileViewerVideoContainer: {
+    width: SCREEN_WIDTH - 40,
+    maxHeight: SCREEN_WIDTH * 0.75,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#000",
+    borderRadius: 12,
+    overflow: "hidden",
+  },
+  fileViewerVideo: {
+    width: "100%",
+    height: SCREEN_WIDTH * 0.75,
+  },
+  fileViewerVideoText: {
+    color: C.text,
+    fontSize: 16,
+    marginTop: 12,
+  },
+  fileViewerDocumentContainer: {
+    width: SCREEN_WIDTH - 40,
+    padding: 40,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.05)",
+    borderRadius: 12,
+  },
+  fileViewerDocumentText: {
+    color: C.text,
+    fontSize: 18,
+    fontWeight: "600",
+    marginTop: 20,
+    textAlign: "center",
+  },
+  fileViewerDocumentSubtext: {
+    color: C.sub,
+    fontSize: 14,
+    marginTop: 8,
+    textAlign: "center",
+  },
+  fileViewerDownloadBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    backgroundColor: C.primary,
+    borderRadius: 12,
+    gap: 8,
+  },
+  fileViewerDownloadText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  swipeActionContainer: {
+    justifyContent: "center",
+    alignItems: "center",
+    width: 80,
+    marginVertical: 6,
+  },
+  swipeDeleteButton: {
+    flex: 1,
+    backgroundColor: C.red,
+    justifyContent: "center",
+    alignItems: "center",
+    width: "100%",
+    borderRadius: 12,
+    paddingHorizontal: 12,
+  },
+  swipeDeleteText: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "600",
+    marginTop: 4,
   },
 });
 
