@@ -137,6 +137,7 @@ export default function Login() {
       setTimeout(() => {
         console.log("🟢 Showing success alert...");
         const displayName = data.user.name || data.user.email.split("@")[0];
+        const redirectPath = data.user.role === "GARAGE" ? "/garage" : "/";
         showCustomAlert(
           `✅ ${t("alerts.loginSuccessTitle")}`, 
           `${t("alerts.welcomeBackPrefix")} ${displayName}${t("alerts.welcomeBackSuffix")}`,
@@ -146,7 +147,7 @@ export default function Login() {
               onPress: () => {
                 console.log("User pressed OK, redirecting...");
                 setTimeout(() => {
-                  r.replace("/");
+                  r.replace(redirectPath);
                 }, 300);
               }
             }

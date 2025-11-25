@@ -44,11 +44,22 @@ export default function HomeScreen() {
       if (cachedUser) {
         setUser(cachedUser);
         setChecking(false);
+        
+        // Redirect garage users to garage page
+        if (cachedUser.role === "GARAGE") {
+          router.replace("/garage");
+          return;
+        }
+        
         // Validate token in background (non-blocking)
         api.get("/api/auth/me").then((me) => {
           if (me?.user) {
             saveUser(me.user);
             setUser(me.user);
+            // Check role again after fetching fresh data
+            if (me.user.role === "GARAGE") {
+              router.replace("/garage");
+            }
           }
         }).catch(() => {
           // If validation fails, clear auth on next attempt
@@ -71,6 +82,12 @@ export default function HomeScreen() {
         if (me?.user) {
           await saveUser(me.user);
           setUser(me.user);
+          
+          // Redirect garage users to garage page
+          if (me.user.role === "GARAGE") {
+            router.replace("/garage");
+            return;
+          }
         }
       } catch (e) {
         // Timeout or error - clear auth and go to login
@@ -277,6 +294,18 @@ export default function HomeScreen() {
                 title={t("home.aiAssistant")}
                 description={t("home.aiAssistantDescription")}
                 onPress={() => router.push("/ai")}
+              />
+              <SecondaryRow
+                icon="chatbubble-ellipses-outline"
+                title={t("home.chatWithGarage")}
+                description={t("home.chatWithGarageDescription")}
+                onPress={() => router.push("/chat-list")}
+              />
+              <SecondaryRow
+                icon="car-outline"
+                title={t("home.myVehicles")}
+                description={t("home.myVehiclesDescription")}
+                onPress={() => router.push("/vehicles")}
               />
               <SecondaryRow
                 icon="settings-outline"

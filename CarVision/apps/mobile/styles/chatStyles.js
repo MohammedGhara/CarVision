@@ -1,0 +1,233 @@
+// apps/mobile/styles/chatStyles.js
+import { StyleSheet } from "react-native";
+import { C } from "./theme";
+
+export const chatStyles = StyleSheet.create({
+  bg: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(148,163,184,0.15)",
+    gap: 12,
+  },
+  backBtn: {
+    width: 40,
+    height: 40,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  headerInfo: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  headerTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: C.text,
+  },
+  headerSubtitle: {
+    fontSize: 12,
+    color: C.sub,
+    marginTop: 2,
+  },
+  messagesList: {
+    padding: 20,
+    paddingBottom: 20,
+  },
+  messageRow: {
+    flexDirection: "row",
+    marginBottom: 12,
+    justifyContent: "flex-start",
+  },
+  messageRowMe: {
+    justifyContent: "flex-end",
+  },
+  bubble: {
+    maxWidth: "75%",
+    padding: 12,
+    borderRadius: 16,
+    borderBottomLeftRadius: 4,
+  },
+  bubbleMe: {
+    backgroundColor: C.primary,
+    borderBottomRightRadius: 4,
+    borderBottomLeftRadius: 16,
+  },
+  bubbleOther: {
+    backgroundColor: "rgba(15,23,42,0.95)",
+    borderWidth: 1,
+    borderColor: "rgba(148,163,184,0.15)",
+  },
+  bubbleText: {
+    fontSize: 15,
+    color: C.text,
+    lineHeight: 20,
+  },
+  bubbleTextMe: {
+    color: "#fff",
+  },
+  bubbleTime: {
+    fontSize: 11,
+    color: C.sub,
+    marginTop: 4,
+  },
+  bubbleTimeMe: {
+    color: "rgba(255,255,255,0.7)",
+  },
+  inputContainer: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(148,163,184,0.15)",
+    backgroundColor: C.bg1,
+    gap: 12,
+  },
+  input: {
+    flex: 1,
+    backgroundColor: "rgba(15,23,42,0.95)",
+    borderWidth: 1,
+    borderColor: "rgba(148,163,184,0.15)",
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    color: C.text,
+    fontSize: 15,
+    maxHeight: 100,
+  },
+  sendBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: C.primary,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  sendBtnDisabled: {
+    opacity: 0.5,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 40,
+  },
+  emptyText: {
+    color: C.sub,
+    fontSize: 16,
+    marginTop: 16,
+    textAlign: "center",
+  },
+  attachBtn: {
+    width: 40,
+    height: 40,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 8,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.7)",
+    justifyContent: "flex-end",
+  },
+  modalContent: {
+    backgroundColor: C.bg1,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: "rgba(148,163,184,0.15)",
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: C.text,
+  },
+  filePickerOptions: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    paddingVertical: 20,
+  },
+  fileOption: {
+    alignItems: "center",
+    padding: 20,
+    borderRadius: 16,
+    backgroundColor: "rgba(124,140,255,0.1)",
+    minWidth: 100,
+  },
+  fileOptionText: {
+    marginTop: 8,
+    fontSize: 14,
+    fontWeight: "600",
+    color: C.text,
+  },
+  filePreview: {
+    marginBottom: 8,
+    borderRadius: 12,
+    overflow: "hidden",
+  },
+  fileImage: {
+    width: "100%",
+    height: 200,
+    borderRadius: 12,
+  },
+  fileVideoContainer: {
+    width: "100%",
+    height: 200,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: 12,
+  },
+  fileVideoText: {
+    color: "#fff",
+    marginTop: 8,
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  fileDocumentContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 12,
+    backgroundColor: "rgba(255,255,255,0.1)",
+    borderRadius: 12,
+  },
+  fileName: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: C.text,
+  },
+  fileNameMe: {
+    color: "#fff",
+  },
+  fileSize: {
+    fontSize: 12,
+    color: C.sub,
+    marginTop: 2,
+  },
+  fileSizeMe: {
+    color: "rgba(255,255,255,0.7)",
+  },
+});
+

@@ -101,17 +101,14 @@ async function buildAllCandidates() {
 
   const all = new Set();
 
-  // (a) phone subnet — HIGHEST PRIORITY (scan FULL range 1-254 on this subnet)
+  // (a) phone subnet — HIGHEST PRIORITY (scan common IPs first, then full range if needed)
   if (phoneSubnet) {
-    // Scan ALL IPs from 1-254 on phone's subnet (most likely to have server)
-    // This ensures we find the server no matter what IP it's on
-    const phoneHosts = [];
-    for (let i = 1; i <= 254; i++) {
-      phoneHosts.push(i);
-    }
-    buildFromSubnet(phoneSubnet, phoneHosts).forEach((u) => all.add(u));
-    console.log(`✅✅✅ Prioritizing ${phoneSubnet} subnet - scanning ALL 254 IPs (1-254)`);
-    console.log(`   This ensures we find your server no matter what IP it's on!`);
+    // First try common IPs (much faster)
+    const commonHosts = [1, 2, 10, 20, 50, 100, 101, 102, 200, 254];
+    buildFromSubnet(phoneSubnet, commonHosts).forEach((u) => all.add(u));
+    
+    // Only scan full range if common IPs don't work (done in detectAndSave)
+    // This reduces initial scan time significantly
   }
 
   // (b) common home subnets (only if phone subnet different)
@@ -132,7 +129,10 @@ async function buildAllCandidates() {
   }
 
   const candidates = Array.from(all);
-  console.log(`🔍 Will scan ${candidates.length} IP addresses for CarVision server...`);
+  // Only log if scanning many IPs
+  if (candidates.length > 50) {
+    console.log(`🔍 Will scan ${candidates.length} IP addresses for CarVision server...`);
+  }
   return candidates;
 }
 
@@ -159,8 +159,7 @@ async function detectAndSave() {
         const [a, b, c] = p;
         currentSubnet = `${a}.${b}.${c}.`;
         await AsyncStorage.setItem(KEY_LAST_IP, currentSubnet);
-        console.log("💾 Current subnet saved:", currentSubnet);
-        console.log("📱 Your phone's IP:", ip);
+    // Don't log IP details unless debugging
       }
     }
   } catch {
@@ -183,53 +182,81 @@ async function detectAndSave() {
     ? candidates.filter(url => !url.startsWith(`ws://${currentSubnet}`))
     : candidates;
 
-  console.log("🔍🔍🔍 Starting aggressive network scan for CarVision server...");
-  console.log(`   Total IPs to scan: ${candidates.length}`);
-  if (currentSubnet && phoneSubnetCandidates.length > 0) {
-    console.log(`   📱 Prioritizing YOUR subnet (${currentSubnet}): ${phoneSubnetCandidates.length} IPs`);
-    console.log(`   🌐 Other subnets: ${otherCandidates.length} IPs`);
+  // Only log if scanning many IPs
+  if (candidates.length > 20) {
+    console.log("🔍 Scanning network for CarVision server...");
   }
-  console.log(`   ⏱️  Timeout per IP: 1500ms (giving server time to respond)`);
 
   // Scan phone subnet FIRST (most likely to have server)
+  // Try common IPs first (fast), then full range if needed
   if (phoneSubnetCandidates.length > 0) {
-    console.log(`\n📡 Scanning YOUR subnet first: ${currentSubnet}...`);
-    const phonePromises = phoneSubnetCandidates.map((url) =>
-      tryWs(url, 1500).then((ok) => {
-        if (ok) {
-          // Extract IP from URL for logging
-          const ipMatch = url.match(/ws:\/\/(\d+\.\d+\.\d+\.\d+)/);
-          console.log(`   ✅✅✅ FOUND SERVER AT: ${ipMatch ? ipMatch[1] : url}`);
-        }
-        return { url, ok };
-      })
-    );
+    // Separate common IPs from full range
+    const commonIPs = [1, 2, 10, 20, 50, 100, 101, 102, 200, 254];
+    const commonCandidates = phoneSubnetCandidates.filter(url => {
+      const match = url.match(/ws:\/\/\d+\.\d+\.\d+\.(\d+):/);
+      return match && commonIPs.includes(parseInt(match[1]));
+    });
+    const fullRangeCandidates = phoneSubnetCandidates.filter(url => !commonCandidates.includes(url));
+    
+    // Try common IPs first (fast scan)
+    if (commonCandidates.length > 0) {
+      const commonPromises = commonCandidates.map((url) =>
+        tryWs(url, 800).then((ok) => {
+          if (ok) {
+            const ipMatch = url.match(/ws:\/\/(\d+\.\d+\.\d+\.\d+)/);
+            console.log(`✅ Server found at: ${ipMatch ? ipMatch[1] : url}`);
+          }
+          return { url, ok };
+        })
+      );
 
-    // Check phone subnet results as they come in (return immediately on first success)
-    const phoneResults = await Promise.allSettled(phonePromises);
-    const phoneWinner = phoneResults
-      .filter((r) => r.status === "fulfilled")
-      .map((r) => r.value)
-      .find((r) => r.ok);
+      const commonResults = await Promise.allSettled(commonPromises);
+      const commonWinner = commonResults
+        .filter((r) => r.status === "fulfilled")
+        .map((r) => r.value)
+        .find((r) => r.ok);
 
-    if (phoneWinner) {
-      console.log("🎉🎉🎉 SERVER FOUND ON YOUR SUBNET! WebSocket URL:", phoneWinner.url);
-      await AsyncStorage.setItem(KEY, phoneWinner.url);
-      await markValidated();
-      return phoneWinner.url;
+      if (commonWinner) {
+        await AsyncStorage.setItem(KEY, commonWinner.url);
+        await markValidated();
+        return commonWinner.url;
+      }
     }
     
-    console.log(`   ⚠️ No server found on ${currentSubnet} subnet (scanned ${phoneSubnetCandidates.length} IPs)`);
+    // If common IPs didn't work, try full range (but don't log excessively)
+    if (fullRangeCandidates.length > 0 && fullRangeCandidates.length < 50) {
+      console.log(`📡 Scanning ${currentSubnet}...`);
+      const fullPromises = fullRangeCandidates.map((url) =>
+        tryWs(url, 1000).then((ok) => {
+          if (ok) {
+            const ipMatch = url.match(/ws:\/\/(\d+\.\d+\.\d+\.\d+)/);
+            console.log(`✅ Server found at: ${ipMatch ? ipMatch[1] : url}`);
+          }
+          return { url, ok };
+        })
+      );
+
+      const fullResults = await Promise.allSettled(fullPromises);
+      const fullWinner = fullResults
+        .filter((r) => r.status === "fulfilled")
+        .map((r) => r.value)
+        .find((r) => r.ok);
+
+      if (fullWinner) {
+        await AsyncStorage.setItem(KEY, fullWinner.url);
+        await markValidated();
+        return fullWinner.url;
+      }
+    }
   }
 
-  // If not found on phone subnet, try other subnets
+  // If not found on phone subnet, try other subnets (silently)
   if (otherCandidates.length > 0) {
-    console.log(`\n🌐 Scanning other subnets...`);
     const otherPromises = otherCandidates.map((url) =>
-      tryWs(url, 1500).then((ok) => {
+      tryWs(url, 1000).then((ok) => {
         if (ok) {
           const ipMatch = url.match(/ws:\/\/(\d+\.\d+\.\d+\.\d+)/);
-          console.log(`   ✅✅✅ FOUND SERVER AT: ${ipMatch ? ipMatch[1] : url}`);
+          console.log(`✅ Server found at: ${ipMatch ? ipMatch[1] : url}`);
         }
         return { url, ok };
       })
@@ -242,22 +269,16 @@ async function detectAndSave() {
       .find((r) => r.ok);
 
     if (otherWinner) {
-      console.log("🎉 SERVER FOUND! WebSocket URL:", otherWinner.url);
       await AsyncStorage.setItem(KEY, otherWinner.url);
       await markValidated();
       return otherWinner.url;
     }
   }
 
-  // Nothing found after scanning all IPs
-  console.log("\n⚠️⚠️⚠️ NO SERVER FOUND after scanning", candidates.length, "IP addresses");
-  console.log("   Possible reasons:");
-  console.log("   1. CarVision server is not running");
-  console.log("   2. Server is on a different network/subnet");
-  console.log("   3. Firewall blocking WebSocket connections");
-  console.log("   4. Server is using a different port (expected: 5173)");
-  console.log(`\n   Using default URL (will likely fail): ${DEFAULT_WS_URL}`);
-  console.log("   Will keep trying to detect on next connection attempt...");
+  // Nothing found - only log if it's a real issue
+  if (candidates.length > 10) {
+    console.log("⚠️ Server not found. Make sure CarVision server is running.");
+  }
   
   // DON'T save default URL - keep trying to detect on next startup
   return DEFAULT_WS_URL;
@@ -330,7 +351,7 @@ export async function getWsUrl(forceReconnect = false, skipValidation = false) {
 
   // CRITICAL: ALWAYS check network change FIRST (synchronously, but fast - just compares subnets)
   // This detects WiFi changes immediately on startup
-  console.log("🔍 Checking network change on startup...");
+  // Only log if network actually changed
   
   // Check if we have a saved subnet - if not, always re-detect (first time use)
   const lastSubnet = await AsyncStorage.getItem(KEY_LAST_IP);

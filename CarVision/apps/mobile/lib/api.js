@@ -2,18 +2,24 @@
 import { getHttpBase } from "./httpBase";
 import { getToken, clearAuth } from "./authStore";
 
-async function request(path, { method = "GET", body, headers } = {}) {
+async function request(path, { method = "GET", body, headers, isFormData = false } = {}) {
   const base = await getHttpBase();
   const token = await getToken();
 
+  const requestHeaders = {
+    ...(headers || {}),
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+
+  // Don't set Content-Type for FormData, let the browser set it with boundary
+  if (!isFormData) {
+    requestHeaders["Content-Type"] = "application/json";
+  }
+
   const res = await fetch(`${base}${path}`, {
     method,
-    headers: {
-      "Content-Type": "application/json",
-      ...(headers || {}),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    body: body ? JSON.stringify(body) : undefined,
+    headers: requestHeaders,
+    body: isFormData ? body : (body ? JSON.stringify(body) : undefined),
   });
 
   let data = null;

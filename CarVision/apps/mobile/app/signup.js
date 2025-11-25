@@ -179,6 +179,7 @@ async function onSignup() {
     setBusy(false);
     setTimeout(() => {
       console.log("🟢 Showing success alert...");
+      const redirectPath = data.user.role === "GARAGE" ? "/garage" : "/";
       showCustomAlert(
         "✅ Success!", 
         `Account created successfully!\n\nWelcome to CarVision, ${data.user.name || data.user.email.split("@")[0]}!`,
@@ -187,7 +188,7 @@ async function onSignup() {
             text: "OK", 
             onPress: () => {
               console.log("User pressed OK, redirecting...");
-              setTimeout(() => r.replace("/"), 300);
+              setTimeout(() => r.replace(redirectPath), 300);
             }
           }
         ]

@@ -35,8 +35,15 @@ const PUBLIC_DIR = path.join(__dirname, "public");
 if (fs.existsSync(PUBLIC_DIR)) {
   app.use(express.static(PUBLIC_DIR)); // optional; serves ./public/*
 }
+
 const { router: authRouter } = require("./src/auth");
 app.use("/api/auth", authRouter);
+
+const vehiclesRouter = require("./src/routes/vehicles");
+app.use("/api/vehicles", vehiclesRouter);
+
+const messagesRouter = require("./src/routes/messages");
+app.use("/api/messages", messagesRouter);
 
 // Password reset now uses 6-digit code sent via email (no redirect route needed)
 

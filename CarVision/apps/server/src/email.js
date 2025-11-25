@@ -247,9 +247,131 @@ This is an automated email. Please do not reply.
 // Verify email config on module load
 verifyEmailConfig().catch(console.error);
 
+// Send vehicle completion email to client
+async function sendVehicleDoneEmail(client, vehicle, garage) {
+  try {
+    const isConfigured = await verifyEmailConfig();
+    if (!isConfigured) {
+      console.log("📧 Vehicle done email skipped (email not configured)");
+      return { ok: false, error: "Email service not configured" };
+    }
+
+    const transporter = getTransporter();
+    const mailOptions = {
+      from: `CarVision <${EMAIL_FROM}>`,
+      to: client.email,
+      subject: `✅ Your ${vehicle.make} ${vehicle.model} is Ready!`,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+            .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+            .vehicle-info { background: #ffffff; border: 2px solid #10b981; border-radius: 8px; padding: 20px; margin: 20px 0; }
+            .info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e5e7eb; }
+            .info-row:last-child { border-bottom: none; }
+            .info-label { font-weight: bold; color: #6b7280; }
+            .info-value { color: #111827; }
+            .button { display: inline-block; background: #7C8CFF; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 20px; }
+            .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>✅ Your Vehicle is Ready!</h1>
+            </div>
+            <div class="content">
+              <h2>Hello ${client.name || client.email.split("@")[0]}!</h2>
+              <p>Great news! Your vehicle has been completed and is ready for pickup.</p>
+              
+              <div class="vehicle-info">
+                <h3 style="margin-top: 0; color: #10b981;">Vehicle Details</h3>
+                <div class="info-row">
+                  <span class="info-label">Make & Model:</span>
+                  <span class="info-value">${vehicle.make} ${vehicle.model}</span>
+                </div>
+                ${vehicle.year ? `<div class="info-row">
+                  <span class="info-label">Year:</span>
+                  <span class="info-value">${vehicle.year}</span>
+                </div>` : ''}
+                ${vehicle.licensePlate ? `<div class="info-row">
+                  <span class="info-label">License Plate:</span>
+                  <span class="info-value">${vehicle.licensePlate}</span>
+                </div>` : ''}
+                ${vehicle.vin ? `<div class="info-row">
+                  <span class="info-label">VIN:</span>
+                  <span class="info-value">${vehicle.vin}</span>
+                </div>` : ''}
+                <div class="info-row">
+                  <span class="info-label">Status:</span>
+                  <span class="info-value" style="color: #10b981; font-weight: bold;">✅ DONE</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">Garage:</span>
+                  <span class="info-value">${garage.name}</span>
+                </div>
+              </div>
+
+              <p>You can now pick up your vehicle from <strong>${garage.name}</strong>.</p>
+              <p>Please contact the garage if you have any questions or need to schedule a pickup time.</p>
+              
+              <p style="margin-top: 30px;">Thank you for using CarVision! 🚗</p>
+              <p style="margin-top: 30px;"><strong>The CarVision Team</strong></p>
+            </div>
+            <div class="footer">
+              <p>This is an automated email. Please do not reply.</p>
+              <p>&copy; 2025 CarVision. All rights reserved.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `,
+      text: `
+Your Vehicle is Ready!
+
+Hello ${client.name || client.email.split("@")[0]}!
+
+Great news! Your vehicle has been completed and is ready for pickup.
+
+Vehicle Details:
+- Make & Model: ${vehicle.make} ${vehicle.model}
+${vehicle.year ? `- Year: ${vehicle.year}` : ''}
+${vehicle.licensePlate ? `- License Plate: ${vehicle.licensePlate}` : ''}
+${vehicle.vin ? `- VIN: ${vehicle.vin}` : ''}
+- Status: ✅ DONE
+- Garage: ${garage.name}
+
+You can now pick up your vehicle from ${garage.name}.
+
+Please contact the garage if you have any questions or need to schedule a pickup time.
+
+Thank you for using CarVision!
+
+The CarVision Team
+
+---
+This is an automated email. Please do not reply.
+© 2025 CarVision. All rights reserved.
+      `,
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`📧 Vehicle done email sent to ${client.email}: ${info.messageId}`);
+    return { ok: true, messageId: info.messageId };
+  } catch (error) {
+    console.error("❌ Failed to send vehicle done email:", error);
+    return { ok: false, error: error.message };
+  }
+}
+
 module.exports = {
   sendWelcomeEmail,
   sendPasswordResetEmail,
+  sendVehicleDoneEmail,
   verifyEmailConfig,
 };
 
