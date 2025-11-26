@@ -426,6 +426,7 @@ export default {
     noGaragesAvailable: "No garages available. Please try again later.",
     saveError: "Failed to save vehicle",
     deleteError: "Failed to delete vehicle",
+    clientsCannotManage: "Clients can only view vehicles. Only garage users can add, edit, or delete vehicles.",
   },
 
   // Chat Screen

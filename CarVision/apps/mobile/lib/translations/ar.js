@@ -426,6 +426,7 @@ export default {
     noGaragesAvailable: "لا توجد ورش متاحة. يرجى المحاولة مرة أخرى لاحقاً.",
     saveError: "فشل حفظ المركبة",
     deleteError: "فشل حذف المركبة",
+    clientsCannotManage: "يمكن للعملاء عرض المركبات فقط. يمكن لمستخدمي الورش فقط إضافة أو تعديل أو حذف المركبات.",
   },
 
   // Chat Screen

@@ -426,6 +426,7 @@ export default {
     noGaragesAvailable: "אין מוסכים זמינים. אנא נסה שוב מאוחר יותר.",
     saveError: "נכשל בשמירת רכב",
     deleteError: "נכשל במחיקת רכב",
+    clientsCannotManage: "לקוחות יכולים רק לצפות ברכבים. רק משתמשי מוסך יכולים להוסיף, לערוך או למחוק רכבים.",
   },
 
   // Chat Screen

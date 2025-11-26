@@ -2,7 +2,7 @@
   "expo": {
     "name": "CarVisionMobile",
     "slug": "CarVisionMobile",
-     "scheme": "carvision",
+    "scheme": "carvision",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -28,7 +28,8 @@
     },
     "plugins": [
       "expo-router",
-      "expo-barcode-scanner"
+      "expo-barcode-scanner",
+      "expo-font"
     ]
   }
 }
