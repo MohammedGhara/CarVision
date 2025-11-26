@@ -187,21 +187,70 @@ async function detectAndSave() {
     console.log("🔍 Scanning network for CarVision server...");
   }
 
-  // Scan phone subnet FIRST (most likely to have server)
-  // Try common IPs first (fast), then full range if needed
-  if (phoneSubnetCandidates.length > 0) {
-    // Separate common IPs from full range
-    const commonIPs = [1, 2, 10, 20, 50, 100, 101, 102, 200, 254];
-    const commonCandidates = phoneSubnetCandidates.filter(url => {
-      const match = url.match(/ws:\/\/\d+\.\d+\.\d+\.(\d+):/);
-      return match && commonIPs.includes(parseInt(match[1]));
+  // FAST SCAN: Try phone subnet + related subnets IN PARALLEL for speed
+  if (currentSubnet) {
+    const commonIPs = [1, 2, 10, 20, 50, 86, 100, 101, 102, 200, 254]; // Added 86 for your server
+    const [a, b] = currentSubnet.split('.').slice(0, 2);
+    const baseSubnet = `${a}.${b}.`;
+    const phoneSubnetNum = parseInt(currentSubnet.split('.')[2]);
+    
+    // Priority subnets to check (including phone subnet + common ones)
+    const prioritySubnets = [
+      phoneSubnetNum, // Phone subnet first
+      0, 1, 2, 10, 20, 39, 50, 100, 200, 254 // Common subnets
+    ].filter((s, i, arr) => arr.indexOf(s) === i && !isNaN(s)); // Remove duplicates and NaN
+    
+    // Build ALL candidates from phone + priority subnets
+    const allFastCandidates = [];
+    prioritySubnets.forEach(subnetC => {
+      const subnet = `${baseSubnet}${subnetC}.`;
+      commonIPs.forEach(host => {
+        allFastCandidates.push(`ws://${subnet}${host}:${PORT}${PATH}`);
+      });
     });
-    const fullRangeCandidates = phoneSubnetCandidates.filter(url => !commonCandidates.includes(url));
     
-    // Try common IPs first (fast scan)
-    if (commonCandidates.length > 0) {
-      const commonPromises = commonCandidates.map((url) =>
-        tryWs(url, 800).then((ok) => {
+    // Scan ALL in parallel (MUCH FASTER!)
+    console.log(`🚀 Fast scan: Trying ${allFastCandidates.length} IPs in parallel (phone + related subnets)...`);
+    const fastPromises = allFastCandidates.map((url) =>
+      tryWs(url, 500).then((ok) => {
+        if (ok) {
+          const ipMatch = url.match(/ws:\/\/(\d+\.\d+\.\d+\.\d+)/);
+          console.log(`✅✅✅ Server found at: ${ipMatch ? ipMatch[1] : url}`);
+        }
+        return { url, ok };
+      })
+    );
+
+    const fastResults = await Promise.allSettled(fastPromises);
+    const fastWinner = fastResults
+      .filter((r) => r.status === "fulfilled")
+      .map((r) => r.value)
+      .find((r) => r.ok);
+
+    if (fastWinner) {
+      await AsyncStorage.setItem(KEY, fastWinner.url);
+      await markValidated();
+      return fastWinner.url;
+    }
+    
+    console.log(`⚠️ Fast scan didn't find server. Expanding search...`);
+    
+    // If fast scan didn't work, try extended IPs on priority subnets (still parallel)
+    const extendedIPs = [3, 4, 5, 15, 25, 30, 40, 60, 80, 90, 103, 150, 250];
+    const extendedCandidates = [];
+    prioritySubnets.forEach(subnetC => {
+      const subnet = `${baseSubnet}${subnetC}.`;
+      extendedIPs.forEach(host => {
+        if (!commonIPs.includes(host)) {
+          extendedCandidates.push(`ws://${subnet}${host}:${PORT}${PATH}`);
+        }
+      });
+    });
+    
+    if (extendedCandidates.length > 0) {
+      console.log(`🔍 Trying ${extendedCandidates.length} extended IPs in parallel...`);
+      const extendedPromises = extendedCandidates.map((url) =>
+        tryWs(url, 600).then((ok) => {
           if (ok) {
             const ipMatch = url.match(/ws:\/\/(\d+\.\d+\.\d+\.\d+)/);
             console.log(`✅ Server found at: ${ipMatch ? ipMatch[1] : url}`);
@@ -210,24 +259,42 @@ async function detectAndSave() {
         })
       );
 
-      const commonResults = await Promise.allSettled(commonPromises);
-      const commonWinner = commonResults
+      const extendedResults = await Promise.allSettled(extendedPromises);
+      const extendedWinner = extendedResults
         .filter((r) => r.status === "fulfilled")
         .map((r) => r.value)
         .find((r) => r.ok);
 
-      if (commonWinner) {
-        await AsyncStorage.setItem(KEY, commonWinner.url);
+      if (extendedWinner) {
+        await AsyncStorage.setItem(KEY, extendedWinner.url);
         await markValidated();
-        return commonWinner.url;
+        return extendedWinner.url;
       }
     }
     
-    // If common IPs didn't work, try full range (but don't log excessively)
-    if (fullRangeCandidates.length > 0 && fullRangeCandidates.length < 50) {
-      console.log(`📡 Scanning ${currentSubnet}...`);
-      const fullPromises = fullRangeCandidates.map((url) =>
-        tryWs(url, 1000).then((ok) => {
+    // Last resort: scan all other subnets with common IPs (batched for speed)
+    console.log(`📡 Scanning remaining subnets (common IPs only)...`);
+    const remainingSubnets = [];
+    for (let subnetC = 0; subnetC <= 255; subnetC++) {
+      if (!prioritySubnets.includes(subnetC)) {
+        remainingSubnets.push(subnetC);
+      }
+    }
+    
+    // Scan in large batches (50 subnets at a time, all IPs in parallel)
+    const BATCH_SIZE = 50;
+    for (let i = 0; i < remainingSubnets.length; i += BATCH_SIZE) {
+      const batch = remainingSubnets.slice(i, i + BATCH_SIZE);
+      const batchCandidates = [];
+      batch.forEach(subnetC => {
+        const subnet = `${baseSubnet}${subnetC}.`;
+        commonIPs.forEach(host => {
+          batchCandidates.push(`ws://${subnet}${host}:${PORT}${PATH}`);
+        });
+      });
+      
+      const batchPromises = batchCandidates.map((url) =>
+        tryWs(url, 500).then((ok) => {
           if (ok) {
             const ipMatch = url.match(/ws:\/\/(\d+\.\d+\.\d+\.\d+)/);
             console.log(`✅ Server found at: ${ipMatch ? ipMatch[1] : url}`);
@@ -236,21 +303,27 @@ async function detectAndSave() {
         })
       );
 
-      const fullResults = await Promise.allSettled(fullPromises);
-      const fullWinner = fullResults
+      const batchResults = await Promise.allSettled(batchPromises);
+      const batchWinner = batchResults
         .filter((r) => r.status === "fulfilled")
         .map((r) => r.value)
         .find((r) => r.ok);
 
-      if (fullWinner) {
-        await AsyncStorage.setItem(KEY, fullWinner.url);
+      if (batchWinner) {
+        await AsyncStorage.setItem(KEY, batchWinner.url);
         await markValidated();
-        return fullWinner.url;
+        return batchWinner.url;
+      }
+      
+      if (i > 0 && i % (BATCH_SIZE * 2) === 0) {
+        console.log(`📡 Scanned ${i}/${remainingSubnets.length} remaining subnets...`);
       }
     }
+    
+    console.log(`⚠️ Scanned all subnets - server not found`);
   }
 
-  // If not found on phone subnet, try other subnets (silently)
+  // If not found on phone subnet or related subnets, try other hardcoded subnets (silently)
   if (otherCandidates.length > 0) {
     const otherPromises = otherCandidates.map((url) =>
       tryWs(url, 1000).then((ok) => {
