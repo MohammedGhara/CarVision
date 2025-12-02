@@ -14,7 +14,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 
-import { getWsUrl, forceReDetect, checkNetworkChange } from "../lib/wsConfig";
+import { getWsUrl, checkNetworkChange } from "../lib/wsConfig";
 import { describeDtc } from "../lib/dtcDescriptions";
 import { useLanguage } from "../context/LanguageContext";
 import { diagnosticsStyles as styles } from "../styles/diagnosticsStyles";
@@ -47,68 +47,40 @@ export default function Diagnostics() {
     adapter: null,
   });
 
-  // Load WS URL
+  // Load WS URL and detect network changes
   useEffect(() => {
     (async () => {
-      // Check network change on startup - this will auto-detect if WiFi changed
-      const url = await getWsUrl(false, true);
-      const oldUrl = wsUrl;
+      const url = await getWsUrl();
       setWsUrl(url);
-      if (url !== oldUrl) {
-        console.log("📡 WebSocket URL updated (WiFi changed):", url);
-      } else {
-        console.log("📡 WebSocket URL loaded:", url);
-      }
+      console.log("📡 WebSocket URL loaded:", url);
     })();
-  }, []); // Empty deps - only run once on mount
-
-  // Monitor network changes when app comes to foreground and periodically
-  useEffect(() => {
-    if (!wsUrl) return; // Don't monitor if no URL set yet
     
-    let intervalId;
-    
-    // Check network change periodically (every 15 seconds - less frequent to save battery)
-    intervalId = setInterval(async () => {
+    // Check for network changes periodically and when app becomes active
+    const checkNetwork = async () => {
       try {
         const changed = await checkNetworkChange();
         if (changed) {
-          console.log("Network change detected during runtime, re-detecting...");
-          const newUrl = await forceReDetect();
-          if (newUrl && newUrl !== wsUrl) {
-            setWsUrl(newUrl);
-          }
+          console.log("🔄 Network changed, re-detecting server...");
+          const newUrl = await getWsUrl();
+          setWsUrl(newUrl);
         }
       } catch (e) {
-        // Silent fail
+        // Ignore errors
       }
-    }, 15000); // Check every 15 seconds
-
-    // Also check when app comes to foreground (with delay to not block UI)
-    const subscription = AppState.addEventListener("change", async (nextAppState) => {
+    };
+    
+    const interval = setInterval(checkNetwork, 30000);
+    const subscription = AppState.addEventListener("change", (nextAppState) => {
       if (nextAppState === "active") {
-        // Delay check slightly so app can render first
-        setTimeout(async () => {
-          try {
-            const changed = await checkNetworkChange();
-            if (changed) {
-              const newUrl = await forceReDetect();
-              if (newUrl && newUrl !== wsUrl) {
-                setWsUrl(newUrl);
-              }
-            }
-          } catch (e) {
-            // Silent fail
-          }
-        }, 500); // 500ms delay so UI can render first
+        setTimeout(checkNetwork, 1000);
       }
     });
-
+    
     return () => {
-      if (intervalId) clearInterval(intervalId);
+      clearInterval(interval);
       subscription?.remove();
     };
-  }, [wsUrl]);
+  }, []);
 
   // Connect WebSocket
   useEffect(() => {
@@ -120,23 +92,6 @@ export default function Diagnostics() {
     const MAX_FAILURES_BEFORE_REDETECT = 3;
 
     async function connect() {
-      // Check if we need to re-detect after multiple failures
-      if (failureCount >= MAX_FAILURES_BEFORE_REDETECT) {
-        failureCount = 0; // Reset counter
-        setLink({ status: "down", message: "Network changed, re-detecting server..." });
-        
-        try {
-          // Force re-detection
-          const newUrl = await forceReDetect();
-          if (newUrl && newUrl !== wsUrl) {
-            // URL changed, update state to trigger reconnect
-            setWsUrl(newUrl);
-            return; // Exit, will reconnect with new URL
-          }
-        } catch (e) {
-          console.log("Re-detection failed:", e);
-        }
-      }
 
       ws = new WebSocket(wsUrl);
       wsRef.current = ws;
