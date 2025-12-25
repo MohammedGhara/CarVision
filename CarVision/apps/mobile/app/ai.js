@@ -9,9 +9,9 @@ import {
   Platform,
   ActivityIndicator
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import AppBackground from "../components/layout/AppBackground";
 import { api } from "../lib/api";
 import { useLanguage } from "../context/LanguageContext";
 import { aiStyles as styles } from "../styles/aiStyles";
@@ -139,50 +139,53 @@ export default function AIChat() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={styles.back}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <Ionicons name="chevron-back" size={22} color={C.text} />
-        </TouchableOpacity>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={{ flex: 1 }}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
+    >
+      <AppBackground scrollable={false} safeAreaEdges={["top"]}>
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={styles.back}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Ionicons name="chevron-back" size={22} color={C.text} />
+          </TouchableOpacity>
 
-        <View style={styles.titleWrap}>
-          <Text style={styles.title}>{t("ai.title")}</Text>
-          <View style={styles.statusRow}>
-            <View
-              style={[
-                styles.dot,
-                { backgroundColor: online ? C.success : C.danger },
-              ]}
-            />
-            <Text style={styles.statusText}>
-              {online ? t("diagnostics.online") : t("diagnostics.offline")}
-            </Text>
+          <View style={styles.titleWrap}>
+            <Text style={styles.title}>{t("ai.title")}</Text>
+            <View style={styles.statusRow}>
+              <View
+                style={[
+                  styles.dot,
+                  { backgroundColor: online ? C.success : C.danger },
+                ]}
+              />
+              <Text style={styles.statusText}>
+                {online ? t("diagnostics.online") : t("diagnostics.offline")}
+              </Text>
+            </View>
           </View>
+
+          <View style={{ width: 40, height: 40 }} />
         </View>
 
-        <View style={{ width: 40, height: 40 }} />
-      </View>
+        {/* Messages (inverted list for "bottom-up" chat) */}
+        <FlatList
+          ref={listRef}
+          inverted
+          data={items}
+          keyExtractor={(it) => it.id}
+          renderItem={({ item }) => <Item item={item} />}
+          contentContainerStyle={{ paddingHorizontal: 12, paddingBottom: 8, paddingTop: 12 }}
+          keyboardShouldPersistTaps="handled"
+          style={{ flex: 1 }}
+        />
 
-      {/* Messages (inverted list for “bottom-up” chat) */}
-      <FlatList
-        ref={listRef}
-        inverted
-        data={items}
-        keyExtractor={(it) => it.id}
-        renderItem={({ item }) => <Item item={item} />}
-        contentContainerStyle={{ paddingHorizontal: 12, paddingBottom: 8, paddingTop: 12 }}
-      />
-
-      {/* Composer */}
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 12 : 0}
-      >
+        {/* Composer */}
         <View style={styles.composerWrap}>
           <View style={styles.inputOuter}>
             <TextInput
@@ -210,8 +213,8 @@ export default function AIChat() {
             <Ionicons name="send" size={18} color="#fff" />
           </TouchableOpacity>
         </View>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+      </AppBackground>
+    </KeyboardAvoidingView>
   );
 }
 

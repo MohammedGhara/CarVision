@@ -6,13 +6,11 @@ import {
   TouchableOpacity,
   FlatList,
   ActivityIndicator,
-  ImageBackground,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { LinearGradient } from "expo-linear-gradient";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import AppBackground from "../components/layout/AppBackground";
 
 import { api } from "../lib/api";
 import { getUser } from "../lib/authStore";
@@ -81,26 +79,19 @@ export default function ChatListScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: C.bg1, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" color={C.primary} />
-        <Text style={{ color: C.sub, marginTop: 12 }}>{t("common.loading")}</Text>
-      </SafeAreaView>
+      <AppBackground scrollable={false}>
+        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+          <ActivityIndicator size="large" color={C.primary} />
+          <Text style={{ color: C.sub, marginTop: 12 }}>{t("common.loading")}</Text>
+        </View>
+      </AppBackground>
     );
   }
 
   const displayList = showAllUsers ? users : conversations;
 
   return (
-    <LinearGradient colors={[C.bg1, C.bg2]} style={styles.bg}>
-      <ImageBackground
-        source={{
-          uri: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=1600&auto=format&fit=crop",
-        }}
-        imageStyle={{ opacity: 0.12 }}
-        style={{ position: "absolute", top: 0, left: 0, bottom: 0, right: 0 }}
-      />
-
-      <SafeAreaView style={{ flex: 1 }}>
+    <AppBackground scrollable={false}>
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity
@@ -196,8 +187,7 @@ export default function ChatListScreen() {
             onRefresh={loadData}
           />
         )}
-      </SafeAreaView>
-    </LinearGradient>
+    </AppBackground>
   );
 }
 

@@ -1,18 +1,17 @@
 // apps/mobile/app/garage.js
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   View,
   Text,
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
-  ImageBackground,
+  AppState,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { LinearGradient } from "expo-linear-gradient";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import AppBackground from "../components/layout/AppBackground";
 
 import { api } from "../lib/api";
 import { getUser, clearAuth, getToken } from "../lib/authStore";
@@ -28,10 +27,84 @@ export default function GarageScreen() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showLanguagePicker, setShowLanguagePicker] = useState(false);
+  const [stats, setStats] = useState({
+    totalVehicles: 0,
+    activeRepairs: 0,
+    completed: 0,
+    clients: 0,
+  });
 
   useEffect(() => {
     loadUser();
   }, []);
+
+  useEffect(() => {
+    if (user) {
+      loadStats();
+    }
+  }, [user]);
+
+  // Reload stats periodically and when app comes into foreground
+  useEffect(() => {
+    if (!user) return;
+
+    // Reload stats every 5 seconds to catch any changes
+    const interval = setInterval(() => {
+      loadStats();
+    }, 5000);
+
+    // Also reload when app comes back to foreground
+    const subscription = AppState.addEventListener("change", (nextAppState) => {
+      if (nextAppState === "active") {
+        loadStats();
+      }
+    });
+
+    return () => {
+      clearInterval(interval);
+      subscription?.remove();
+    };
+  }, [user]);
+
+  async function loadStats() {
+    try {
+      // Check if we have a token before making API call
+      const token = await getToken();
+      if (!token) {
+        return; // No token, skip loading stats
+      }
+
+      // Load vehicles to calculate stats
+      const vehiclesData = await api.get("/api/vehicles");
+      if (vehiclesData?.vehicles) {
+        const vehicles = vehiclesData.vehicles;
+        
+        // Calculate stats
+        const totalVehicles = vehicles.length;
+        const activeRepairs = vehicles.filter(v => v.status === "IN_FIXING").length;
+        const completed = vehicles.filter(v => v.status === "DONE").length;
+        
+        // Get unique clients
+        const uniqueClients = new Set();
+        vehicles.forEach(v => {
+          if (v.ownerId) uniqueClients.add(v.ownerId);
+        });
+        
+        setStats({
+          totalVehicles,
+          activeRepairs,
+          completed,
+          clients: uniqueClients.size,
+        });
+      }
+    } catch (e) {
+      // Only log errors that aren't related to missing token/auth
+      if (!e.message?.includes("token") && !e.message?.includes("Missing") && !e.message?.includes("401") && !e.message?.includes("Unauthorized")) {
+        console.error("Failed to load stats:", e);
+      }
+      // Don't show error to user, just keep existing stats
+    }
+  }
 
   async function loadUser() {
     try {
@@ -82,10 +155,12 @@ export default function GarageScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: C.bg1, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" color={C.primary} />
-        <Text style={{ color: C.sub, marginTop: 12 }}>{t("common.loading")}</Text>
-      </SafeAreaView>
+      <AppBackground scrollable={false}>
+        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+          <ActivityIndicator size="large" color={C.primary} />
+          <Text style={{ color: C.sub, marginTop: 12 }}>{t("common.loading")}</Text>
+        </View>
+      </AppBackground>
     );
   }
 
@@ -94,16 +169,7 @@ export default function GarageScreen() {
   }
 
   return (
-    <LinearGradient colors={[C.bg1, C.bg2]} style={styles.bg}>
-      <ImageBackground
-        source={{
-          uri: "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?q=80&w=1600&auto=format&fit=crop",
-        }}
-        imageStyle={{ opacity: 0.12 }}
-        style={{ position: "absolute", top: 0, left: 0, bottom: 0, right: 0 }}
-      />
-
-      <SafeAreaView style={{ flex: 1 }}>
+    <AppBackground scrollable={false}>
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.appIdentity}>
@@ -162,25 +228,25 @@ export default function GarageScreen() {
             <StatCard
               icon="car-multiple"
               label={t("garage.totalVehicles")}
-              value="—"
+              value={stats.totalVehicles.toString()}
               color={C.blue}
             />
             <StatCard
               icon="wrench"
               label={t("garage.activeRepairs")}
-              value="—"
+              value={stats.activeRepairs.toString()}
               color={C.amber}
             />
             <StatCard
               icon="check-circle"
               label={t("garage.completed")}
-              value="—"
+              value={stats.completed.toString()}
               color={C.green}
             />
             <StatCard
               icon="account-group"
               label={t("garage.clients")}
-              value="—"
+              value={stats.clients.toString()}
               color={C.primary}
             />
           </View>
@@ -193,7 +259,11 @@ export default function GarageScreen() {
                 icon="car-wrench"
                 title={t("garage.manageVehicles")}
                 subtitle={t("garage.manageVehiclesDesc")}
-                onPress={() => router.push("/vehicles")}
+                onPress={() => {
+                  router.push("/vehicles");
+                  // Reload stats when navigating back (will trigger on next focus)
+                  setTimeout(() => loadStats(), 100);
+                }}
                 accent={C.primary}
               />
               <ActionCard
@@ -225,7 +295,7 @@ export default function GarageScreen() {
             <Text style={styles.sectionTitle}>{t("garage.tools")}</Text>
             <View style={styles.toolsList}>
               <ToolRow
-                icon="diagnostics"
+                icon="car-wrench"
                 title={t("garage.diagnostics")}
                 description={t("garage.diagnosticsDesc")}
                 onPress={() => router.push("/diagnostics")}
@@ -245,9 +315,8 @@ export default function GarageScreen() {
             </View>
           </View>
 
-          <Text style={styles.footer}>{t("home.footer")}</Text>
-        </ScrollView>
-      </SafeAreaView>
+        <Text style={styles.footer}>{t("home.footer")}</Text>
+      </ScrollView>
 
       <LanguagePickerModal
         visible={showLanguagePicker}
@@ -257,7 +326,7 @@ export default function GarageScreen() {
           setShowLanguagePicker(false);
         }}
       />
-    </LinearGradient>
+    </AppBackground>
   );
 }
 

@@ -9,7 +9,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-  ImageBackground,
   Image,
   Modal,
   ScrollView,
@@ -17,12 +16,11 @@ import {
   Dimensions,
   LogBox,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { LinearGradient } from "expo-linear-gradient";
 import { Swipeable, GestureHandlerRootView } from "react-native-gesture-handler";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import AppBackground from "../components/layout/AppBackground";
 import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from "expo-file-system/legacy";
@@ -400,112 +398,108 @@ export default function ChatScreen() {
 
   if (loading && !otherUser) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: C.bg1, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" color={C.primary} />
-        <Text style={{ color: C.sub, marginTop: 12 }}>{t("common.loading")}</Text>
-      </SafeAreaView>
+      <AppBackground scrollable={false}>
+        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+          <ActivityIndicator size="large" color={C.primary} />
+          <Text style={{ color: C.sub, marginTop: 12 }}>{t("common.loading")}</Text>
+        </View>
+      </AppBackground>
     );
   }
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <LinearGradient colors={[C.bg1, C.bg2]} style={styles.bg}>
-        <ImageBackground
-          source={{
-            uri: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=1600&auto=format&fit=crop",
-          }}
-          imageStyle={{ opacity: 0.12 }}
-          style={{ position: "absolute", top: 0, left: 0, bottom: 0, right: 0 }}
-        />
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
+      >
+        <AppBackground scrollable={false} safeAreaEdges={["top"]}>
+          {/* Header */}
+          <View style={styles.header}>
+            <TouchableOpacity
+              onPress={() => router.back()}
+              style={styles.backBtn}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="chevron-back" size={22} color={C.text} />
+            </TouchableOpacity>
 
-        <SafeAreaView style={{ flex: 1 }}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity
-            onPress={() => router.back()}
-            style={styles.backBtn}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="chevron-back" size={22} color={C.text} />
-          </TouchableOpacity>
-
-          <View style={styles.headerInfo}>
-            <View style={[styles.avatar, { backgroundColor: otherUser?.role === "GARAGE" ? "rgba(250,204,21,0.15)" : "rgba(124,140,255,0.15)" }]}>
-              <MaterialCommunityIcons
-                name={otherUser?.role === "GARAGE" ? "garage" : "account"}
-                size={20}
-                color={otherUser?.role === "GARAGE" ? C.amber : C.primary}
-              />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.headerTitle}>{otherUserName || otherUser?.name || "User"}</Text>
-              <Text style={styles.headerSubtitle}>
-                {otherUser?.role === "GARAGE" ? t("chat.garage") : t("chat.client")}
-              </Text>
-            </View>
-          </View>
-
-          <TouchableOpacity
-            onPress={deleteConversation}
-            style={styles.deleteConversationBtn}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="trash-outline" size={22} color={C.red} />
-          </TouchableOpacity>
-        </View>
-
-        {/* Messages */}
-        <FlatList
-          ref={listRef}
-          data={messages}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.messagesList}
-          renderItem={({ item }) => {
-            const isMe = item.senderId === user?.id;
-            return <MessageBubble message={item} isMe={isMe} t={t} baseUrl={baseUrl} onViewFile={viewFile} onDelete={deleteMessage} />;
-          }}
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <MaterialCommunityIcons name="chat-outline" size={48} color={C.sub} />
-              <Text style={styles.emptyText}>{t("chat.noMessages")}</Text>
-            </View>
-          }
-        />
-
-        {/* Selected File Preview */}
-        {selectedFile && (
-          <View style={styles.filePreview}>
-            <View style={styles.filePreviewContent}>
-              <Ionicons 
-                name={selectedFile.type.startsWith("image/") ? "image-outline" : 
-                      selectedFile.type.startsWith("video/") ? "videocam-outline" : 
-                      "document-outline"} 
-                size={24} 
-                color={C.primary} 
-              />
-              <View style={{ flex: 1, marginLeft: 12 }}>
-                <Text style={styles.filePreviewName} numberOfLines={1}>
-                  {selectedFile.name}
-                </Text>
-                <Text style={styles.filePreviewType}>
-                  {selectedFile.type}
+            <View style={styles.headerInfo}>
+              <View style={[styles.avatar, { backgroundColor: otherUser?.role === "GARAGE" ? "rgba(250,204,21,0.15)" : "rgba(124,140,255,0.15)" }]}>
+                <MaterialCommunityIcons
+                  name={otherUser?.role === "GARAGE" ? "garage" : "account"}
+                  size={20}
+                  color={otherUser?.role === "GARAGE" ? C.amber : C.primary}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.headerTitle}>{otherUserName || otherUser?.name || "User"}</Text>
+                <Text style={styles.headerSubtitle}>
+                  {otherUser?.role === "GARAGE" ? t("chat.garage") : t("chat.client")}
                 </Text>
               </View>
-              <TouchableOpacity
-                onPress={() => setSelectedFile(null)}
-                style={styles.filePreviewClose}
-              >
-                <Ionicons name="close-circle" size={24} color={C.red} />
-              </TouchableOpacity>
             </View>
-          </View>
-        )}
 
-        {/* Input */}
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
-          keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
-        >
+            <TouchableOpacity
+              onPress={deleteConversation}
+              style={styles.deleteConversationBtn}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="trash-outline" size={22} color={C.red} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Messages */}
+          <FlatList
+            ref={listRef}
+            data={messages}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.messagesList}
+            renderItem={({ item }) => {
+              const isMe = item.senderId === user?.id;
+              return <MessageBubble message={item} isMe={isMe} t={t} baseUrl={baseUrl} onViewFile={viewFile} onDelete={deleteMessage} />;
+            }}
+            ListEmptyComponent={
+              <View style={styles.emptyContainer}>
+                <MaterialCommunityIcons name="chat-outline" size={48} color={C.sub} />
+                <Text style={styles.emptyText}>{t("chat.noMessages")}</Text>
+              </View>
+            }
+            keyboardShouldPersistTaps="handled"
+            style={{ flex: 1 }}
+          />
+
+          {/* Selected File Preview */}
+          {selectedFile && (
+            <View style={styles.filePreview}>
+              <View style={styles.filePreviewContent}>
+                <Ionicons 
+                  name={selectedFile.type.startsWith("image/") ? "image-outline" : 
+                        selectedFile.type.startsWith("video/") ? "videocam-outline" : 
+                        "document-outline"} 
+                  size={24} 
+                  color={C.primary} 
+                />
+                <View style={{ flex: 1, marginLeft: 12 }}>
+                  <Text style={styles.filePreviewName} numberOfLines={1}>
+                    {selectedFile.name}
+                  </Text>
+                  <Text style={styles.filePreviewType}>
+                    {selectedFile.type}
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  onPress={() => setSelectedFile(null)}
+                  style={styles.filePreviewClose}
+                >
+                  <Ionicons name="close-circle" size={24} color={C.red} />
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+
+          {/* Input */}
           <View style={styles.inputContainer}>
             <TouchableOpacity
               style={styles.attachBtn}
@@ -546,69 +540,68 @@ export default function ChatScreen() {
               )}
             </TouchableOpacity>
           </View>
-        </KeyboardAvoidingView>
+        </AppBackground>
+      </KeyboardAvoidingView>
 
-        {/* File Viewer Modal */}
-        <Modal
-          visible={viewingFile !== null}
-          transparent
-          animationType="fade"
-          onRequestClose={() => {
-            if (videoRef.current) {
-              videoRef.current.pauseAsync();
-              videoRef.current.unloadAsync();
-            }
-            setViewingFile(null);
-          }}
-        >
-          <View style={styles.fileViewerModal}>
-            <View style={styles.fileViewerHeader}>
-              <Text style={styles.fileViewerTitle} numberOfLines={1}>
-                {viewingFile?.fileName || t("chat.file")}
-              </Text>
-              <TouchableOpacity
-                onPress={() => {
-                  if (videoRef.current) {
-                    videoRef.current.pauseAsync();
-                    videoRef.current.unloadAsync();
-                  }
-                  setViewingFile(null);
-                }}
-                style={styles.fileViewerClose}
-              >
-                <Ionicons name="close" size={28} color={C.text} />
-              </TouchableOpacity>
-            </View>
-            <ScrollView
-              contentContainerStyle={styles.fileViewerContent}
-              maximumZoomScale={3}
-              minimumZoomScale={1}
+      {/* File Viewer Modal */}
+      <Modal
+        visible={viewingFile !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          if (videoRef.current) {
+            videoRef.current.pauseAsync();
+            videoRef.current.unloadAsync();
+          }
+          setViewingFile(null);
+        }}
+      >
+        <View style={styles.fileViewerModal}>
+          <View style={styles.fileViewerHeader}>
+            <Text style={styles.fileViewerTitle} numberOfLines={1}>
+              {viewingFile?.fileName || t("chat.file")}
+            </Text>
+            <TouchableOpacity
+              onPress={() => {
+                if (videoRef.current) {
+                  videoRef.current.pauseAsync();
+                  videoRef.current.unloadAsync();
+                }
+                setViewingFile(null);
+              }}
+              style={styles.fileViewerClose}
             >
-              {viewingFile?.type === "image" && (
-                <Image
-                  source={{ uri: viewingFile.fullUrl }}
-                  style={styles.fileViewerImage}
-                  resizeMode="contain"
-                />
-              )}
-              {viewingFile?.type === "video" && (
-                <View style={styles.fileViewerVideoContainer}>
-                  <Video
-                    ref={videoRef}
-                    source={{ uri: viewingFile.fullUrl }}
-                    style={styles.fileViewerVideo}
-                    useNativeControls
-                    resizeMode="contain"
-                    shouldPlay
-                    isLooping={false}
-                  />
-                </View>
-              )}
-            </ScrollView>
+              <Ionicons name="close" size={28} color={C.text} />
+            </TouchableOpacity>
           </View>
-        </Modal>
-        </SafeAreaView>
-      </LinearGradient>
+          <ScrollView
+            contentContainerStyle={styles.fileViewerContent}
+            maximumZoomScale={3}
+            minimumZoomScale={1}
+          >
+            {viewingFile?.type === "image" && (
+              <Image
+                source={{ uri: viewingFile.fullUrl }}
+                style={styles.fileViewerImage}
+                resizeMode="contain"
+              />
+            )}
+            {viewingFile?.type === "video" && (
+              <View style={styles.fileViewerVideoContainer}>
+                <Video
+                  ref={videoRef}
+                  source={{ uri: viewingFile.fullUrl }}
+                  style={styles.fileViewerVideo}
+                  useNativeControls
+                  resizeMode="contain"
+                  shouldPlay
+                  isLooping={false}
+                />
+              </View>
+            )}
+          </ScrollView>
+        </View>
+      </Modal>
     </GestureHandlerRootView>
   );
 }

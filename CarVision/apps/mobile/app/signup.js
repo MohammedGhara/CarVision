@@ -8,12 +8,10 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  ImageBackground,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { LinearGradient } from "expo-linear-gradient";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import AppBackground from "../components/layout/AppBackground";
 import { getHttpBase } from "../lib/httpBase";
 import { saveToken, saveUser } from "../lib/authStore";
 import { showCustomAlert } from "../components/CustomAlert";
@@ -93,7 +91,8 @@ async function onSignup() {
       base = await getHttpBase();
       console.log("✅ Base URL:", base);
     } catch (urlError) {
-      console.error("❌ URL Error:", urlError);
+      // Use console.log for expected errors (handled gracefully)
+      console.log("⚠️ URL Error:", urlError.message || urlError);
       setBusy(false);
       showCustomAlert(
         "Connection Error", 
@@ -123,7 +122,8 @@ async function onSignup() {
       console.log("📥 Response text:", responseText);
       data = responseText ? JSON.parse(responseText) : {};
     } catch (parseError) {
-      console.error("❌ JSON parse error:", parseError);
+      // Use console.log for expected errors (handled gracefully)
+      console.log("⚠️ JSON parse error:", parseError.message || parseError);
       setBusy(false);
       showCustomAlert(
         "Server Error", 
@@ -136,7 +136,8 @@ async function onSignup() {
     
     if (!resp.ok || !data.ok) {
       const errorMsg = data.error || `Server returned error (${resp.status})`;
-      console.error("❌ Signup failed:", errorMsg);
+      // Use console.log for expected errors (handled gracefully)
+      console.log("⚠️ Signup failed:", errorMsg);
       setBusy(false);
       
       if (errorMsg.toLowerCase().includes("email") && errorMsg.toLowerCase().includes("already")) {
@@ -156,7 +157,8 @@ async function onSignup() {
     }
     
     if (!data.token || !data.user) {
-      console.error("❌ Missing token or user in response:", data);
+      // Use console.log for expected errors (handled gracefully)
+      console.log("⚠️ Missing token or user in response");
       setBusy(false);
       showCustomAlert("Signup Error", "Server response is incomplete. Please try again.");
       return;
@@ -169,7 +171,8 @@ async function onSignup() {
       await saveUser(data.user);
       console.log("✅ Credentials saved");
     } catch (saveError) {
-      console.error("❌ Save error:", saveError);
+      // Use console.log for expected errors (handled gracefully)
+      console.log("⚠️ Save error:", saveError.message || saveError);
       setBusy(false);
       showCustomAlert("Storage Error", "Account created but failed to save credentials. Please try logging in.");
       return;
@@ -196,7 +199,8 @@ async function onSignup() {
     }, 300);
     
   } catch (e) {
-    console.error("❌ Signup exception:", e);
+    // Use console.log for expected errors (handled gracefully)
+    console.log("⚠️ Signup exception:", e.message || e);
     setBusy(false);
     
     let errorMsg = "An unexpected error occurred.";
@@ -218,20 +222,11 @@ async function onSignup() {
   }
 }
   return (
-    <LinearGradient colors={["#07101F", "#0B0F19"]} style={{ flex: 1 }}>
-      <ImageBackground
-        source={{
-          uri: "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=1400&auto=format&fit=crop",
-        }}
-        resizeMode="cover"
-        style={{ flex: 1, opacity: 0.22 }}
-      />
-
-      <SafeAreaView style={{ position: "absolute", top: 0, left: 0, bottom: 0, right: 0 }}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
-          style={{ flex: 1 }}
-        >
+    <AppBackground scrollable={false}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        style={{ flex: 1 }}
+      >
           <View style={styles.brandWrap}>
             <Text style={styles.logo}> CarVision</Text>
             <Text style={styles.tagline}>Join the smarter driving community</Text>
@@ -320,10 +315,9 @@ async function onSignup() {
             </View>
           </View>
 
-          <Text style={styles.footer}>© 2025 CarVision</Text>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
-    </LinearGradient>
+        <Text style={styles.footer}>© 2025 CarVision</Text>
+      </KeyboardAvoidingView>
+    </AppBackground>
   );
 }
 

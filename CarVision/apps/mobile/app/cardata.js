@@ -7,15 +7,13 @@ import {
   TouchableOpacity,
   ScrollView,
   RefreshControl,
-  ImageBackground,
   Alert,
   AppState,
 } from "react-native";
-import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { LinearGradient } from "expo-linear-gradient";
+import AppBackground from "../components/layout/AppBackground";
 import * as Sharing from "expo-sharing";
 import * as Print from "expo-print";
 
@@ -608,18 +606,7 @@ export default function CarData() {
   ];
 
   return (
-    <SafeAreaProvider>
-      <SafeAreaView style={styles.container}>
-        {/* background image */}
-        <ImageBackground
-          source={{
-            uri: "https://images.unsplash.com/photo-1525609004556-c46c7d6cf023?q=80&w=1600&auto=format&fit=crop",
-          }}
-          style={{ position: "absolute", top: 0, left: 0, bottom: 0, right: 0 }}
-          imageStyle={{ opacity: 0.09 }}
-        />
-
-        <LinearGradient colors={[C.bg1, C.bg2]} style={styles.overlay}>
+    <AppBackground scrollable={false}>
           {/* TOP BAR */}
           <View style={styles.topbar}>
             <TouchableOpacity
@@ -797,9 +784,7 @@ export default function CarData() {
               {link.status === "up" ? t("cardata.live") : t("cardata.offline")} · {link.message}
             </Text>
           </View>
-        </LinearGradient>
-      </SafeAreaView>
-    </SafeAreaProvider>
+    </AppBackground>
   );
 }
 

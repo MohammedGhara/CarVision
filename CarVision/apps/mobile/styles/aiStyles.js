@@ -72,7 +72,7 @@ export const aiStyles = StyleSheet.create({
     padding: 12,
     borderTopWidth: 1,
     borderTopColor: C.border,
-    backgroundColor: "rgba(10,12,18,0.9)",
+    backgroundColor: "transparent",
   },
   inputOuter: {
     flex: 1,

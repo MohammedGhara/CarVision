@@ -6,17 +6,17 @@ import {
   TouchableOpacity,
   FlatList,
   ActivityIndicator,
-  ImageBackground,
   Modal,
   TextInput,
   Alert,
   ScrollView,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { LinearGradient } from "expo-linear-gradient";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import AppBackground from "../components/layout/AppBackground";
 
 import { api } from "../lib/api";
 import { getUser } from "../lib/authStore";
@@ -190,16 +190,7 @@ export default function VehiclesScreen() {
   const selectedGarage = garages.find(g => g.id === formData.garageId);
 
   return (
-    <LinearGradient colors={[C.bg1, C.bg2]} style={styles.bg}>
-      <ImageBackground
-        source={{
-          uri: "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?q=80&w=1600&auto=format&fit=crop",
-        }}
-        imageStyle={{ opacity: 0.12 }}
-        style={{ position: "absolute", top: 0, left: 0, bottom: 0, right: 0 }}
-      />
-
-      <SafeAreaView style={{ flex: 1 }}>
+    <AppBackground scrollable={false}>
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity
@@ -269,7 +260,6 @@ export default function VehiclesScreen() {
             )}
           />
         )}
-      </SafeAreaView>
 
       {/* Add/Edit Modal */}
       <Modal
@@ -278,18 +268,28 @@ export default function VehiclesScreen() {
         visible={showModal}
         onRequestClose={() => setShowModal(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>
-                {editingVehicle ? t("vehicles.editVehicle") : t("vehicles.addVehicle")}
-              </Text>
-              <TouchableOpacity onPress={() => setShowModal(false)}>
-                <Ionicons name="close" size={24} color={C.text} />
-              </TouchableOpacity>
-            </View>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={{ flex: 1 }}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>
+                  {editingVehicle ? t("vehicles.editVehicle") : t("vehicles.addVehicle")}
+                </Text>
+                <TouchableOpacity onPress={() => setShowModal(false)}>
+                  <Ionicons name="close" size={24} color={C.text} />
+                </TouchableOpacity>
+              </View>
 
-            <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+              <ScrollView 
+                style={styles.modalBody} 
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                contentContainerStyle={{ paddingBottom: 20 }}
+              >
               {/* Client Selection (for garages only, when creating) */}
               {user?.role === "GARAGE" && !editingVehicle && (
                 <View style={styles.inputGroup}>
@@ -447,6 +447,7 @@ export default function VehiclesScreen() {
             </View>
           </View>
         </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Garage Picker Modal */}
@@ -595,7 +596,7 @@ export default function VehiclesScreen() {
           </View>
         </View>
       </Modal>
-    </LinearGradient>
+    </AppBackground>
   );
 }
 

@@ -103,7 +103,7 @@ export const chatStyles = StyleSheet.create({
     paddingVertical: 12,
     borderTopWidth: 1,
     borderTopColor: "rgba(148,163,184,0.15)",
-    backgroundColor: C.bg1,
+    backgroundColor: "transparent",
     gap: 12,
   },
   input: {

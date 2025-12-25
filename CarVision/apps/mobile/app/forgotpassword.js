@@ -7,14 +7,12 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  ImageBackground,
   ScrollView,
   TouchableWithoutFeedback,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { LinearGradient } from "expo-linear-gradient";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import AppBackground from "../components/layout/AppBackground";
 import { getHttpBase } from "../lib/httpBase";
 import { showCustomAlert } from "../components/CustomAlert";
 import { useLanguage } from "../context/LanguageContext";
@@ -335,28 +333,18 @@ export default function ForgotPassword() {
   }
 
   return (
-    <LinearGradient colors={["#07101F", "#0B0F19"]} style={{ flex: 1 }}>
-      <ImageBackground
-        source={{
-          uri: "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=1400&auto=format&fit=crop",
-        }}
-        resizeMode="cover"
-        style={{ flex: 1, opacity: 0.22 }}
-        pointerEvents="none"
-      />
-
-      <SafeAreaView style={{ position: "absolute", top: 0, left: 0, bottom: 0, right: 0 }}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
-          keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
-          style={{ flex: 1 }}
+    <AppBackground scrollable={false}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
+        style={{ flex: 1 }}
+      >
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          bounces={false}
         >
-          <ScrollView
-            contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-            bounces={false}
-          >
             <View style={styles.topbar}>
               <TouchableOpacity onPress={() => r.back()} style={styles.backBtn}>
                 <Ionicons name="arrow-back" size={20} color={C.text} />
@@ -501,9 +489,8 @@ export default function ForgotPassword() {
               </View>
             </View>
           </View>
-          </ScrollView>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
-    </LinearGradient>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </AppBackground>
   );
 }

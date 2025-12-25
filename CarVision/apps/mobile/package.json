@@ -43,7 +43,9 @@
   },
   "private": true,
   "devDependencies": {
-    "baseline-browser-mapping": "^2.8.29"
+    "@types/react": "~19.1.10",
+    "baseline-browser-mapping": "^2.8.29",
+    "typescript": "~5.9.2"
   },
   "overrides": {
     "glob": "^10.3.10",

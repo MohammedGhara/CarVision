@@ -6,17 +6,18 @@ import {
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
-  ImageBackground,
   Alert,
   Modal,
   TextInput,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import AppBackground from "../components/layout/AppBackground";
 
 import { api } from "../lib/api";
 import { getUser, clearAuth, getToken, saveUser } from "../lib/authStore";
@@ -285,24 +286,17 @@ export default function ProfileScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: C.bg1, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" color={C.primary} />
-        <Text style={{ color: C.sub, marginTop: 12 }}>{t("profile.loadingProfile")}</Text>
-      </SafeAreaView>
+      <AppBackground scrollable={false}>
+        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+          <ActivityIndicator size="large" color={C.primary} />
+          <Text style={{ color: C.sub, marginTop: 12 }}>{t("profile.loadingProfile")}</Text>
+        </View>
+      </AppBackground>
     );
   }
 
   return (
-    <LinearGradient colors={[C.bg1, C.bg2]} style={styles.bg}>
-      <ImageBackground
-        source={{
-          uri: "https://images.unsplash.com/photo-1502877828070-33b167ad6860?q=80&w=1600&auto=format&fit=crop",
-        }}
-        imageStyle={{ opacity: 0.12 }}
-        style={{ position: "absolute", top: 0, left: 0, bottom: 0, right: 0 }}
-      />
-
-      <SafeAreaView style={{ flex: 1 }}>
+    <AppBackground scrollable={false}>
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity
@@ -493,9 +487,8 @@ export default function ProfileScreen() {
             <Text style={styles.logoutText}>{t("profile.logout")}</Text>
           </TouchableOpacity>
 
-          <Text style={styles.footer}>{t("home.footer")}</Text>
-        </ScrollView>
-      </SafeAreaView>
+        <Text style={styles.footer}>{t("home.footer")}</Text>
+      </ScrollView>
 
       <LanguagePickerModal
         visible={showLanguageModal}
@@ -516,7 +509,7 @@ export default function ProfileScreen() {
         saving={savingProfile}
         t={t}
       />
-    </LinearGradient>
+    </AppBackground>
   );
 }
 
@@ -583,48 +576,54 @@ function PreferenceRow({ icon, title, value, onPress }) {
 function EditProfileModal({ visible, value, emailValue, onChangeName, onChangeEmail, onCancel, onSave, saving, t }) {
   return (
     <Modal transparent animationType="fade" visible={visible} onRequestClose={onCancel}>
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalCard}>
-          <Text style={styles.modalTitle}>{t("profile.editProfileTitle")}</Text>
-          <Text style={styles.modalSubtitle}>{t("profile.editProfileDescription")}</Text>
-          <TextInput
-            style={styles.modalInput}
-            value={value}
-            onChangeText={onChangeName}
-            placeholder={t("profile.namePlaceholder")}
-            placeholderTextColor="rgba(148,163,184,0.8)"
-          />
-          <TextInput
-            style={[styles.modalInput, { marginTop: 12 }]}
-            value={emailValue}
-            onChangeText={onChangeEmail}
-            placeholder={t("profile.emailPlaceholder")}
-            placeholderTextColor="rgba(148,163,184,0.8)"
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
-          <View style={styles.modalActions}>
-            <TouchableOpacity
-              style={[styles.modalButton, styles.modalButtonGhost]}
-              onPress={onCancel}
-              disabled={saving}
-            >
-              <Text style={styles.modalButtonGhostText}>{t("common.cancel")}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.modalButton}
-              onPress={onSave}
-              disabled={saving}
-            >
-              {saving ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.modalButtonText}>{t("profile.saveChanges")}</Text>
-              )}
-            </TouchableOpacity>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>{t("profile.editProfileTitle")}</Text>
+            <Text style={styles.modalSubtitle}>{t("profile.editProfileDescription")}</Text>
+            <TextInput
+              style={styles.modalInput}
+              value={value}
+              onChangeText={onChangeName}
+              placeholder={t("profile.namePlaceholder")}
+              placeholderTextColor="rgba(148,163,184,0.8)"
+            />
+            <TextInput
+              style={[styles.modalInput, { marginTop: 12 }]}
+              value={emailValue}
+              onChangeText={onChangeEmail}
+              placeholder={t("profile.emailPlaceholder")}
+              placeholderTextColor="rgba(148,163,184,0.8)"
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonGhost]}
+                onPress={onCancel}
+                disabled={saving}
+              >
+                <Text style={styles.modalButtonGhostText}>{t("common.cancel")}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.modalButton}
+                onPress={onSave}
+                disabled={saving}
+              >
+                {saving ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.modalButtonText}>{t("profile.saveChanges")}</Text>
+                )}
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }

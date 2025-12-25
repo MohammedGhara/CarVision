@@ -8,13 +8,11 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  ImageBackground,
   Switch,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { LinearGradient } from "expo-linear-gradient";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import AppBackground from "../components/layout/AppBackground";
 import { getHttpBase } from "../lib/httpBase";
 import { saveToken, saveUser, getToken } from "../lib/authStore";
 import { showCustomAlert } from "../components/CustomAlert";
@@ -176,20 +174,11 @@ export default function Login() {
   }
 
   return (
-    <LinearGradient colors={["#07101F", "#0B0F19"]} style={{ flex: 1 }}>
-      <ImageBackground
-        source={{
-          uri: "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=1400&auto=format&fit=crop",
-        }}
-        resizeMode="cover"
-        style={{ flex: 1, opacity: 0.22 }}
-      />
-
-      <SafeAreaView style={{ position: "absolute", top: 0, left: 0, bottom: 0, right: 0 }}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
-          style={{ flex: 1 }}
-        >
+    <AppBackground scrollable={false}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        style={{ flex: 1 }}
+      >
           {/* ─── top bar with settings ─── */}
           <View style={styles.topbar}>
             <TouchableOpacity
@@ -277,9 +266,8 @@ export default function Login() {
             </View>
           </View>
 
-          <Text style={styles.footer}>© 2025 CarVision</Text>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
+        <Text style={styles.footer}>© 2025 CarVision</Text>
+      </KeyboardAvoidingView>
 
       <LanguagePickerModal
         visible={showLanguagePicker}
@@ -289,6 +277,6 @@ export default function Login() {
           setShowLanguagePicker(false);
         }}
       />
-    </LinearGradient>
+    </AppBackground>
   );
 }

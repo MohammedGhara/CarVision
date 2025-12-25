@@ -7,12 +7,11 @@ import {
   ScrollView,
   StatusBar,
   ActivityIndicator,
-  ImageBackground,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { LinearGradient } from "expo-linear-gradient";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import AppBackground from "../components/layout/AppBackground";
 import FloatingChatButton from "../components/FloatingChatButton";
 import LanguagePickerModal from "../components/LanguagePickerModal";
 
@@ -22,12 +21,65 @@ import { useLanguage } from "../context/LanguageContext";
 import { C } from "../styles/theme";
 import { homeStyles as styles } from "../styles/homeStyles";
 
+const HISTORY_STORAGE_KEY = "carvision.history.v1";
+
 export default function HomeScreen() {
   const router = useRouter();
   const { t, language, languages, changeLanguage } = useLanguage();
   const [checking, setChecking] = useState(true);
   const [user, setUser] = useState(null);
   const [showLanguagePicker, setShowLanguagePicker] = useState(false);
+  const [vehicleStats, setVehicleStats] = useState({
+    engineHealth: null,
+    activeDTCs: 0,
+  });
+
+  // Load vehicle stats from history
+  useEffect(() => {
+    loadVehicleStats();
+  }, []);
+
+  async function loadVehicleStats() {
+    try {
+      const saved = await AsyncStorage.getItem(HISTORY_STORAGE_KEY);
+      if (saved) {
+        const history = JSON.parse(saved);
+        if (history && history.length > 0) {
+          // Get the most recent entry
+          const latest = history[0];
+          if (latest?.snapshot) {
+            const snapshot = latest.snapshot;
+            
+            // Calculate active DTCs
+            const dtcs = snapshot.dtcs || [];
+            const pending = snapshot.pending || [];
+            const totalDTCs = dtcs.length + pending.length;
+            
+            // Calculate engine health (percentage based on DTCs)
+            // Less DTCs = better health
+            let health = "—";
+            if (snapshot.monitors) {
+              const milOn = snapshot.monitors.milOn;
+              if (!milOn && totalDTCs === 0) {
+                health = "Good";
+              } else if (!milOn && totalDTCs <= 2) {
+                health = "Fair";
+              } else if (milOn || totalDTCs > 2) {
+                health = "Poor";
+              }
+            }
+            
+            setVehicleStats({
+              engineHealth: health,
+              activeDTCs: totalDTCs,
+            });
+          }
+        }
+      }
+    } catch (e) {
+      console.log("Failed to load vehicle stats:", e);
+    }
+  }
 
   // Validate token + load user (with timeout to prevent hanging)
   useEffect(() => {
@@ -111,36 +163,21 @@ export default function HomeScreen() {
 
   if (checking) {
     return (
-      <SafeAreaView
-        style={{
-          flex: 1,
-          justifyContent: "center",
-          alignItems: "center",
-          backgroundColor: C.bg1,
-        }}
-      >
-        <ActivityIndicator size="large" />
-        <Text style={{ color: C.sub, marginTop: 10 }}>Loading…</Text>
-      </SafeAreaView>
+      <AppBackground scrollable={false}>
+        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+          <ActivityIndicator size="large" color={C.primary} />
+          <Text style={{ color: C.sub, marginTop: 10 }}>Loading…</Text>
+        </View>
+      </AppBackground>
     );
   }
 
   return (
-    <LinearGradient colors={[C.bg1, C.bg2]} style={styles.bg}>
+    <AppBackground scrollable={false}>
       <StatusBar barStyle="light-content" />
 
-      {/* Soft abstract background */}
-      <ImageBackground
-        source={{
-          uri: "https://images.unsplash.com/photo-1502877828070-33b167ad6860?q=80&w=1600&auto=format&fit=crop",
-        }}
-        imageStyle={{ opacity: 0.12 }}
-        style={{ position: "absolute", top: 0, left: 0, bottom: 0, right: 0 }}
-      />
-
-      <SafeAreaView style={{ flex: 1 }}>
-        {/* —— TOP BAR —— */}
-        <View style={styles.header}>
+      {/* —— TOP BAR —— */}
+      <View style={styles.header}>
           <View style={styles.appIdentity}>
             <View style={styles.logoCircle}>
               <Ionicons name="car-sport-outline" size={20} color={C.primary} />
@@ -179,11 +216,11 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* —— MAIN CONTENT —— */}
-        <ScrollView
-          contentContainerStyle={styles.content}
-          showsVerticalScrollIndicator={false}
-        >
+      {/* —— MAIN CONTENT —— */}
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
           {/* Greeting + small pills */}
           <View style={styles.greetingBlock}>
             <View>
@@ -211,14 +248,14 @@ export default function HomeScreen() {
               <View style={{ flex: 1 }}>
                 <OverviewMetric
                   label={t("home.engineHealth")}
-                  value="—"
-                  hint={t("home.runScanToAnalyze")}
+                  value={vehicleStats.engineHealth || "—"}
+                  hint={vehicleStats.engineHealth ? "" : t("home.runScanToAnalyze")}
                 />
                 <View style={{ height: 10 }} />
                 <OverviewMetric
                   label={t("home.activeDTCCodes")}
-                  value="—"
-                  hint={t("home.shownAfterFirstScan")}
+                  value={vehicleStats.activeDTCs > 0 ? vehicleStats.activeDTCs.toString() : "—"}
+                  hint={vehicleStats.activeDTCs > 0 ? "" : t("home.shownAfterFirstScan")}
                 />
               </View>
 
@@ -330,9 +367,8 @@ export default function HomeScreen() {
             </View>
           </View>
 
-          <Text style={styles.footer}>{t("home.footer")}</Text>
-        </ScrollView>
-      </SafeAreaView>
+        <Text style={styles.footer}>{t("home.footer")}</Text>
+      </ScrollView>
 
       {/* Global floating AI button */}
       <FloatingChatButton onPress={() => router.push("/ai")} />
@@ -345,7 +381,7 @@ export default function HomeScreen() {
           setShowLanguagePicker(false);
         }}
       />
-    </LinearGradient>
+    </AppBackground>
   );
 }
 
