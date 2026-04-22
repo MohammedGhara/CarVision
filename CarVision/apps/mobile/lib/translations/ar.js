@@ -68,6 +68,38 @@ export default {
     footer: "© 2025 CarVision — مشروع تخرج",
   },
 
+  // Nearest Garages (client)
+  nearestGarages: {
+    title: "الورش",
+    subtitle: "ورش شاركت موقعها، مرتبة حسب البعد عنك.",
+    homeDescription: "ورش قريبة منك مرتبة حسب المسافة.",
+    intro: "يُستخدم الموقع مرة واحدة لترتيب الورش. يمكنك إعادة المحاولة في أي وقت.",
+    findButton: "البحث عن ورش قريبة",
+    requestingPermission: "جاري طلب إذن الموقع…",
+    gettingLocation: "جاري الحصول على موقعك…",
+    loadingList: "جاري تحميل الورش القريبة…",
+    permissionDenied: "تم رفض الوصول للموقع",
+    permissionDeniedBody: "اسمح بالموقع لتطبيق CarVision من إعدادات النظام، أو أعد المحاولة بعد التفعيل.",
+    openSettings: "فتح الإعدادات",
+    retry: "حاول مرة أخرى",
+    emptyTitle: "لا توجد ورش بإحداثيات",
+    emptyBody: "لم تحفظ أي ورشة موقعاً بعد. حاول لاحقاً.",
+    distanceKm: "على بعد {{distance}} كم",
+    addressUnknown: "لا يوجد عنوان شارع في الملف",
+    addressNoStreetHint: "التوجيه ما زال يستخدم نقطة الموقع على الخريطة.",
+    emailGarage: "بريد",
+    emailFailed: "تعذر فتح تطبيق البريد.",
+    messageGarage: "مراسلة",
+    chatInitialDraft:
+      "مرحباً، وجدت ورشتكم في CarVision وأود المساعدة بخصوص سيارتي.",
+    navigate: "توجيه",
+    navigateFailed: "تعذر فتح الخرائط.",
+    listingDetailsMissing:
+      "لا يوجد وصف أو ساعات بعد — يحفظها صاحب الورشة من الورشة → بيانات الورشة للعرض.",
+    listHeading: "قريب منك",
+    errorTitle: "تعذر التحميل",
+  },
+
   // Profile Screen
   profile: {
     title: "الملف الشخصي",
@@ -112,6 +144,41 @@ export default {
     nameRequired: "يرجى إدخال اسمك.",
     updateSuccess: "تم تحديث الملف الشخصي بنجاح.",
     updateError: "فشل تحديث الملف الشخصي.",
+    garageLocation: "موقع الورشة",
+    garageLocationSubtitle:
+      "يظهر للعملاء في شاشة الورش: العنوان، الموقع على الخريطة، وصف قصير، وساعات العمل.",
+    garageLocationTitle: "موقع الورشة",
+    garageLocationHint:
+      "الصق رابط خريطة من العامل، أو استخدم موقعك الحالي، أو اكتب الإحداثيات. يمكنك ترك الحقول فارغة حتى تجهز بياناتك.",
+    mapShareLinkLabel: "رابط الخريطة من العامل",
+    mapShareLinkPlaceholder: "الصق رابط خرائط جوجل/أبل أو lat,lng",
+    applyFromMapLink: "استخراج الإحداثيات من الرابط",
+    coordinatesHelp:
+      "خط العرض وخط الطول هما موقع الدبوس على الخريطة؛ نحتاجهما لإظهار ورشتك في \"أقرب ورشة\" حسب المسافة. الرابط المدعوم يملأهما تلقائياً.",
+    mapLinkInvalidTitle: "تعذر قراءة الرابط",
+    mapLinkInvalidMessage:
+      "الصق رابط خريطة كاملاً (وليس اختصاراً يعيد التوجيه)، أو رقماًين مثل 32.401299، 35.039123.",
+    mapLinkAppliedTitle: "تم تطبيق الإحداثيات",
+    mapLinkAppliedMessage:
+      "تم تعبئة خط العرض {{lat}} وخط الطول {{lng}} من الرابط. احفظ بياناتك عندما تكون جاهزاً.",
+    addressLabel: "العنوان",
+    latitudeLabel: "خط العرض",
+    longitudeLabel: "خط الطول",
+    latitudePlaceholder: "مثال: 32.0853",
+    longitudePlaceholder: "مثال: 34.7818",
+    invalidLatitude: "يجب أن يكون خط العرض بين -90 و 90.",
+    invalidLongitude: "يجب أن يكون خط الطول بين -180 و 180.",
+    invalidCoordinate: "أدخل رقماً صالحاً أو اترك الحقل فارغاً.",
+    useCurrentLocation: "استخدام الموقع الحالي",
+    locationPermissionDenied:
+      "يلزم إذن الموقع. يمكنك تفعيله من إعدادات الجهاز ثم المحاولة مرة أخرى.",
+    locationUnavailable: "تعذر قراءة موقعك الحالي. حاول مرة أخرى أو أدخل الإحداثيات يدوياً.",
+    garageDescriptionLabel: "وصف قصير (للعامة)",
+    garageDescriptionPlaceholder: "مثال: تشخيص، فرامل، صيانة عامة",
+    workingHoursLabel: "ساعات العمل (نص)",
+    workingHoursPlaceholder: "مثال: الأحد–الخميس 08:00–17:00",
+    garageDescriptionTooLong: "يجب ألا يتجاوز الوصف {{max}} حرفاً.",
+    workingHoursTooLong: "يجب ألا تتجاوز ساعات العمل {{max}} حرفاً.",
   },
 
   // Login Screen
@@ -377,6 +444,18 @@ export default {
     aiAssistantDesc: "الحصول على اقتراحات إصلاح مدعومة بالذكاء الاصطناعي",
     comingSoon: "قريباً",
     comingSoonMessage: "هذه الميزة ستكون متاحة قريباً!",
+    listingHomeTitle: "بيانات الورشة للعرض",
+    listingHomeSubtitle: "الموقع والعنوان والوصف وساعات العمل كما يظهر للعملاء في الورش.",
+    listingHomeCta: "تعديل البيانات",
+    listingEditorTitle: "بيانات الورشة",
+    listingEditorSubtitle: "من الرئيسية — يظهر للعملاء",
+    listingEditorIntro:
+      "خذ وقتك. الحقول اختيارية حتى تجهز؛ العميل يرى فقط ما تحفظه.",
+    listingSectionMap: "الموقع على الخريطة",
+    listingSectionMapHint: "العنوان، GPS، أو رابط خريطة من فريقك. الإحداثيات تُستخدم لترتيب الورش حسب المسافة.",
+    listingSectionPublic: "ما يراه العملاء في الورش",
+    listingSectionPublicHint: "سطر قصير عن الورش وساعات كنص بسيط (بدون جدولة معقدة).",
+    saveListing: "حفظ البيانات",
   },
 
   // Vehicles Screen
@@ -397,12 +476,9 @@ export default {
     notes: "ملاحظات",
     garage: "الورشة",
     client: "العميل",
-    selectGarage: "اختر الورشة",
-    selectGaragePlaceholder: "اختر ورشة...",
     selectClient: "اختر العميل",
     selectClientPlaceholder: "اختر عميل...",
     clientSelected: "تم اختيار العميل",
-    garageRequired: "يرجى اختيار ورشة",
     clientRequired: "يرجى اختيار عميل",
     noClientsAvailable: "لا يوجد عملاء متاحون",
     loadClientsError: "فشل تحميل العملاء",
@@ -422,8 +498,6 @@ export default {
     deleteConfirm: "حذف المركبة",
     deleteMessage: "هل أنت متأكد أنك تريد حذف {{make}} {{model}}؟",
     loadError: "فشل تحميل المركبات",
-    loadGaragesError: "فشل تحميل الورش",
-    noGaragesAvailable: "لا توجد ورش متاحة. يرجى المحاولة مرة أخرى لاحقاً.",
     saveError: "فشل حفظ المركبة",
     deleteError: "فشل حذف المركبة",
     clientsCannotManage: "يمكن للعملاء عرض المركبات فقط. يمكن لمستخدمي الورش فقط إضافة أو تعديل أو حذف المركبات.",

@@ -200,7 +200,12 @@ router.post("/login", async (req, res) => {
       name: user.name,
       role: user.role,
       createdAt: user.createdAt,
-      updatedAt: user.updatedAt
+      updatedAt: user.updatedAt,
+      address: user.address ?? null,
+      latitude: user.latitude ?? null,
+      longitude: user.longitude ?? null,
+      garageDescription: user.garageDescription ?? null,
+      workingHoursText: user.workingHoursText ?? null,
     };
 
     const token = sign(clean);
@@ -222,7 +227,12 @@ router.get("/me", authRequired, async (req, res) => {
         name: true, 
         role: true, 
         createdAt: true,
-        updatedAt: true
+        updatedAt: true,
+        address: true,
+        latitude: true,
+        longitude: true,
+        garageDescription: true,
+        workingHoursText: true,
       }
     });
     
@@ -437,11 +447,33 @@ router.post("/reset-password", async (req, res) => {
   }
 });
 
-/* PUT /api/auth/update-profile  { name?, email? } */
+const MAX_GARAGE_DESCRIPTION_LEN = 400;
+const MAX_WORKING_HOURS_TEXT_LEN = 120;
+
+/* PUT /api/auth/update-profile  { name?, email?, address?, latitude?, longitude?, garageDescription?, workingHoursText? } — listing/location text: GARAGE only */
 router.put("/update-profile", authRequired, async (req, res) => {
   try {
-    const { name, email } = req.body || {};
+    const body = req.body || {};
+    const { name, email, address, latitude, longitude, garageDescription, workingHoursText } = body;
     const updates = {};
+
+    const current = await prisma.user.findUnique({
+      where: { id: req.user.uid },
+      select: { role: true },
+    });
+    if (!current) {
+      return res.status(404).json({ ok: false, error: "User not found" });
+    }
+
+    const hasGarageListingField =
+      Object.prototype.hasOwnProperty.call(body, "address") ||
+      Object.prototype.hasOwnProperty.call(body, "latitude") ||
+      Object.prototype.hasOwnProperty.call(body, "longitude") ||
+      Object.prototype.hasOwnProperty.call(body, "garageDescription") ||
+      Object.prototype.hasOwnProperty.call(body, "workingHoursText");
+    if (hasGarageListingField && current.role !== "GARAGE") {
+      return res.status(403).json({ ok: false, error: "Only garages can update garage listing fields" });
+    }
 
     if (name !== undefined) {
       if (!name || !name.trim()) {
@@ -456,6 +488,67 @@ router.put("/update-profile", authRequired, async (req, res) => {
         return res.status(400).json({ ok: false, error: "Invalid email format" });
       }
       updates.email = email.trim().toLowerCase();
+    }
+
+    if (current.role === "GARAGE") {
+      if (Object.prototype.hasOwnProperty.call(body, "address")) {
+        if (address === null || address === "") {
+          updates.address = null;
+        } else {
+          const trimmed = String(address).trim();
+          updates.address = trimmed === "" ? null : trimmed;
+        }
+      }
+      if (Object.prototype.hasOwnProperty.call(body, "latitude")) {
+        if (latitude === null || latitude === "") {
+          updates.latitude = null;
+        } else {
+          const lat = typeof latitude === "number" ? latitude : parseFloat(String(latitude).trim());
+          if (!Number.isFinite(lat) || lat < -90 || lat > 90) {
+            return res.status(400).json({ ok: false, error: "Latitude must be between -90 and 90" });
+          }
+          updates.latitude = lat;
+        }
+      }
+      if (Object.prototype.hasOwnProperty.call(body, "longitude")) {
+        if (longitude === null || longitude === "") {
+          updates.longitude = null;
+        } else {
+          const lng = typeof longitude === "number" ? longitude : parseFloat(String(longitude).trim());
+          if (!Number.isFinite(lng) || lng < -180 || lng > 180) {
+            return res.status(400).json({ ok: false, error: "Longitude must be between -180 and 180" });
+          }
+          updates.longitude = lng;
+        }
+      }
+      if (Object.prototype.hasOwnProperty.call(body, "garageDescription")) {
+        if (garageDescription === null || garageDescription === "") {
+          updates.garageDescription = null;
+        } else {
+          const trimmed = String(garageDescription).trim();
+          if (trimmed.length > MAX_GARAGE_DESCRIPTION_LEN) {
+            return res.status(400).json({
+              ok: false,
+              error: `Description must be at most ${MAX_GARAGE_DESCRIPTION_LEN} characters`,
+            });
+          }
+          updates.garageDescription = trimmed === "" ? null : trimmed;
+        }
+      }
+      if (Object.prototype.hasOwnProperty.call(body, "workingHoursText")) {
+        if (workingHoursText === null || workingHoursText === "") {
+          updates.workingHoursText = null;
+        } else {
+          const trimmed = String(workingHoursText).trim();
+          if (trimmed.length > MAX_WORKING_HOURS_TEXT_LEN) {
+            return res.status(400).json({
+              ok: false,
+              error: `Working hours must be at most ${MAX_WORKING_HOURS_TEXT_LEN} characters`,
+            });
+          }
+          updates.workingHoursText = trimmed === "" ? null : trimmed;
+        }
+      }
     }
 
     if (Object.keys(updates).length === 0) {
@@ -479,6 +572,11 @@ router.put("/update-profile", authRequired, async (req, res) => {
         role: true,
         createdAt: true,
         updatedAt: true,
+        address: true,
+        latitude: true,
+        longitude: true,
+        garageDescription: true,
+        workingHoursText: true,
       },
     });
 

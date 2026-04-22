@@ -29,7 +29,13 @@
     "plugins": [
       "expo-router",
       "expo-barcode-scanner",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "CarVision uses your location to find nearby garages and to set your garage coordinates in your profile."
+        }
+      ]
     ]
   }
 }

@@ -23,6 +23,7 @@
     "expo-intent-launcher": "~13.0.7",
     "expo-linear-gradient": "~15.0.7",
     "expo-linking": "~8.0.9",
+    "expo-location": "~19.0.8",
     "expo-network": "~8.0.7",
     "expo-notifications": "~0.32.13",
     "expo-print": "~15.0.7",
@@ -44,7 +45,7 @@
   "private": true,
   "devDependencies": {
     "@types/react": "~19.1.10",
-    "baseline-browser-mapping": "^2.8.29",
+    "baseline-browser-mapping": "^2.10.21",
     "typescript": "~5.9.2"
   },
   "overrides": {

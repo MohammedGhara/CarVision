@@ -3,9 +3,6 @@ import { StyleSheet } from "react-native";
 import { C } from "./theme";
 
 export const vehiclesStyles = StyleSheet.create({
-  bg: {
-    flex: 1,
-  },
   header: {
     flexDirection: "row",
     alignItems: "center",

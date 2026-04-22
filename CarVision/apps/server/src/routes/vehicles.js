@@ -8,12 +8,19 @@ const { sendVehicleDoneEmail } = require("../email");
 const router = express.Router();
 const prisma = new PrismaClient();
 
-// GET /api/vehicles/garages - Get all garages (for client to select when adding vehicle)
+// GET /api/vehicles/garages — list users with role GARAGE (for API consumers)
 router.get("/garages", authRequired, async (req, res) => {
   try {
     const garages = await prisma.user.findMany({
       where: { role: "GARAGE" },
-      select: { id: true, name: true, email: true },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        address: true,
+        latitude: true,
+        longitude: true,
+      },
       orderBy: { name: "asc" },
     });
     res.json({ ok: true, garages });
@@ -125,7 +132,7 @@ router.get("/:id", authRequired, async (req, res) => {
 // POST /api/vehicles - Create a new vehicle
 router.post("/", authRequired, async (req, res) => {
   try {
-    const { make, model, year, vin, licensePlate, color, mileage, notes, garageId } = req.body || {};
+    const { make, model, year, vin, licensePlate, color, mileage, notes } = req.body || {};
     
     if (!make || !model) {
       return res.status(400).json({ ok: false, error: "Make and model are required" });
@@ -136,28 +143,15 @@ router.post("/", authRequired, async (req, res) => {
       select: { role: true },
     });
 
-    // If client, garageId is required
-    // If garage, they can add vehicles and assign to clients (ownerId should be provided)
-    if (user.role === "CLIENT" && !garageId) {
-      return res.status(400).json({ ok: false, error: "Garage selection is required" });
+    if (user.role !== "GARAGE") {
+      return res.status(403).json({ ok: false, error: "Only garages can create vehicles" });
     }
 
-    // Verify garage exists if provided
-    if (garageId) {
-      const garage = await prisma.user.findUnique({
-        where: { id: garageId, role: "GARAGE" },
-      });
-      if (!garage) {
-        return res.status(400).json({ ok: false, error: "Invalid garage selected" });
-      }
-    }
-
-    // If garage is adding vehicle, they can specify ownerId (client)
+    // Garages can assign vehicles to clients via ownerId
     let finalOwnerId = req.user.uid;
-    if (user.role === "GARAGE" && req.body.ownerId) {
-      // Verify owner (client) exists
-      const owner = await prisma.user.findUnique({
-        where: { id: req.body.ownerId, role: "CLIENT" },
+    if (req.body.ownerId) {
+      const owner = await prisma.user.findFirst({
+        where: { id: String(req.body.ownerId), role: "CLIENT" },
       });
       if (!owner) {
         return res.status(400).json({ ok: false, error: "Invalid client selected" });
@@ -176,16 +170,16 @@ router.post("/", authRequired, async (req, res) => {
         mileage: mileage ? parseInt(mileage) : null,
         notes: notes?.trim() || null,
         ownerId: finalOwnerId,
-        garageId: user.role === "CLIENT" ? garageId : (user.role === "GARAGE" ? req.user.uid : null),
+        garageId: req.user.uid,
         status: "PENDING",
       },
       include: {
-        garage: user.role === "CLIENT" ? {
+        garage: {
           select: { id: true, name: true, email: true },
-        } : undefined,
-        owner: user.role === "GARAGE" ? {
+        },
+        owner: {
           select: { id: true, name: true, email: true },
-        } : undefined,
+        },
       },
     });
 
@@ -232,7 +226,6 @@ router.put("/:id", authRequired, async (req, res) => {
       return res.status(404).json({ ok: false, error: "Vehicle not found" });
     }
 
-    // Only garages can update status
     const updateData = {
       ...(make !== undefined && { make: make.trim() }),
       ...(model !== undefined && { model: model.trim() }),

@@ -44,12 +44,19 @@ LogBox.ignoreLogs([
   "[expo-image-picker] `ImagePicker.MediaTypeOptions` have been deprecated",
 ]);
 
+function readRouteParam(value) {
+  if (value == null) return "";
+  if (Array.isArray(value)) return String(value[0] ?? "").trim();
+  return String(value).trim();
+}
+
 export default function ChatScreen() {
   const router = useRouter();
   const { t } = useLanguage();
   const params = useLocalSearchParams();
   const otherUserId = params.userId;
   const otherUserName = params.userName;
+  const initialDraft = readRouteParam(params.initialDraft);
 
   const [user, setUser] = useState(null);
   const [otherUser, setOtherUser] = useState(null);
@@ -64,6 +71,8 @@ export default function ChatScreen() {
   const listRef = useRef(null);
   const pollIntervalRef = useRef(null);
   const videoRef = useRef(null);
+  /** Avoid re-prefilling the same draft on re-renders; reset when conversation or draft source changes. */
+  const draftPrefillKeyRef = useRef("");
 
   useEffect(() => {
     if (!otherUserId) {
@@ -85,6 +94,18 @@ export default function ChatScreen() {
       }
     };
   }, [otherUserId]);
+
+  useEffect(() => {
+    if (!initialDraft) draftPrefillKeyRef.current = "";
+  }, [initialDraft]);
+
+  useEffect(() => {
+    if (!otherUserId || !initialDraft) return;
+    const key = `${readRouteParam(otherUserId)}|${initialDraft}`;
+    if (draftPrefillKeyRef.current === key) return;
+    draftPrefillKeyRef.current = key;
+    setInput((prev) => (prev.trim() === "" ? initialDraft : prev));
+  }, [otherUserId, initialDraft]);
 
   async function loadBaseUrl() {
     try {

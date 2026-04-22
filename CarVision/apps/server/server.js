@@ -49,6 +49,9 @@ app.use("/api/auth", authRouter);
 const vehiclesRouter = require("./src/routes/vehicles");
 app.use("/api/vehicles", vehiclesRouter);
 
+const garagesRouter = require("./src/routes/garages");
+app.use("/api/garages", garagesRouter);
+
 const messagesRouter = require("./src/routes/messages");
 app.use("/api/messages", messagesRouter);
 

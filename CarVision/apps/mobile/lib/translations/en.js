@@ -68,6 +68,38 @@ export default {
     footer: "© 2025 CarVision — Senior Project",
   },
 
+  // Nearest Garages (client)
+  nearestGarages: {
+    title: "Garages",
+    subtitle: "Garages that shared their location, sorted by distance from you.",
+    homeDescription: "Garages near you, sorted by distance.",
+    intro: "Location is used once to sort garages. You can retry anytime.",
+    findButton: "Find garages",
+    requestingPermission: "Requesting location access…",
+    gettingLocation: "Getting your location…",
+    loadingList: "Loading garages…",
+    permissionDenied: "Location access denied",
+    permissionDeniedBody: "Allow location for CarVision in system settings, or tap retry after enabling.",
+    openSettings: "Open settings",
+    retry: "Try again",
+    emptyTitle: "No garages with coordinates",
+    emptyBody: "No garages have saved a location yet. Try again later.",
+    distanceKm: "{{distance}} km away",
+    addressUnknown: "No street address on file",
+    addressNoStreetHint: "Directions still use the garage's map pin.",
+    emailGarage: "Email",
+    emailFailed: "Could not open your email app.",
+    messageGarage: "Message",
+    chatInitialDraft:
+      "Hi, I found your garage in CarVision and I'd like some help with my car.",
+    navigate: "Navigate",
+    navigateFailed: "Could not open maps.",
+    listingDetailsMissing:
+      "No description or hours on file yet — the owner saves these under Garage → Garage listing.",
+    listHeading: "Nearby",
+    errorTitle: "Could not load",
+  },
+
   // Profile Screen
   profile: {
     title: "Profile",
@@ -112,6 +144,41 @@ export default {
     nameRequired: "Please enter your name.",
     updateSuccess: "Profile updated successfully.",
     updateError: "Failed to update profile.",
+    garageLocation: "Garage location",
+    garageLocationSubtitle:
+      "Shown to clients on Garages (home): address, map pin, short description, and hours.",
+    garageLocationTitle: "Garage location",
+    garageLocationHint:
+      "Paste a map link from your worker, use your current GPS, or type coordinates. You can leave everything empty until your listing is ready.",
+    mapShareLinkLabel: "Map link from worker",
+    mapShareLinkPlaceholder: "Paste Google Maps / Apple Maps link or lat,lng",
+    applyFromMapLink: "Apply coordinates from link",
+    coordinatesHelp:
+      "Latitude and longitude are the pin on the map; the app needs them to show your garage in “Garages” by distance. A supported link fills them for you.",
+    mapLinkInvalidTitle: "Could not read that link",
+    mapLinkInvalidMessage:
+      "Paste a full maps URL (not a short redirect), or two numbers like 32.401299, 35.039123.",
+    mapLinkAppliedTitle: "Coordinates applied",
+    mapLinkAppliedMessage:
+      "Latitude {{lat}} and longitude {{lng}} were filled from the link. Save your listing when you are ready.",
+    addressLabel: "Address",
+    latitudeLabel: "Latitude",
+    longitudeLabel: "Longitude",
+    latitudePlaceholder: "e.g. 32.0853",
+    longitudePlaceholder: "e.g. 34.7818",
+    invalidLatitude: "Latitude must be between -90 and 90.",
+    invalidLongitude: "Longitude must be between -180 and 180.",
+    invalidCoordinate: "Enter a valid number or leave the field empty.",
+    useCurrentLocation: "Use current location",
+    locationPermissionDenied:
+      "Location permission is required. You can enable it in your device settings, then try again.",
+    locationUnavailable: "Could not read your current location. Please try again or enter coordinates manually.",
+    garageDescriptionLabel: "Short description (public)",
+    garageDescriptionPlaceholder: "e.g. Diagnostics, brakes, general service",
+    workingHoursLabel: "Working hours (text)",
+    workingHoursPlaceholder: "e.g. Sun–Thu 08:00–17:00",
+    garageDescriptionTooLong: "Description must be at most {{max}} characters.",
+    workingHoursTooLong: "Working hours must be at most {{max}} characters.",
   },
 
   // Login Screen
@@ -377,6 +444,18 @@ export default {
     aiAssistantDesc: "Get AI-powered repair suggestions",
     comingSoon: "Coming Soon",
     comingSoonMessage: "This feature will be available soon!",
+    listingHomeTitle: "Garage listing",
+    listingHomeSubtitle: "Map pin, address, description, and hours shown to clients in Garages.",
+    listingHomeCta: "Edit listing",
+    listingEditorTitle: "Garage listing",
+    listingEditorSubtitle: "Home → saved for clients",
+    listingEditorIntro:
+      "Take your time here. Everything is optional until you are ready; clients only see what you save.",
+    listingSectionMap: "Location on the map",
+    listingSectionMapHint: "Address, GPS, or a map link from your team. Coordinates power the Garages list by distance.",
+    listingSectionPublic: "What clients see on Garages",
+    listingSectionPublicHint: "A short line about your shop and plain-text hours (no schedules to configure).",
+    saveListing: "Save listing",
   },
 
   // Vehicles Screen
@@ -397,12 +476,9 @@ export default {
     notes: "Notes",
     garage: "Garage",
     client: "Client",
-    selectGarage: "Select Garage",
-    selectGaragePlaceholder: "Choose a garage...",
     selectClient: "Select Client",
     selectClientPlaceholder: "Choose a client...",
     clientSelected: "Client Selected",
-    garageRequired: "Please select a garage",
     clientRequired: "Please select a client",
     noClientsAvailable: "No clients available",
     loadClientsError: "Failed to load clients",
@@ -422,8 +498,6 @@ export default {
     deleteConfirm: "Delete Vehicle",
     deleteMessage: "Are you sure you want to delete {{make}} {{model}}?",
     loadError: "Failed to load vehicles",
-    loadGaragesError: "Failed to load garages",
-    noGaragesAvailable: "No garages available. Please try again later.",
     saveError: "Failed to save vehicle",
     deleteError: "Failed to delete vehicle",
     clientsCannotManage: "Clients can only view vehicles. Only garage users can add, edit, or delete vehicles.",

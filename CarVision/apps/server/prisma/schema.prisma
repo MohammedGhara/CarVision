@@ -19,6 +19,16 @@ model User {
   name      String
   passwordHash  String
   role      Role     @default(CLIENT)
+  /// Street or free-form address for garage location (Nearest Garage groundwork).
+  address   String?
+  /// WGS-84 latitude; null until set. Intended range when set: -90..90 (enforced in DB).
+  latitude  Float?
+  /// WGS-84 longitude; null until set. Intended range when set: -180..180 (enforced in DB).
+  longitude Float?
+  /// Short public blurb for garage discovery (CLIENT Garages list); GARAGE only, optional.
+  garageDescription String?
+  /// Free-text hours line, e.g. "Sun–Thu 08:00–17:00"; optional, no structured schedule.
+  workingHoursText    String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   resetToken        String?   

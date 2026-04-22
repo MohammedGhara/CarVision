@@ -12,6 +12,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -202,10 +203,6 @@ export default function ProfileScreen() {
     } finally {
       setSavingProfile(false);
     }
-  }
-
-  function getLanguageName() {
-    return languages[language]?.nativeName || languages[language]?.name || "English";
   }
 
   function getLanguageName() {
@@ -509,6 +506,7 @@ export default function ProfileScreen() {
         saving={savingProfile}
         t={t}
       />
+
     </AppBackground>
   );
 }

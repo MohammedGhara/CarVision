@@ -256,6 +256,13 @@ export default function GarageScreen() {
             <Text style={styles.sectionTitle}>{t("garage.mainActions")}</Text>
             <View style={styles.actionsList}>
               <ActionCard
+                icon="map-marker-radius"
+                title={t("garage.listingHomeTitle")}
+                subtitle={t("garage.listingHomeSubtitle")}
+                onPress={() => router.push("/garage-location")}
+                accent={C.primary}
+              />
+              <ActionCard
                 icon="car-wrench"
                 title={t("garage.manageVehicles")}
                 subtitle={t("garage.manageVehiclesDesc")}

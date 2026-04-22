@@ -68,6 +68,38 @@ export default {
     footer: "© 2025 CarVision — פרויקט גמר",
   },
 
+  // Nearest Garages (client)
+  nearestGarages: {
+    title: "מוסכים",
+    subtitle: "מוסכים ששיתפו מיקום, ממוינים לפי מרחק ממך.",
+    homeDescription: "מוסכים לידך, ממוינים לפי מרחק.",
+    intro: "המיקום משמש פעם אחת למיון. אפשר לנסות שוב בכל עת.",
+    findButton: "חפש מוסכים בקרבתי",
+    requestingPermission: "מבקש הרשאת מיקום…",
+    gettingLocation: "מאתר את המיקום שלך…",
+    loadingList: "טוען מוסכים בקרבת מקום…",
+    permissionDenied: "גישה למיקום נדחתה",
+    permissionDeniedBody: "אפשר גישה למיקום ל-CarVision בהגדרות המערכת, או נסה שוב אחרי ההפעלה.",
+    openSettings: "פתח הגדרות",
+    retry: "נסה שוב",
+    emptyTitle: "אין מוסכים עם קואורדינטות",
+    emptyBody: "עדיין אין מוסכים עם מיקום שמור. נסה שוב מאוחר יותר.",
+    distanceKm: "במרחק {{distance}} ק\"מ",
+    addressUnknown: "אין כתובת רחוב במערכת",
+    addressNoStreetHint: "הניווט עדיין משתמש בסיכה על המפה.",
+    emailGarage: "אימייל",
+    emailFailed: "לא ניתן לפתוח את אפליקציית המייל.",
+    messageGarage: "הודעה",
+    chatInitialDraft:
+      "היי, מצאתי את המוסך שלכם ב-CarVision ואשמח לעזרה לגבי הרכב שלי.",
+    navigate: "ניווט",
+    navigateFailed: "לא ניתן לפתוח מפות.",
+    listingDetailsMissing:
+      "אין עדיין תיאור או שעות — בעל המוסך שומר אותם במוסך → פרטי המוסך ללקוחות.",
+    listHeading: "בקרבתך",
+    errorTitle: "טעינה נכשלה",
+  },
+
   // Profile Screen
   profile: {
     title: "פרופיל",
@@ -112,6 +144,41 @@ export default {
     nameRequired: "אנא הזן את שמך.",
     updateSuccess: "הפרופיל עודכן בהצלחה.",
     updateError: "עדכון הפרופיל נכשל.",
+    garageLocation: "מיקום המוסך",
+    garageLocationSubtitle:
+      "מוצג ללקוחות במסך \"מוסכים\" מהבית: כתובת, נקודה במפה, תיאור קצר ושעות.",
+    garageLocationTitle: "מיקום המוסך",
+    garageLocationHint:
+      "הדבק קישור למפה מהעובד, השתמש ב-GPS הנוכחי, או הקלד קואורדינטות. אפשר להשאיר ריק עד שהרישום מוכן.",
+    mapShareLinkLabel: "קישור למפה מהעובד",
+    mapShareLinkPlaceholder: "הדבק קישור Google/Apple Maps או lat,lng",
+    applyFromMapLink: "החל קואורדינטות מהקישור",
+    coordinatesHelp:
+      "קו רוחב וקו אורך הם נקודת הסימון על המפה; האפליקציה צריכה אותם כדי להציג את המוסך ב\"מוסכים קרובים\" לפי מרחק. קישור נתמך ממלא אותם בשבילך.",
+    mapLinkInvalidTitle: "לא הצלחנו לקרוא את הקישור",
+    mapLinkInvalidMessage:
+      "הדבק כתובת מפה מלאה (לא קישור מקוצר), או שני מספרים כמו 32.401299, 35.039123.",
+    mapLinkAppliedTitle: "הקואורדינטות עודכנו",
+    mapLinkAppliedMessage:
+      "קו רוחב {{lat}} וקו אורך {{lng}} נמלאו מהקישור. שמור את הרישום כשאתה מוכן.",
+    addressLabel: "כתובת",
+    latitudeLabel: "קו רוחב",
+    longitudeLabel: "קו אורך",
+    latitudePlaceholder: "למשל: 32.0853",
+    longitudePlaceholder: "למשל: 34.7818",
+    invalidLatitude: "קו הרוחב חייב להיות בין -90 ל-90.",
+    invalidLongitude: "קו האורך חייב להיות בין -180 ל-180.",
+    invalidCoordinate: "הזן מספר תקין או השאר ריק.",
+    useCurrentLocation: "השתמש במיקום הנוכחי",
+    locationPermissionDenied:
+      "נדרשת הרשאת מיקום. אפשר להפעיל בהגדרות המכשיר ואז לנסות שוב.",
+    locationUnavailable: "לא ניתן לקרוא את המיקום הנוכחי. נסה שוב או הזן קואורדינטות ידנית.",
+    garageDescriptionLabel: "תיאור קצר (ציבורי)",
+    garageDescriptionPlaceholder: "למשל: אבחון, בלמים, שירות כללי",
+    workingHoursLabel: "שעות פעילות (טקסט)",
+    workingHoursPlaceholder: "למשל: א׳–ה׳ 08:00–17:00",
+    garageDescriptionTooLong: "התיאור חייב להיות עד {{max}} תווים.",
+    workingHoursTooLong: "שעות הפעילות חייבות להיות עד {{max}} תווים.",
   },
 
   // Login Screen
@@ -377,6 +444,18 @@ export default {
     aiAssistantDesc: "קבל הצעות תיקון מונעות AI",
     comingSoon: "בקרוב",
     comingSoonMessage: "תכונה זו תהיה זמינה בקרוב!",
+    listingHomeTitle: "פרטי המוסך ללקוחות",
+    listingHomeSubtitle: "מיקום, כתובת, תיאור ושעות — כפי שמופיע למשתמשים במסך \"מוסכים\".",
+    listingHomeCta: "עריכת פרטים",
+    listingEditorTitle: "פרטי המוסך",
+    listingEditorSubtitle: "מהבית — נשמר ללקוחות",
+    listingEditorIntro:
+      "אפשר למלא בהדרגה. הכל אופציונלי עד שתהיו מוכנים; לקוחות רואים רק מה ששמרת.",
+    listingSectionMap: "מיקום במפה",
+    listingSectionMapHint: "כתובת, GPS או קישור מפה מהצוות. הקואורדינטות משמשות למיון \"מוסכים\" לפי מרחק.",
+    listingSectionPublic: "מה לקוחות רואים ב\"מוסכים\"",
+    listingSectionPublicHint: "שורה קצרה על המוסך ושעות כטקסט חופשי (בלי מערכת שעות מורכבת).",
+    saveListing: "שמור פרטים",
   },
 
   // Vehicles Screen
@@ -397,12 +476,9 @@ export default {
     notes: "הערות",
     garage: "מוסך",
     client: "לקוח",
-    selectGarage: "בחר מוסך",
-    selectGaragePlaceholder: "בחר מוסך...",
     selectClient: "בחר לקוח",
     selectClientPlaceholder: "בחר לקוח...",
     clientSelected: "לקוח נבחר",
-    garageRequired: "אנא בחר מוסך",
     clientRequired: "אנא בחר לקוח",
     noClientsAvailable: "אין לקוחות זמינים",
     loadClientsError: "נכשל בטעינת לקוחות",
@@ -422,8 +498,6 @@ export default {
     deleteConfirm: "מחק רכב",
     deleteMessage: "האם אתה בטוח שברצונך למחוק {{make}} {{model}}?",
     loadError: "נכשל בטעינת רכבים",
-    loadGaragesError: "נכשל בטעינת מוסכים",
-    noGaragesAvailable: "אין מוסכים זמינים. אנא נסה שוב מאוחר יותר.",
     saveError: "נכשל בשמירת רכב",
     deleteError: "נכשל במחיקת רכב",
     clientsCannotManage: "לקוחות יכולים רק לצפות ברכבים. רק משתמשי מוסך יכולים להוסיף, לערוך או למחוק רכבים.",

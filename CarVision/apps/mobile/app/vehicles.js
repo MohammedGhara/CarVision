@@ -30,10 +30,8 @@ export default function VehiclesScreen() {
   const { t } = useLanguage();
   const [user, setUser] = useState(null);
   const [vehicles, setVehicles] = useState([]);
-  const [garages, setGarages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [showGaragePicker, setShowGaragePicker] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState(null);
   const [formData, setFormData] = useState({
     make: "",
@@ -44,7 +42,6 @@ export default function VehiclesScreen() {
     color: "",
     mileage: "",
     notes: "",
-    garageId: "",
     ownerId: "", // For garage to select client
     status: "",
   });
@@ -72,9 +69,6 @@ export default function VehiclesScreen() {
       if (data?.vehicles) {
         setVehicles(data.vehicles);
       }
-
-      // Only garage users need to load garages (for client selection when adding vehicles)
-      // Clients can only view vehicles, so they don't need garage list
     } catch (e) {
       console.error("Failed to load vehicles:", e);
       showCustomAlert(t("common.error"), e.message || t("vehicles.loadError"));
@@ -94,7 +88,6 @@ export default function VehiclesScreen() {
       color: "",
       mileage: "",
       notes: "",
-      garageId: "",
       ownerId: "",
       status: "",
     });
@@ -112,7 +105,6 @@ export default function VehiclesScreen() {
       color: vehicle.color || "",
       mileage: vehicle.mileage?.toString() || "",
       notes: vehicle.notes || "",
-      garageId: vehicle.garageId || "",
       ownerId: vehicle.ownerId || "",
       status: vehicle.status || "",
     });
@@ -120,13 +112,12 @@ export default function VehiclesScreen() {
   }
 
   async function saveVehicle() {
-    console.log("Save vehicle called, formData:", formData);
     if (!formData.make.trim() || !formData.model.trim()) {
       showCustomAlert(t("common.error"), t("vehicles.makeModelRequired"));
       return;
     }
 
-    // Clients cannot add or edit vehicles
+    // Clients cannot add or edit vehicles from this app (garage manages vehicles)
     if (user?.role === "CLIENT") {
       showCustomAlert(t("common.error"), t("vehicles.clientsCannotManage"));
       return;
@@ -138,7 +129,6 @@ export default function VehiclesScreen() {
       return;
     }
 
-    console.log("Validation passed, saving vehicle...");
     try {
       if (editingVehicle) {
         // Update
@@ -187,8 +177,6 @@ export default function VehiclesScreen() {
     );
   }
 
-  const selectedGarage = garages.find(g => g.id === formData.garageId);
-
   return (
     <AppBackground scrollable={false}>
         {/* Header */}
@@ -205,7 +193,6 @@ export default function VehiclesScreen() {
             <Text style={styles.headerTitle}>{t("vehicles.title")}</Text>
           </View>
 
-          {/* Only show add button for garage users */}
           {user?.role === "GARAGE" && (
             <TouchableOpacity
               onPress={openAddModal}
@@ -229,7 +216,6 @@ export default function VehiclesScreen() {
             <Text style={styles.emptyText}>
               {user?.role === "CLIENT" ? t("vehicles.noVehicles") : t("vehicles.noVehiclesGarage")}
             </Text>
-            {/* Only show add first button for garage users */}
             {user?.role === "GARAGE" && (
               <TouchableOpacity style={styles.addFirstBtn} onPress={openAddModal}>
                 <Text style={styles.addFirstBtnText}>{t("vehicles.addFirst")}</Text>
@@ -331,8 +317,6 @@ export default function VehiclesScreen() {
                   </TouchableOpacity>
                 </View>
               )}
-
-              {/* Garage Selection removed - clients cannot add vehicles */}
 
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>{t("vehicles.make")} *</Text>
@@ -450,81 +434,6 @@ export default function VehiclesScreen() {
         </KeyboardAvoidingView>
       </Modal>
 
-      {/* Garage Picker Modal */}
-      <Modal
-        transparent
-        animationType="slide"
-        visible={showGaragePicker}
-        onRequestClose={() => {
-          setShowGaragePicker(false);
-          // Reopen add modal after closing garage picker
-          setTimeout(() => {
-            setShowModal(true);
-          }, 300);
-        }}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { maxHeight: "80%" }]}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{t("vehicles.selectGarage")}</Text>
-              <TouchableOpacity
-                onPress={() => {
-                  setShowGaragePicker(false);
-                  // Reopen add modal after closing garage picker
-                  setTimeout(() => {
-                    setShowModal(true);
-                  }, 300);
-                }}
-              >
-                <Ionicons name="close" size={24} color={C.text} />
-              </TouchableOpacity>
-            </View>
-            {garages.length === 0 ? (
-              <View style={[styles.center, { padding: 40 }]}>
-                <ActivityIndicator size="large" color={C.primary} />
-                <Text style={styles.emptyText}>{t("common.loading")}</Text>
-              </View>
-            ) : (
-              <FlatList
-                data={garages}
-                keyExtractor={(item) => item.id}
-                contentContainerStyle={{ paddingBottom: 20 }}
-                renderItem={({ item }) => (
-                  <TouchableOpacity
-                    style={styles.garageItem}
-                    onPress={() => {
-                      console.log("Garage selected:", item.name);
-                      setFormData({ ...formData, garageId: item.id });
-                      setShowGaragePicker(false);
-                      // Reopen add modal with selected garage
-                      setTimeout(() => {
-                        setShowModal(true);
-                      }, 300);
-                    }}
-                    activeOpacity={0.7}
-                  >
-                    <MaterialCommunityIcons name="garage" size={24} color={C.amber} />
-                    <View style={{ flex: 1, marginLeft: 12 }}>
-                      <Text style={styles.garageName}>{item.name}</Text>
-                      <Text style={styles.garageEmail}>{item.email}</Text>
-                    </View>
-                    {formData.garageId === item.id && (
-                      <Ionicons name="checkmark-circle" size={24} color={C.primary} />
-                    )}
-                  </TouchableOpacity>
-                )}
-                ListEmptyComponent={
-                  <View style={[styles.center, { padding: 40 }]}>
-                    <MaterialCommunityIcons name="garage-alert" size={48} color={C.sub} />
-                    <Text style={styles.emptyText}>{t("vehicles.noGaragesAvailable")}</Text>
-                  </View>
-                }
-              />
-            )}
-          </View>
-        </View>
-      </Modal>
-
       {/* Client Picker Modal (for garages) */}
       <Modal
         transparent
@@ -566,7 +475,6 @@ export default function VehiclesScreen() {
                   <TouchableOpacity
                     style={styles.garageItem}
                     onPress={() => {
-                      console.log("Client selected:", item.name);
                       setFormData({ ...formData, ownerId: item.id });
                       setShowClientPicker(false);
                       setTimeout(() => {
@@ -629,7 +537,6 @@ function VehicleCard({ vehicle, userRole, onEdit, onDelete, onStatusUpdate, t })
             )}
           </View>
         </View>
-        {/* Only garage users can edit and delete vehicles */}
         {userRole === "GARAGE" && (
           <View style={styles.cardActions}>
             <TouchableOpacity onPress={onEdit} style={styles.actionBtn}>
