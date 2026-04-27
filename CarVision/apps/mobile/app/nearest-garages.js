@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   FlatList,
   ActivityIndicator,
-  Platform,
   Linking,
   StatusBar,
   RefreshControl,
@@ -19,20 +18,12 @@ import AppBackground from "../components/layout/AppBackground";
 import { api } from "../lib/api";
 import { getUser } from "../lib/authStore";
 import { showCustomAlert } from "../components/CustomAlert";
+import { openNavigationChooser } from "../lib/navigation";
 import { useLanguage } from "../context/LanguageContext";
 import { C } from "../styles/theme";
 import { nearestGaragesStyles as styles } from "../styles/nearestGaragesStyles";
 
 const DEFAULT_LIMIT = 20;
-
-function buildDirectionsUrl(latitude, longitude) {
-  const lat = Number(latitude);
-  const lng = Number(longitude);
-  if (Platform.OS === "ios") {
-    return `http://maps.apple.com/?daddr=${lat},${lng}`;
-  }
-  return `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
-}
 
 /** Format km for display: finer precision when close. */
 function formatDistanceNumber(distanceKm) {
@@ -45,7 +36,7 @@ function formatDistanceNumber(distanceKm) {
   return String(Math.round(d));
 }
 
-function GarageCard({ item, onNavigate, onEmail, onMessage, t }) {
+function GarageCard({ item, onNavigate, onEmail, onMessage, onOpenDetails, t }) {
   const distStr = formatDistanceNumber(item.distanceKm);
   const rawAddress = item.address != null ? String(item.address).trim() : "";
   const hasAddress = rawAddress.length > 0;
@@ -64,7 +55,7 @@ function GarageCard({ item, onNavigate, onEmail, onMessage, t }) {
   const canMessage = !!(item?.id && String(item.id).trim());
 
   return (
-    <View style={styles.card}>
+    <TouchableOpacity style={styles.card} activeOpacity={0.92} onPress={() => onOpenDetails(item)}>
       <View style={styles.cardTopRow}>
         <Text style={styles.cardTitle} numberOfLines={2}>
           {item.name}
@@ -149,7 +140,7 @@ function GarageCard({ item, onNavigate, onEmail, onMessage, t }) {
           </TouchableOpacity>
         ) : null}
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }
 
@@ -311,12 +302,12 @@ export default function NearestGaragesScreen() {
       const lat = item?.latitude;
       const lng = item?.longitude;
       if (lat == null || lng == null) return;
-      const url = buildDirectionsUrl(lat, lng);
-      try {
-        await Linking.openURL(url);
-      } catch (e) {
-        showCustomAlert(t("common.error"), t("nearestGarages.navigateFailed"));
-      }
+      await openNavigationChooser({
+        latitude: lat,
+        longitude: lng,
+        t,
+        onError: () => showCustomAlert(t("common.error"), t("nearestGarages.navigateFailed")),
+      });
     },
     [t]
   );
@@ -351,6 +342,27 @@ export default function NearestGaragesScreen() {
     [router, t]
   );
 
+  const onOpenDetails = useCallback(
+    (item) => {
+      const id = item?.id != null ? String(item.id).trim() : "";
+      if (!id) return;
+      router.push({
+        pathname: "/garage-detail",
+        params: {
+          id,
+          name: item?.name ?? "",
+          email: item?.email ?? "",
+          address: item?.address ?? "",
+          latitude: item?.latitude != null ? String(item.latitude) : "",
+          longitude: item?.longitude != null ? String(item.longitude) : "",
+          garageDescription: item?.garageDescription ?? "",
+          workingHoursText: item?.workingHoursText ?? "",
+        },
+      });
+    },
+    [router]
+  );
+
   const renderItem = useCallback(
     ({ item }) => (
       <GarageCard
@@ -358,10 +370,11 @@ export default function NearestGaragesScreen() {
         onNavigate={onNavigate}
         onEmail={onEmail}
         onMessage={onMessage}
+        onOpenDetails={onOpenDetails}
         t={t}
       />
     ),
-    [onNavigate, onEmail, onMessage, t]
+    [onNavigate, onEmail, onMessage, onOpenDetails, t]
   );
 
   const listHeader = useCallback(() => {

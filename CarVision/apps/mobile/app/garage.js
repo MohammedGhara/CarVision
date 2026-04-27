@@ -263,6 +263,13 @@ export default function GarageScreen() {
                 accent={C.primary}
               />
               <ActionCard
+                icon="storefront"
+                title={t("marketplace.garageTitle")}
+                subtitle={t("marketplace.garageSubtitle")}
+                onPress={() => router.push("/marketplace-garage")}
+                accent={C.amber}
+              />
+              <ActionCard
                 icon="car-wrench"
                 title={t("garage.manageVehicles")}
                 subtitle={t("garage.manageVehiclesDesc")}

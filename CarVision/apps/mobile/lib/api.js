@@ -45,4 +45,7 @@ export const api = {
   postFile: async (path, formData) => {
     return request(path, { method: "POST", body: formData, isFormData: true });
   },
+  putFile: async (path, formData) => {
+    return request(path, { method: "PUT", body: formData, isFormData: true });
+  },
 };

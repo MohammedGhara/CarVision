@@ -7,6 +7,7 @@ import {
   ScrollView,
   StatusBar,
   ActivityIndicator,
+  Image,
 } from "react-native";
 import { useRouter } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -17,11 +18,18 @@ import LanguagePickerModal from "../components/LanguagePickerModal";
 
 import { api } from "../lib/api";
 import { getToken, getUser, saveUser, clearAuth } from "../lib/authStore";
+import { getHttpBase } from "../lib/httpBase";
 import { useLanguage } from "../context/LanguageContext";
 import { C } from "../styles/theme";
 import { homeStyles as styles } from "../styles/homeStyles";
 
 const HISTORY_STORAGE_KEY = "carvision.history.v1";
+
+function formatPrice(cents, t) {
+  const n = Number(cents);
+  if (!Number.isFinite(n)) return "—";
+  return t("marketplace.priceDisplay", { amount: (n / 100).toFixed(2) });
+}
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -33,11 +41,37 @@ export default function HomeScreen() {
     engineHealth: null,
     activeDTCs: 0,
   });
+  const [featuredProducts, setFeaturedProducts] = useState([]);
+  const [productsBaseUrl, setProductsBaseUrl] = useState("");
 
   // Load vehicle stats from history
   useEffect(() => {
     loadVehicleStats();
   }, []);
+
+  useEffect(() => {
+    if (!user || user.role !== "CLIENT") return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const base = await getHttpBase();
+        const data = await api.get("/api/marketplace");
+        const all = Array.isArray(data?.listings) ? data.listings : [];
+        const featured = all.filter((p) => !!p?.isFeatured).slice(0, 6);
+        if (!cancelled) {
+          setProductsBaseUrl(base);
+          setFeaturedProducts(featured);
+        }
+      } catch (e) {
+        if (!cancelled) {
+          setFeaturedProducts([]);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   async function loadVehicleStats() {
     try {
@@ -160,6 +194,19 @@ export default function HomeScreen() {
     () => (user?.name || user?.fullName || user?.email || "Driver"),
     [user]
   );
+
+  function pricingView(item) {
+    const price = Number(item?.priceCents);
+    const compareAt = Number(item?.compareAtPriceCents);
+    const onSale = Number.isFinite(compareAt) && compareAt > price;
+    return { onSale, compareAt };
+  }
+
+  function previewImageUri(imageUrl) {
+    if (!imageUrl || !productsBaseUrl) return null;
+    const path = imageUrl.startsWith("/") ? imageUrl : `/${imageUrl}`;
+    return `${productsBaseUrl}${path}`;
+  }
 
   if (checking) {
     return (
@@ -339,6 +386,12 @@ export default function HomeScreen() {
                 onPress={() => router.push("/nearest-garages")}
               />
               <SecondaryRow
+                icon="storefront-outline"
+                title={t("marketplace.title")}
+                description={t("marketplace.homeDescription")}
+                onPress={() => router.push("/marketplace")}
+              />
+              <SecondaryRow
                 icon="chatbubble-ellipses-outline"
                 title={t("home.chatWithGarage")}
                 description={t("home.chatWithGarageDescription")}
@@ -358,6 +411,68 @@ export default function HomeScreen() {
               />
             </View>
           </View>
+
+          {featuredProducts.length > 0 ? (
+            <View style={styles.block}>
+              <View style={styles.blockHeaderRow}>
+                <View>
+                  <Text style={styles.blockTitle}>{t("home.productsPreviewTitle")}</Text>
+                  <Text style={styles.blockSubtitle}>{t("home.productsPreviewSubtitle")}</Text>
+                </View>
+                <TouchableOpacity onPress={() => router.push("/marketplace")} activeOpacity={0.85}>
+                  <Text style={styles.viewAllLink}>{t("home.productsViewAll")}</Text>
+                </TouchableOpacity>
+              </View>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.productsPreviewRow}
+              >
+                {featuredProducts.map((item) => {
+                  const price = pricingView(item);
+                  const uri = previewImageUri(item.imageUrl);
+                  return (
+                    <TouchableOpacity
+                      key={item.id}
+                      style={styles.productPreviewCard}
+                      activeOpacity={0.92}
+                      onPress={() =>
+                        router.push({
+                          pathname: "/marketplace-detail",
+                          params: { id: item.id },
+                        })
+                      }
+                    >
+                      {uri ? <Image source={{ uri }} style={styles.productPreviewImage} resizeMode="cover" /> : null}
+                      <View style={styles.productPreviewBadges}>
+                        {item.isFeatured ? (
+                          <View style={styles.productFeaturedBadge}>
+                            <Text style={styles.productFeaturedBadgeText}>{t("marketplace.featuredBadge")}</Text>
+                          </View>
+                        ) : null}
+                        {price.onSale ? (
+                          <View style={styles.productSaleBadge}>
+                            <Text style={styles.productSaleBadgeText}>{t("marketplace.saleBadge")}</Text>
+                          </View>
+                        ) : null}
+                      </View>
+                      <Text style={styles.productPreviewTitle} numberOfLines={2}>
+                        {item.title}
+                      </Text>
+                      <View style={styles.productPreviewPriceRow}>
+                        <Text style={styles.productPreviewPrice}>{formatPrice(item.priceCents, t)}</Text>
+                        {price.onSale ? (
+                          <Text style={styles.productPreviewComparePrice}>
+                            {formatPrice(price.compareAt, t)}
+                          </Text>
+                        ) : null}
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            </View>
+          ) : null}
 
           {/* HELP & TIPS */}
           <View style={styles.block}>

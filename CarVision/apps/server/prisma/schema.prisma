@@ -37,6 +37,26 @@ model User {
   garageVehicles    Vehicle[] @relation("GarageVehicles")
   sentMessages      Message[] @relation("SenderMessages")
   receivedMessages  Message[] @relation("ReceiverMessages")
+  marketplaceListings MarketplaceListing[]
+}
+
+/// Garage-offered item or service on the in-app marketplace (Sprint 1: list, detail, CRUD for GARAGE).
+model MarketplaceListing {
+  id           String   @id @default(cuid())
+  sellerId     String
+  seller       User     @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  title        String
+  description  String   @default("")
+  priceCents   Int
+  compareAtPriceCents Int?
+  imageUrl     String?
+  isFeatured   Boolean  @default(false)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([sellerId])
+  @@index([isActive, createdAt(sort: Desc)])
 }
 
 enum VehicleStatus {
