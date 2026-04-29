@@ -223,4 +223,4 @@ CarVision was built as a real-world full-stack software engineering project comb
 
 ## 📄 License
 
-This project is developed for educational and portfolio purposes.
+This project is developed for portfolio and professional demonstration purposes.
