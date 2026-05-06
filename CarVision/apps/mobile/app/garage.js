@@ -270,6 +270,13 @@ export default function GarageScreen() {
                 accent={C.amber}
               />
               <ActionCard
+                icon="forum-outline"
+                title={t("garage.communityForumTitle")}
+                subtitle={t("garage.communityForumSubtitle")}
+                onPress={() => router.push("/community-forum")}
+                accent={C.green}
+              />
+              <ActionCard
                 icon="car-wrench"
                 title={t("garage.manageVehicles")}
                 subtitle={t("garage.manageVehiclesDesc")}

@@ -386,6 +386,12 @@ export default function HomeScreen() {
                 onPress={() => router.push("/ai")}
               />
               <SecondaryRow
+                icon="people-outline"
+                title={t("home.communityForum")}
+                description={t("home.communityForumDescription")}
+                onPress={() => router.push("/community-forum")}
+              />
+              <SecondaryRow
                 icon="location-outline"
                 title={t("nearestGarages.title")}
                 description={t("nearestGarages.homeDescription")}

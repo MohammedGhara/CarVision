@@ -417,6 +417,16 @@ export default function Diagnostics() {
               </Text>
             </TouchableOpacity>
           </View>
+
+          <TouchableOpacity
+            style={[styles.mainBtn, { flex: 0, alignSelf: "stretch", marginTop: 10, backgroundColor: "rgba(99, 102, 241, 0.14)", borderWidth: 1, borderColor: "rgba(129, 140, 248, 0.35)" }]}
+            onPress={() => router.push("/community-forum")}
+            accessibilityRole="button"
+            accessibilityLabel={t("diagnostics.askCommunity")}
+          >
+            <Ionicons name="people-outline" size={18} color="#A5B4FC" />
+            <Text style={[styles.mainBtnText, { color: "#C7D2FE" }]}>{t("diagnostics.askCommunity")}</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Trouble Codes card */}
@@ -426,16 +436,19 @@ export default function Diagnostics() {
             title={t("diagnostics.currentCodes")}
             description={t("diagnostics.currentCodesDesc")}
             values={data.dtcs}
+            router={router}
           />
           <CodeSection
             title={t("diagnostics.pendingCodes")}
             description={t("diagnostics.pendingCodesDesc")}
             values={data.pending}
+            router={router}
           />
           <CodeSection
             title={t("diagnostics.permanentCodes")}
             description={t("diagnostics.permanentCodesDesc")}
             values={data.permanent}
+            router={router}
           />
         </View>
 
@@ -467,9 +480,10 @@ export default function Diagnostics() {
 
 // ----- Subcomponents -----
 
-function CodeSection({ title, description, values }) {
+function CodeSection({ title, description, values, router }) {
   const { t } = useLanguage();
   const list = values && values.length ? values : [];
+  const OBD_DTC_CATEGORY = "OBD-II / DTC Codes";
 
   return (
     <View style={{ marginBottom: 14 }}>
@@ -495,6 +509,21 @@ function CodeSection({ title, description, values }) {
                 <Text style={styles.codeHint}>
                   {t("diagnostics.codeHint")}
                 </Text>
+                <TouchableOpacity
+                  onPress={() =>
+                    router.push({
+                      pathname: "/create-forum-post",
+                      params: { initialDtc: code, initialCategory: OBD_DTC_CATEGORY },
+                    })
+                  }
+                  style={{ marginTop: 8, alignSelf: "flex-start" }}
+                  accessibilityRole="button"
+                  accessibilityLabel={t("diagnostics.askAboutThisCode")}
+                >
+                  <Text style={{ color: C.primary, fontSize: 12, fontWeight: "800" }}>
+                    {t("diagnostics.askAboutThisCode")}
+                  </Text>
+                </TouchableOpacity>
               </View>
             );
           })}

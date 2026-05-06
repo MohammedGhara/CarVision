@@ -55,6 +55,9 @@ app.use("/api/garages", garagesRouter);
 const marketplaceRouter = require("./src/routes/marketplace");
 app.use("/api/marketplace", marketplaceRouter);
 
+const forumRouter = require("./src/routes/forum");
+app.use("/api/forum", forumRouter);
+
 const messagesRouter = require("./src/routes/messages");
 app.use("/api/messages", messagesRouter);
 

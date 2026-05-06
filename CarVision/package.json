@@ -7,7 +7,9 @@
   "scripts": {
     "start": "node apps/server/server.js",
     "dev": "node apps/server/server.js",
-    "db:generate": "prisma generate --schema apps/server/prisma/schema.prisma"
+    "db:generate": "prisma generate --schema apps/server/prisma/schema.prisma",
+    "db:push": "prisma db push --schema apps/server/prisma/schema.prisma",
+    "db:sync": "prisma generate --schema apps/server/prisma/schema.prisma && prisma db push --schema apps/server/prisma/schema.prisma"
   },
   "dependencies": {
     "@prisma/client": "^6.18.0",
