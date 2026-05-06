@@ -36,6 +36,27 @@ export const nearestGaragesStyles = StyleSheet.create({
     lineHeight: 20,
     marginBottom: 16,
   },
+  openMapBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 14,
+    marginBottom: 16,
+    borderRadius: 14,
+    backgroundColor: "rgba(99,102,241,0.1)",
+    borderWidth: 1,
+    borderColor: "rgba(99,102,241,0.28)",
+  },
+  openMapBannerTitle: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: C.text,
+  },
+  openMapBannerDesc: {
+    fontSize: 12,
+    color: C.sub,
+    marginTop: 2,
+    lineHeight: 16,
+  },
   primaryBtn: {
     flexDirection: "row",
     alignItems: "center",

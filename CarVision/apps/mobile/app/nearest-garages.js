@@ -22,6 +22,7 @@ import { openNavigationChooser } from "../lib/navigation";
 import { useLanguage } from "../context/LanguageContext";
 import { C } from "../styles/theme";
 import { nearestGaragesStyles as styles } from "../styles/nearestGaragesStyles";
+import { NEARBY_RADIUS_KM } from "../lib/garageNearbyConstants";
 
 const DEFAULT_LIMIT = 20;
 
@@ -166,7 +167,7 @@ export default function NearestGaragesScreen() {
       setPhase("loading_list");
       setErrorMessage("");
     }
-    const path = `/api/garages/nearby?lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(lng)}&limit=${DEFAULT_LIMIT}`;
+    const path = `/api/garages/nearby?lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(lng)}&limit=${DEFAULT_LIMIT}&radiusKm=${NEARBY_RADIUS_KM}`;
     const data = await api.get(path);
     const list = Array.isArray(data?.garages) ? data.garages : [];
     setGarages(list);
@@ -418,6 +419,19 @@ export default function NearestGaragesScreen() {
 
       <View style={styles.body}>
         <Text style={styles.subtitle}>{t("nearestGarages.subtitle")}</Text>
+
+        <TouchableOpacity
+          style={styles.openMapBanner}
+          onPress={() => router.push("/map-for-garages")}
+          activeOpacity={0.9}
+        >
+          <Ionicons name="map-outline" size={22} color={C.primary} />
+          <View style={{ flex: 1, marginLeft: 10 }}>
+            <Text style={styles.openMapBannerTitle}>{t("mapForGarages.openButton")}</Text>
+            <Text style={styles.openMapBannerDesc}>{t("mapForGarages.openButtonDesc")}</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color={C.sub} />
+        </TouchableOpacity>
 
         {phase === "need_permission" && (
           <View>

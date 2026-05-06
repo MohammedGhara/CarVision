@@ -9,6 +9,14 @@ const prisma = new PrismaClient();
 
 const EARTH_RADIUS_KM = 6371;
 
+function normalizeServices(raw) {
+  if (raw == null) return [];
+  if (Array.isArray(raw)) {
+    return raw.map((s) => String(s).trim()).filter(Boolean);
+  }
+  return [];
+}
+
 /** Haversine distance in kilometers between two WGS-84 points. */
 function haversineKm(lat1, lon1, lat2, lon2) {
   const toRad = (deg) => (deg * Math.PI) / 180;
@@ -46,7 +54,27 @@ function parseOptionalLimit(value, defaultLimit = 10, max = 50) {
   return { ok: true, value: n };
 }
 
-// GET /api/garages/nearby?lat=...&lng=...&limit=10
+/**
+ * When `radiusKm` is omitted: no distance filter (still sorted by distance, then limited).
+ * When set (e.g. 35): only garages within that radius (km).
+ */
+const MAX_RADIUS_KM = 200;
+
+function parseOptionalRadiusKm(value) {
+  if (value === undefined || value === null || String(value).trim() === "") {
+    return { ok: true, value: null };
+  }
+  const n = Number(String(value).trim());
+  if (!Number.isFinite(n) || n <= 0 || n > MAX_RADIUS_KM) {
+    return {
+      ok: false,
+      error: `radiusKm must be a positive number up to ${MAX_RADIUS_KM}`,
+    };
+  }
+  return { ok: true, value: n };
+}
+
+// GET /api/garages/nearby?lat=...&lng=...&limit=...  [&radiusKm=35]
 router.get("/nearby", authRequired, async (req, res) => {
   try {
     const latParsed = parseRequiredNumber(req.query.lat, "lat");
@@ -80,6 +108,12 @@ router.get("/nearby", authRequired, async (req, res) => {
     }
     const limit = limitParsed.value;
 
+    const radiusParsed = parseOptionalRadiusKm(req.query.radiusKm);
+    if (!radiusParsed.ok) {
+      return res.status(400).json({ ok: false, error: radiusParsed.error });
+    }
+    const radiusKm = radiusParsed.value;
+
     const rows = await prisma.user.findMany({
       where: {
         role: "GARAGE",
@@ -95,6 +129,9 @@ router.get("/nearby", authRequired, async (req, res) => {
         longitude: true,
         garageDescription: true,
         workingHoursText: true,
+        phone: true,
+        services: true,
+        rating: true,
       },
     });
 
@@ -107,9 +144,8 @@ router.get("/nearby", authRequired, async (req, res) => {
           Number.isFinite(g.longitude)
       )
       .map((g) => {
-        const distanceKm = haversineKm(lat, lng, g.latitude, g.longitude);
-        const rounded =
-          Math.round(distanceKm * 100) / 100;
+        const rawKm = haversineKm(lat, lng, g.latitude, g.longitude);
+        const rounded = Math.round(rawKm * 100) / 100;
         const descTrim =
           g.garageDescription != null && String(g.garageDescription).trim() !== ""
             ? String(g.garageDescription).trim()
@@ -118,6 +154,11 @@ router.get("/nearby", authRequired, async (req, res) => {
           g.workingHoursText != null && String(g.workingHoursText).trim() !== ""
             ? String(g.workingHoursText).trim()
             : null;
+        const phoneTrim =
+          g.phone != null && String(g.phone).trim() !== "" ? String(g.phone).trim() : null;
+        const servicesArr = normalizeServices(g.services);
+        const ratingNum =
+          g.rating != null && Number.isFinite(Number(g.rating)) ? Number(g.rating) : null;
         return {
           id: g.id,
           name: g.name,
@@ -126,14 +167,20 @@ router.get("/nearby", authRequired, async (req, res) => {
           latitude: g.latitude,
           longitude: g.longitude,
           distanceKm: rounded,
+          _rawKm: rawKm,
           garageDescription: descTrim,
           workingHoursText: hoursTrim,
+          phone: phoneTrim,
+          services: servicesArr,
+          rating: ratingNum,
         };
       })
+      .filter((row) => radiusKm == null || row._rawKm <= radiusKm)
+      .map(({ _rawKm, ...rest }) => rest)
       .sort((a, b) => a.distanceKm - b.distanceKm)
       .slice(0, limit);
 
-    return res.json({ ok: true, garages: withDistance });
+    return res.json({ ok: true, garages: withDistance, radiusKm });
   } catch (e) {
     console.error("GET /garages/nearby error:", e);
     return res.status(500).json({ ok: false, error: String(e.message) });

@@ -39,6 +39,7 @@ export default function ProfileScreen() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [editName, setEditName] = useState("");
   const [editEmail, setEditEmail] = useState("");
+  const [editPhone, setEditPhone] = useState("");
   const [savingProfile, setSavingProfile] = useState(false);
   const [stats, setStats] = useState({
     totalScans: 0,
@@ -163,6 +164,7 @@ export default function ProfileScreen() {
   async function handleSaveProfile() {
     const trimmedName = (editName || "").trim();
     const trimmedEmail = (editEmail || "").trim();
+    const trimmedPhone = (editPhone || "").trim();
     if (!trimmedName) {
       showCustomAlert(t("common.error"), t("profile.nameRequired"));
       return;
@@ -176,10 +178,18 @@ export default function ProfileScreen() {
       showCustomAlert(t("common.error"), t("profile.invalidEmail"));
       return;
     }
+    if (trimmedPhone.length > 40) {
+      showCustomAlert(t("common.error"), t("profile.phoneTooLong"));
+      return;
+    }
     const payload = {};
     if (!user || trimmedName !== user.name) payload.name = trimmedName;
     if (!user || trimmedEmail.toLowerCase() !== (user.email || "").toLowerCase()) {
       payload.email = trimmedEmail.toLowerCase();
+    }
+    const prevPhone = user?.phone ? String(user.phone).trim() : "";
+    if (trimmedPhone !== prevPhone) {
+      payload.phone = trimmedPhone === "" ? null : trimmedPhone;
     }
     if (Object.keys(payload).length === 0) {
       showCustomAlert(t("common.error"), t("profile.noChanges"));
@@ -398,6 +408,7 @@ export default function ProfileScreen() {
                 onPress={() => {
                   setEditName(user?.name || "");
                   setEditEmail(user?.email || "");
+                  setEditPhone(user?.phone ? String(user.phone) : "");
                   setShowEditModal(true);
                 }}
               />
@@ -422,6 +433,11 @@ export default function ProfileScreen() {
             <View style={styles.infoCard}>
               <InfoRow icon="mail-outline" label={t("profile.email")} value={user?.email || "—"} />
               <InfoRow icon="person-outline" label={t("profile.name")} value={user?.name || "—"} />
+              <InfoRow
+                icon="call-outline"
+                label={t("profile.phone")}
+                value={user?.phone?.trim() ? String(user.phone).trim() : "—"}
+              />
               <InfoRow
                 icon="shield-checkmark-outline"
                 label={t("profile.accountType")}
@@ -499,8 +515,10 @@ export default function ProfileScreen() {
         visible={showEditModal}
         value={editName}
         emailValue={editEmail}
+        phoneValue={editPhone}
         onChangeName={setEditName}
         onChangeEmail={setEditEmail}
+        onChangePhone={setEditPhone}
         onCancel={() => setShowEditModal(false)}
         onSave={handleSaveProfile}
         saving={savingProfile}
@@ -571,7 +589,19 @@ function PreferenceRow({ icon, title, value, onPress }) {
   );
 }
 
-function EditProfileModal({ visible, value, emailValue, onChangeName, onChangeEmail, onCancel, onSave, saving, t }) {
+function EditProfileModal({
+  visible,
+  value,
+  emailValue,
+  phoneValue,
+  onChangeName,
+  onChangeEmail,
+  onChangePhone,
+  onCancel,
+  onSave,
+  saving,
+  t,
+}) {
   return (
     <Modal transparent animationType="fade" visible={visible} onRequestClose={onCancel}>
       <KeyboardAvoidingView
@@ -598,6 +628,15 @@ function EditProfileModal({ visible, value, emailValue, onChangeName, onChangeEm
               placeholderTextColor="rgba(148,163,184,0.8)"
               keyboardType="email-address"
               autoCapitalize="none"
+            />
+            <TextInput
+              style={[styles.modalInput, { marginTop: 12 }]}
+              value={phoneValue}
+              onChangeText={onChangePhone}
+              placeholder={t("profile.phonePlaceholder")}
+              placeholderTextColor="rgba(148,163,184,0.8)"
+              keyboardType="phone-pad"
+              maxLength={40}
             />
             <View style={styles.modalActions}>
               <TouchableOpacity

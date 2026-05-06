@@ -11,7 +11,28 @@ const prisma = new PrismaClient({
   log: ["error", "warn"]  // helps you see DB errors in the console
 });
 
+/** Wrong DB password, Postgres down, bad host — https://www.prisma.io/docs/orm/reference/error-reference */
+function isPrismaDatabaseUnavailable(e) {
+  if (!e || typeof e !== "object") return false;
+  const c = String(e.code ?? e.errorCode ?? "");
+  if (/^(P1000|P1001|P1002|P1003|P1011|P1017)$/.test(c)) return true;
+  const msg = String(e.message ?? "");
+  return /Authentication failed|Can't reach database server|Can't reach database|Server has closed the connection/i.test(
+    msg
+  );
+}
+
 const router = express.Router();
+
+/** Same validation as mobile — used to choose email vs username login path */
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** Uniform JSON for wrong user / wrong password (do not reveal which). */
+const INVALID_LOGIN_BODY = {
+  ok: false,
+  error: "Invalid email/username or password.",
+  code: "INVALID_CREDENTIALS",
+};
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-change-me";
 const TOKEN_TTL = "7d";
@@ -58,11 +79,12 @@ router.post("/signup", async (req, res) => {
       return res.status(400).json({ ok: false, error: "Email is required" });
     }
     
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    const emailTrim = String(email).trim();
+    if (!EMAIL_REGEX.test(emailTrim)) {
       console.log("❌ Validation failed: Invalid email format");
       return res.status(400).json({ ok: false, error: "Invalid email format" });
     }
+    const emailNorm = emailTrim.toLowerCase();
     
     // Validate password
     if (!password) {
@@ -77,9 +99,11 @@ router.post("/signup", async (req, res) => {
 
     // Check if email already exists
     console.log("🔍 Checking if email exists...");
-    const emailExists = await prisma.user.findUnique({ where: { email } });
+    const emailExists = await prisma.user.findFirst({
+      where: { email: { equals: emailNorm, mode: "insensitive" } },
+    });
     if (emailExists) {
-      console.log("❌ Email already exists:", email);
+      console.log("❌ Email already exists:", emailNorm);
       return res.status(409).json({ ok: false, error: "Email already registered" });
     }
 
@@ -87,12 +111,12 @@ router.post("/signup", async (req, res) => {
     const passwordHash = await bcrypt.hash(String(password), 10);
 
     // Provide default name if not provided (since schema requires it)
-    const userName = name && name.trim() ? name.trim() : email.split("@")[0]; // Use email prefix as fallback
+    const userName = name && name.trim() ? name.trim() : emailNorm.split("@")[0]; // Use email prefix as fallback
     console.log("👤 Creating user with name:", userName);
 
     const user = await prisma.user.create({
       data: {
-        email,
+        email: emailNorm,
         name: userName, // Always provide a name
         role: role || "CLIENT",
         passwordHash
@@ -122,7 +146,15 @@ router.post("/signup", async (req, res) => {
     console.error("Error code:", e.code);
     console.error("Error message:", e.message);
     console.error("Error meta:", e.meta);
-    
+
+    if (isPrismaDatabaseUnavailable(e)) {
+      return res.status(503).json({
+        ok: false,
+        error:
+          "Database unavailable. Start Postgres (Docker: apps/server → docker compose up -d) or fix DATABASE_URL (password + port).",
+      });
+    }
+
     // Handle Prisma unique constraint errors
     if (e.code === "P2002") {
       const field = e.meta?.target?.[0] || "field";
@@ -138,14 +170,8 @@ router.post("/signup", async (req, res) => {
       console.log("❌ Prisma validation error");
       return res.status(400).json({ ok: false, error: "Invalid data provided" });
     }
-    
-    // Handle database connection errors
-    if (e.code === "P1001" || e.message?.includes("connect")) {
-      console.log("❌ Database connection error");
-      return res.status(503).json({ ok: false, error: "Database connection failed. Please try again later." });
-    }
-    
-    return res.status(500).json({ 
+
+    return res.status(500).json({
       ok: false, 
       error: String(e.message || "Signup failed. Please try again.") 
     });
@@ -157,41 +183,42 @@ router.post("/signup", async (req, res) => {
 router.post("/login", async (req, res) => {
   try {
     const { email, username, password } = (req.body || {});
-    const identifier = email || username;
-    
+    const identifier = String(email || username || "").trim();
+
     if (!identifier) {
       return res.status(400).json({ ok: false, error: "Email or username is required" });
     }
-    
+
     if (!password) {
       return res.status(400).json({ ok: false, error: "Password is required" });
     }
 
-    // Try to find user by email first, then by name (username)
-    let user = await prisma.user.findUnique({ where: { email: identifier } });
-    
-    if (!user) {
-      // If not found by email, try finding by name (username)
-      user = await prisma.user.findFirst({ 
-        where: { name: identifier } 
+    let user = null;
+    if (EMAIL_REGEX.test(identifier)) {
+      user = await prisma.user.findFirst({
+        where: { email: { equals: identifier, mode: "insensitive" } },
+      });
+    } else {
+      user = await prisma.user.findFirst({
+        where: { name: identifier },
       });
     }
-    
+
     if (!user) {
-      return res.status(401).json({ ok: false, error: "Invalid email/username or password" });
+      return res.status(401).json({ ...INVALID_LOGIN_BODY });
     }
 
     // Check if user has password
     if (!user.passwordHash) {
       return res.status(400).json({
         ok: false,
-        error: "This account has no password. Please sign up again."
+        error: "This account has no password. Please sign up again.",
       });
     }
 
     const ok = await bcrypt.compare(String(password), user.passwordHash);
     if (!ok) {
-      return res.status(401).json({ ok: false, error: "Invalid email/username or password" });
+      return res.status(401).json({ ...INVALID_LOGIN_BODY });
     }
 
     const clean = {
@@ -212,6 +239,13 @@ router.post("/login", async (req, res) => {
     return res.json({ ok: true, user: clean, token });
   } catch (e) {
     console.error("LOGIN ERROR:", e);
+    if (isPrismaDatabaseUnavailable(e)) {
+      return res.status(503).json({
+        ok: false,
+        error:
+          "Database unavailable. Start Postgres (Docker: apps/server → docker compose up -d) or fix DATABASE_URL.",
+      });
+    }
     return res.status(500).json({ ok: false, error: String(e.message || "Login failed. Please try again.") });
   }
 });
@@ -233,6 +267,9 @@ router.get("/me", authRequired, async (req, res) => {
         longitude: true,
         garageDescription: true,
         workingHoursText: true,
+        phone: true,
+        services: true,
+        rating: true,
       }
     });
     
@@ -255,13 +292,15 @@ router.post("/forgot-password", async (req, res) => {
       return res.status(400).json({ ok: false, error: "Email is required" });
     }
     
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    const emailTrim = String(email).trim();
+    if (!EMAIL_REGEX.test(emailTrim)) {
       return res.status(400).json({ ok: false, error: "Invalid email format" });
     }
-    
-    // Find user
-    const user = await prisma.user.findUnique({ where: { email } });
+
+    // Find user (case-insensitive so it matches login/signup)
+    const user = await prisma.user.findFirst({
+      where: { email: { equals: emailTrim, mode: "insensitive" } },
+    });
     
     // Show error if email doesn't exist - tell user to signup
     if (!user) {
@@ -284,7 +323,7 @@ router.post("/forgot-password", async (req, res) => {
       }
     });
     
-    console.log(`🔐 Reset code generated for ${email}: ${resetCode}`);
+    console.log(`🔐 Reset code generated for ${emailTrim}: ${resetCode}`);
     
     // Send password reset email with code
     const emailResult = await sendPasswordResetEmail(user, resetCode);
@@ -307,7 +346,15 @@ router.post("/forgot-password", async (req, res) => {
     console.error("Error code:", e.code);
     console.error("Error message:", e.message);
     console.error("Error meta:", e.meta);
-    
+
+    if (isPrismaDatabaseUnavailable(e)) {
+      return res.status(503).json({
+        ok: false,
+        error:
+          "Database unavailable. Start Postgres (Docker: apps/server → docker compose up -d) or fix DATABASE_URL.",
+      });
+    }
+
     // Check if it's a Prisma field error (missing columns)
     if (e.code === "P2025" || e.message?.includes("Unknown arg") || e.message?.includes("resetToken")) {
       return res.status(500).json({ 
@@ -315,16 +362,8 @@ router.post("/forgot-password", async (req, res) => {
         error: "Database schema error. Please run: npx prisma migrate dev" 
       });
     }
-    
-    // Check if it's a database connection error
-    if (e.code === "P1001" || e.message?.includes("connect")) {
-      return res.status(503).json({ 
-        ok: false, 
-        error: "Database connection failed. Please check your database settings." 
-      });
-    }
-    
-    return res.status(500).json({ 
+
+    return res.status(500).json({
       ok: false, 
       error: `Failed to process request: ${e.message || "Unknown error"}` 
     });
@@ -344,15 +383,21 @@ router.post("/verify-reset-code", async (req, res) => {
       return res.status(400).json({ ok: false, error: "Verification code is required" });
     }
     
+    const emailTrim = String(email).trim();
+
     // Find user with matching email and code
     const user = await prisma.user.findFirst({
       where: {
-        email: email,
-        resetToken: code,
-        resetTokenExpiry: {
-          gt: new Date() // Code not expired
-        }
-      }
+        AND: [
+          { email: { equals: emailTrim, mode: "insensitive" } },
+          { resetToken: String(code) },
+          {
+            resetTokenExpiry: {
+              gt: new Date(), // Code not expired
+            },
+          },
+        ],
+      },
     });
     
     if (!user) {
@@ -362,7 +407,7 @@ router.post("/verify-reset-code", async (req, res) => {
       });
     }
     
-    console.log(`✅ Verification code validated for ${email}`);
+    console.log(`✅ Verification code validated for ${emailTrim}`);
     
     return res.json({ 
       ok: true, 
@@ -400,15 +445,21 @@ router.post("/reset-password", async (req, res) => {
       return res.status(400).json({ ok: false, error: "Password must be at least 6 characters" });
     }
     
+    const emailTrim = String(email).trim();
+
     // Find user with valid code
     const user = await prisma.user.findFirst({
       where: {
-        email: email,
-        resetToken: code,
-        resetTokenExpiry: {
-          gt: new Date() // Code not expired
-        }
-      }
+        AND: [
+          { email: { equals: emailTrim, mode: "insensitive" } },
+          { resetToken: String(code) },
+          {
+            resetTokenExpiry: {
+              gt: new Date(),
+            },
+          },
+        ],
+      },
     });
     
     if (!user) {
@@ -449,12 +500,25 @@ router.post("/reset-password", async (req, res) => {
 
 const MAX_GARAGE_DESCRIPTION_LEN = 400;
 const MAX_WORKING_HOURS_TEXT_LEN = 120;
+const MAX_GARAGE_PHONE_LEN = 40;
+const MAX_SERVICES_COUNT = 24;
+const MAX_SERVICE_LABEL_LEN = 80;
 
-/* PUT /api/auth/update-profile  { name?, email?, address?, latitude?, longitude?, garageDescription?, workingHoursText? } — listing/location text: GARAGE only */
+/* PUT /api/auth/update-profile  { name?, email?, phone?, ...garage fields } — phone optional for any role; listing fields GARAGE only */
 router.put("/update-profile", authRequired, async (req, res) => {
   try {
     const body = req.body || {};
-    const { name, email, address, latitude, longitude, garageDescription, workingHoursText } = body;
+    const {
+      name,
+      email,
+      address,
+      latitude,
+      longitude,
+      garageDescription,
+      workingHoursText,
+      phone,
+      services,
+    } = body;
     const updates = {};
 
     const current = await prisma.user.findUnique({
@@ -470,7 +534,8 @@ router.put("/update-profile", authRequired, async (req, res) => {
       Object.prototype.hasOwnProperty.call(body, "latitude") ||
       Object.prototype.hasOwnProperty.call(body, "longitude") ||
       Object.prototype.hasOwnProperty.call(body, "garageDescription") ||
-      Object.prototype.hasOwnProperty.call(body, "workingHoursText");
+      Object.prototype.hasOwnProperty.call(body, "workingHoursText") ||
+      Object.prototype.hasOwnProperty.call(body, "services");
     if (hasGarageListingField && current.role !== "GARAGE") {
       return res.status(403).json({ ok: false, error: "Only garages can update garage listing fields" });
     }
@@ -488,6 +553,22 @@ router.put("/update-profile", authRequired, async (req, res) => {
         return res.status(400).json({ ok: false, error: "Invalid email format" });
       }
       updates.email = email.trim().toLowerCase();
+    }
+
+    /** Optional contact phone — allowed for CLIENT and GARAGE */
+    if (Object.prototype.hasOwnProperty.call(body, "phone")) {
+      if (phone === null || phone === "") {
+        updates.phone = null;
+      } else {
+        const trimmed = String(phone).trim();
+        if (trimmed.length > MAX_GARAGE_PHONE_LEN) {
+          return res.status(400).json({
+            ok: false,
+            error: `Phone must be at most ${MAX_GARAGE_PHONE_LEN} characters`,
+          });
+        }
+        updates.phone = trimmed;
+      }
     }
 
     if (current.role === "GARAGE") {
@@ -549,6 +630,33 @@ router.put("/update-profile", authRequired, async (req, res) => {
           updates.workingHoursText = trimmed === "" ? null : trimmed;
         }
       }
+      if (Object.prototype.hasOwnProperty.call(body, "services")) {
+        if (services === null || services === "") {
+          updates.services = null;
+        } else if (!Array.isArray(services)) {
+          return res.status(400).json({ ok: false, error: "services must be an array of strings" });
+        } else {
+          const cleaned = [];
+          for (const raw of services) {
+            const s = String(raw ?? "").trim();
+            if (!s) continue;
+            if (s.length > MAX_SERVICE_LABEL_LEN) {
+              return res.status(400).json({
+                ok: false,
+                error: `Each service label must be at most ${MAX_SERVICE_LABEL_LEN} characters`,
+              });
+            }
+            cleaned.push(s);
+            if (cleaned.length > MAX_SERVICES_COUNT) {
+              return res.status(400).json({
+                ok: false,
+                error: `At most ${MAX_SERVICES_COUNT} services allowed`,
+              });
+            }
+          }
+          updates.services = cleaned.length ? cleaned : null;
+        }
+      }
     }
 
     if (Object.keys(updates).length === 0) {
@@ -577,6 +685,9 @@ router.put("/update-profile", authRequired, async (req, res) => {
         longitude: true,
         garageDescription: true,
         workingHoursText: true,
+        phone: true,
+        services: true,
+        rating: true,
       },
     });
 

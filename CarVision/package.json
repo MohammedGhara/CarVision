@@ -6,7 +6,8 @@
   "main": "apps/server/server.js",
   "scripts": {
     "start": "node apps/server/server.js",
-    "dev": "node apps/server/server.js"
+    "dev": "node apps/server/server.js",
+    "db:generate": "prisma generate --schema apps/server/prisma/schema.prisma"
   },
   "dependencies": {
     "@prisma/client": "^6.18.0",

@@ -386,6 +386,12 @@ export default function HomeScreen() {
                 onPress={() => router.push("/nearest-garages")}
               />
               <SecondaryRow
+                icon="map-outline"
+                title={t("mapForGarages.openButton")}
+                description={t("mapForGarages.openButtonDesc")}
+                onPress={() => router.push("/map-for-garages")}
+              />
+              <SecondaryRow
                 icon="storefront-outline"
                 title={t("marketplace.title")}
                 description={t("marketplace.homeDescription")}

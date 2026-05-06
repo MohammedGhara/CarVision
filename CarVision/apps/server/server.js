@@ -6,9 +6,9 @@
 require("events").EventEmitter.defaultMaxListeners = 30;
 
 /* ───────────── Deps ───────────── */
-require("dotenv").config();                  // .env for OPENAI_API_KEY
-const http = require("http");
 const path = require("path");
+require("dotenv").config({ path: path.join(__dirname, ".env") });
+const http = require("http");
 const fs = require("fs");
 const net = require("net");
 const WebSocket = require("ws");

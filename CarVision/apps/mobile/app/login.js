@@ -61,15 +61,14 @@ export default function Login() {
       const base = await getHttpBase();
       
       // Determine if it's an email or username
-      const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifier);
-      
+      const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifier.trim());
+      const idTrim = identifier.trim();
+
       const resp = await fetch(`${base}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(
-          isEmail 
-            ? { email: identifier, password } 
-            : { username: identifier, password }
+          isEmail ? { email: idTrim, password } : { username: idTrim, password }
         ),
       });
       
@@ -90,20 +89,29 @@ export default function Login() {
       }
       
       if (!resp.ok || !data.ok) {
-        // Show specific error message from server
         const errorMsg = data.error || "Login failed. Please try again.";
+        const code = data.code;
         setBusy(false);
-        
-        // Show specific alerts based on error type
-        if (errorMsg.toLowerCase().includes("password")) {
-          showCustomAlert("❌ " + t("common.error"), t("login.incorrectPassword"));
-        } else if (errorMsg.toLowerCase().includes("email") || errorMsg.toLowerCase().includes("username")) {
-          showCustomAlert("❌ " + t("common.error"), t("login.accountNotFound"));
-        } else if (errorMsg.toLowerCase().includes("required")) {
-          showCustomAlert("⚠️ " + t("login.missingInfo"), errorMsg);
-        } else {
-          showCustomAlert("❌ " + t("login.loginFailed"), errorMsg);
+
+        if (
+          code === "INVALID_CREDENTIALS" ||
+          /invalid email\/username or password/i.test(errorMsg)
+        ) {
+          showCustomAlert(t("common.error"), t("login.invalidCredentials"));
+          return;
         }
+
+        const lower = errorMsg.toLowerCase();
+        if (lower.includes("no password")) {
+          showCustomAlert(t("common.error"), errorMsg);
+          return;
+        }
+        if (lower.includes("required")) {
+          showCustomAlert("⚠️ " + t("login.missingInfo"), errorMsg);
+          return;
+        }
+
+        showCustomAlert("❌ " + t("login.loginFailed"), errorMsg);
         return;
       }
       

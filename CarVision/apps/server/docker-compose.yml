@@ -1,0 +1,27 @@
+# Postgres for CarVision — matches apps/server/.env DATABASE_URL (password carvision).
+# Host port 5433 avoids conflict when another Postgres already uses 5432.
+#
+#   cd apps/server
+#   docker compose up -d
+#   npx prisma db push
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: carvision-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: carvision
+      POSTGRES_DB: carvision
+    ports:
+      - "5433:5432"
+    volumes:
+      - carvision_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d carvision"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  carvision_pgdata:
