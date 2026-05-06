@@ -15,9 +15,11 @@ import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 
 import { getWsUrl, checkNetworkChange } from "../lib/wsConfig";
+import { pushTelemetrySlice } from "../lib/liveTelemetryBridge";
 import { describeDtc } from "../lib/dtcDescriptions";
 import { useLanguage } from "../context/LanguageContext";
 import { diagnosticsStyles as styles } from "../styles/diagnosticsStyles";
+import EmergencySOSModal from "../components/safety/EmergencySOSModal";
 
 const C = {
   bg: "#050712",
@@ -35,6 +37,7 @@ export default function Diagnostics() {
   const router = useRouter();
   const { t } = useLanguage();
   const wsRef = useRef(null);
+  const [sosOpen, setSosOpen] = useState(false);
 
   const [wsUrl, setWsUrl] = useState(null);
   const [link, setLink] = useState({ status: "down", message: "Connecting…" });
@@ -110,6 +113,7 @@ export default function Diagnostics() {
           }
 
           if (msg.type === "telemetry") {
+            pushTelemetrySlice(msg.data);
             setData((prev) => ({
               ...prev,
               monitors: msg.data.monitors ?? prev.monitors,
@@ -330,6 +334,14 @@ export default function Diagnostics() {
         </View>
 
         <View style={styles.rightWrap}>
+          <TouchableOpacity
+            onPress={() => setSosOpen(true)}
+            style={{ paddingVertical: 6, paddingHorizontal: 4 }}
+            accessibilityRole="button"
+            accessibilityLabel={t("diagnostics.sosAccessibility")}
+          >
+            <Ionicons name="medkit-outline" size={22} color="#F97373" />
+          </TouchableOpacity>
           {/* NEW: History button */}
           <TouchableOpacity
             style={styles.historyBtn}
@@ -448,6 +460,7 @@ export default function Diagnostics() {
           </Text>
         </View>
       </ScrollView>
+      <EmergencySOSModal visible={sosOpen} onClose={() => setSosOpen(false)} t={t} />
     </SafeAreaView>
   );
 }

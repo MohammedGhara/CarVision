@@ -2,7 +2,9 @@
 import { Stack } from "expo-router";
 import { LogBox } from "react-native";
 import { AuthProvider } from "../context/AuthContext";
+import { SafetySettingsProvider } from "../context/SafetySettingsContext";
 import { CustomAlertProvider } from "../components/CustomAlert";
+import SafetyEmergencyHost from "../components/SafetyEmergencyHost";
 import { LanguageProvider } from "../context/LanguageContext";
 
 // Suppress warnings
@@ -20,10 +22,14 @@ if (typeof LogBox !== "undefined") {
 export default function Layout() {
   return (
     <LanguageProvider>
-      <AuthProvider>
-        <CustomAlertProvider />
-        <Stack screenOptions={{ headerShown: false }} />
-      </AuthProvider>
+      <SafetySettingsProvider>
+        <AuthProvider>
+          <CustomAlertProvider />
+          <SafetyEmergencyHost>
+            <Stack screenOptions={{ headerShown: false }} />
+          </SafetyEmergencyHost>
+        </AuthProvider>
+      </SafetySettingsProvider>
     </LanguageProvider>
   );
 }

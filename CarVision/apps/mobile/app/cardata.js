@@ -18,6 +18,8 @@ import * as Sharing from "expo-sharing";
 import * as Print from "expo-print";
 
 import { getWsUrl, checkNetworkChange } from "../lib/wsConfig";
+import { pushTelemetrySlice } from "../lib/liveTelemetryBridge";
+import EmergencySOSModal from "../components/safety/EmergencySOSModal";
 import { useLanguage } from "../context/LanguageContext";
 import { colors } from "../styles/theme";
 import { cardataStyles as styles } from "../styles/cardataStyles";
@@ -39,6 +41,7 @@ export default function CarData() {
   const [queued, setQueued] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [isLogging, setIsLogging] = useState(false);
+  const [sosOpen, setSosOpen] = useState(false);
 
   const [telemetry, setTelemetry] = useState({
     battery: null,
@@ -131,6 +134,7 @@ export default function CarData() {
           }
 
           if (msg.type === "telemetry") {
+            pushTelemetrySlice(msg.data);
             setTelemetry((prev) => {
               const next = { ...prev, ...msg.data };
 
@@ -607,6 +611,7 @@ export default function CarData() {
 
   return (
     <AppBackground scrollable={false}>
+      <View style={{ flex: 1 }}>
           {/* TOP BAR */}
           <View style={styles.topbar}>
             <TouchableOpacity
@@ -784,6 +789,19 @@ export default function CarData() {
               {link.status === "up" ? t("cardata.live") : t("cardata.offline")} · {link.message}
             </Text>
           </View>
+
+          <TouchableOpacity
+            style={styles.sosFab}
+            onPress={() => setSosOpen(true)}
+            activeOpacity={0.9}
+            accessibilityRole="button"
+            accessibilityLabel={t("cardata.sosFabAccessibility")}
+          >
+            <MaterialCommunityIcons name="lifebuoy" size={26} color="#fff" />
+          </TouchableOpacity>
+
+          <EmergencySOSModal visible={sosOpen} onClose={() => setSosOpen(false)} t={t} />
+      </View>
     </AppBackground>
   );
 }

@@ -368,6 +368,12 @@ export default function HomeScreen() {
 
             <View style={styles.secondaryList}>
               <SecondaryRow
+                icon="shield-checkmark-outline"
+                title={t("home.safetyTitle")}
+                description={t("home.safetyDescription")}
+                onPress={() => router.push("/safety-emergency")}
+              />
+              <SecondaryRow
                 icon="person-outline"
                 title={t("common.profile")}
                 description={t("home.profileDescription")}

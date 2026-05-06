@@ -312,5 +312,23 @@ export const cardataStyles = StyleSheet.create({
     color: C.sub,
     fontSize: 12,
   },
+  sosFab: {
+    position: "absolute",
+    bottom: 52,
+    right: 14,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#B91C1C",
+    borderWidth: 2,
+    borderColor: "rgba(254,202,202,0.45)",
+    zIndex: 50,
+    elevation: 14,
+    shadowColor: "#000",
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+  },
 });
 

@@ -51,6 +51,8 @@ export default {
     liveDataSubtitle: "RPM, speed, temperature",
     repairGuidance: "Repair Guidance",
     repairGuidanceSubtitle: "Causes and fix steps",
+    safetyTitle: "Safety & Emergency",
+    safetyDescription: "SOS, crash hints, battery & tire awareness.",
     toolsReports: "Tools & Reports",
     profileDescription: "View your account information and statistics.",
     aiAssistant: "AI Assistant",
@@ -155,6 +157,73 @@ export default {
     recenterAccessibility: "Go to my current location",
     expandMapAccessibility: "Expand map to fullscreen",
     minimizeMapAccessibility: "Minimize map",
+  },
+
+  safetyEmergency: {
+    eyebrow: "SAFETY",
+    screenTitle: "Safety & Emergency",
+    heroTitle: "Emergency assistance",
+    heroSub:
+      "Quick access to help, your location, and nearby garages. Emergency calls always require your confirmation in CarVision.",
+    sosButton: "SOS — Emergency",
+    sosModalTitle: "Emergency assistance",
+    sosModalSubtitle:
+      "Choose an action. CarVision does not place emergency calls automatically.",
+    sosNoAutoCall:
+      "You must confirm any outgoing call. Use official emergency lines only when appropriate.",
+    cancel: "Close",
+    imOkay: "I'm OK",
+    callEmergency: "Call emergency (primary)",
+    shareLocation: "Share my location",
+    openGarageMap: "Open garage map",
+    dismissPanel: "Dismiss alert",
+    crashTitle: "Possible impact detected",
+    crashSubtitle:
+      "Are you okay? Sudden vibration can trigger false alerts — assess your situation calmly.",
+    crashCountdown: "Reference timer: {{seconds}}s (no auto-call).",
+    crashCountdownDone: "If you need help, use the actions below.",
+    crashDisclaimer:
+      "Detection uses the device accelerometer (g-force). It is not medically or legally verified.",
+    noAutoCallLegal:
+      "CarVision never contacts emergency services by itself. Safe driving is always your responsibility.",
+    crashMonitorTitle: "Impact monitoring",
+    crashMonitorSub:
+      "While enabled, uses sensors while the app is open. Turn off if you see frequent false positives.",
+    sectionVehicle: "VEHICLE ALERTS",
+    batteryCardTitle: "Battery / ECU voltage",
+    batteryNormal: "Within expected range",
+    batteryWarning: "Low voltage warning",
+    batteryCritical: "Critically low voltage",
+    batteryUnknown: "No voltage data yet",
+    batteryVoltageLine: "{{v}} · {{mode}}",
+    engineRunning: "Engine running",
+    engineOff: "Engine off / low RPM",
+    batteryHint:
+      "Uses the same ECU/battery voltage as Live Data when connected. Interpretation varies by vehicle state.",
+    tireCardTitle: "Tires",
+    tirePlaceholder:
+      "Tire pressure monitoring will be available when TPMS-capable data is supported in telemetry.",
+    tireFutureHint:
+      "Alerts will activate only from real PID data — CarVision will not invent tire pressures.",
+    sectionQuickDial: "ISRAEL QUICK DIAL",
+    numberPolice: "Police",
+    numberMda: "Ambulance (MDA)",
+    numberFire: "Fire",
+    sectionTrusted: "TRUSTED CONTACT",
+    trustedPlaceholder:
+      "Trusted contact shortcuts are not configured yet. A future update can add one-tap calling.",
+    screenLegal:
+      "Driver assistance only — not a substitute for emergency services, roadside assistance, or medical care.",
+    callConfirmTitle: "Start phone call?",
+    callConfirmBody:
+      "Your phone will dial {{number}}. Only continue if it is safe and appropriate.",
+    callNow: "Call",
+    cannotOpenDialer: "Could not open the phone dialer.",
+    invalidNumber: "Invalid emergency number.",
+    shareMessage: "Emergency — my location: {{lat}}, {{lng}}\n{{url}}",
+    shareFailed: "Could not open the share sheet.",
+    locationDeniedTitle: "Location unavailable",
+    locationDeniedBody: "Allow location access in settings to share coordinates.",
   },
 
   // Marketplace (Sprint 1)
@@ -434,6 +503,7 @@ export default {
     attention: "ATTENTION",
     historyStatus: "HISTORY",
     exportFailed: "Could not generate PDF report. Please try again.",
+    sosAccessibility: "Open emergency assistance",
   },
 
   // CarData Screen
@@ -457,6 +527,7 @@ export default {
     pending: "Pending",
     permanent: "Permanent",
     none: "None",
+    sosFabAccessibility: "Open emergency SOS assistance",
   },
 
   // Repairs Screen
