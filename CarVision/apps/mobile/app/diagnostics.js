@@ -330,7 +330,6 @@ export default function Diagnostics() {
 
         <View style={{ flex: 1, alignItems: "center" }}>
           <Text style={styles.topTitle}>{t("diagnostics.title")}</Text>
-          <Text style={styles.topSubtitle}>{t("diagnostics.subtitle")}</Text>
         </View>
 
         <View style={styles.rightWrap}>
@@ -352,11 +351,6 @@ export default function Diagnostics() {
             <Text style={styles.historyText}>{t("diagnostics.history")}</Text>
           </TouchableOpacity>
 
-          {data.adapter ? (
-            <Text style={styles.adapterText} numberOfLines={1}>
-              {data.adapter}
-            </Text>
-          ) : null}
           <View
             style={[
               styles.dot,
@@ -388,12 +382,6 @@ export default function Diagnostics() {
           </View>
 
           <Text style={styles.summaryText}>{statusText}</Text>
-
-          <Text style={styles.helpText}>
-            • <Text style={styles.helpStrong}>{t("diagnostics.currentHelp")}</Text>: {t("diagnostics.currentHelpDesc")} {"\n"}
-            • <Text style={styles.helpStrong}>{t("diagnostics.pendingHelp")}</Text>: {t("diagnostics.pendingHelpDesc")} {"\n"}
-            • <Text style={styles.helpStrong}>{t("diagnostics.permanentHelp")}</Text>: {t("diagnostics.permanentHelpDesc")}
-          </Text>
 
           <View style={styles.actionsRow}>
             <TouchableOpacity
@@ -434,30 +422,21 @@ export default function Diagnostics() {
         <View style={styles.card}>
           <CodeSection
             title={t("diagnostics.currentCodes")}
-            description={t("diagnostics.currentCodesDesc")}
             values={data.dtcs}
-            router={router}
           />
           <CodeSection
             title={t("diagnostics.pendingCodes")}
-            description={t("diagnostics.pendingCodesDesc")}
             values={data.pending}
-            router={router}
           />
           <CodeSection
             title={t("diagnostics.permanentCodes")}
-            description={t("diagnostics.permanentCodesDesc")}
             values={data.permanent}
-            router={router}
           />
         </View>
 
         {/* Readiness Snapshot */}
         <Text style={styles.sectionLabel}>{t("diagnostics.readinessSnapshot")}</Text>
         <View style={styles.card}>
-          <Text style={styles.bodyText}>
-            {t("diagnostics.readinessDescription")}
-          </Text>
           <Text style={styles.rawBox}>
             {Array.isArray(data.monitors?.bytes) &&
             data.monitors.bytes.length ? (
@@ -468,9 +447,6 @@ export default function Diagnostics() {
               <>{t("diagnostics.notAvailable")}</>
             )}
           </Text>
-          <Text style={[styles.bodyText, { fontSize: 11, opacity: 0.75 }]}>
-            {t("diagnostics.readinessNote")}
-          </Text>
         </View>
       </ScrollView>
       <EmergencySOSModal visible={sosOpen} onClose={() => setSosOpen(false)} t={t} />
@@ -480,15 +456,13 @@ export default function Diagnostics() {
 
 // ----- Subcomponents -----
 
-function CodeSection({ title, description, values, router }) {
+function CodeSection({ title, values }) {
   const { t } = useLanguage();
   const list = values && values.length ? values : [];
-  const OBD_DTC_CATEGORY = "OBD-II / DTC Codes";
 
   return (
     <View style={{ marginBottom: 14 }}>
       <Text style={styles.h2}>{title}</Text>
-      <Text style={styles.bodyText}>{description}</Text>
 
       {list.length === 0 ? (
         <View style={styles.emptyChip}>
@@ -506,24 +480,6 @@ function CodeSection({ title, description, values, router }) {
                   </View>
                   <Text style={styles.codeTitle}>{desc}</Text>
                 </View>
-                <Text style={styles.codeHint}>
-                  {t("diagnostics.codeHint")}
-                </Text>
-                <TouchableOpacity
-                  onPress={() =>
-                    router.push({
-                      pathname: "/create-forum-post",
-                      params: { initialDtc: code, initialCategory: OBD_DTC_CATEGORY },
-                    })
-                  }
-                  style={{ marginTop: 8, alignSelf: "flex-start" }}
-                  accessibilityRole="button"
-                  accessibilityLabel={t("diagnostics.askAboutThisCode")}
-                >
-                  <Text style={{ color: C.primary, fontSize: 12, fontWeight: "800" }}>
-                    {t("diagnostics.askAboutThisCode")}
-                  </Text>
-                </TouchableOpacity>
               </View>
             );
           })}

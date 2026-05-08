@@ -244,8 +244,10 @@ This is an automated email. Please do not reply.
   }
 }
 
-// Verify email config on module load
-verifyEmailConfig().catch(console.error);
+// Verify email config on module load (skip in tests to avoid async log noise)
+if (process.env.NODE_ENV !== "test") {
+  verifyEmailConfig().catch(console.error);
+}
 
 // Send vehicle completion email to client
 async function sendVehicleDoneEmail(client, vehicle, garage) {

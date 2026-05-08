@@ -13,8 +13,9 @@ const repoRootEnv = path.join(__dirname, "..", "..", ".env");
 const serverEnv = path.join(__dirname, ".env");
 dotenv.config({ path: repoRootEnv });
 dotenv.config({ path: serverEnv });
+const IS_TEST = process.env.NODE_ENV === "test";
 
-if (!process.env.DATABASE_URL) {
+if (!process.env.DATABASE_URL && !IS_TEST) {
   console.error(
     "Missing DATABASE_URL. Add it to .env at the repo root (recommended) or apps/server/.env.",
   );
@@ -161,9 +162,10 @@ app.delete("/api/users/:id", async (req, res) => {
 
 /* ───────────── HTTP + WebSocket server ───────────── */
 const httpServer = http.createServer(app);
-const wss = new WebSocket.Server({ server: httpServer, path: "/ws" });
+const wss = IS_TEST ? null : new WebSocket.Server({ server: httpServer, path: "/ws" });
 
 function wsBroadcast(obj) {
+  if (!wss) return;
   const msg = JSON.stringify(obj);
   for (const c of wss.clients)
     if (c.readyState === WebSocket.OPEN) c.send(msg);
@@ -171,7 +173,7 @@ function wsBroadcast(obj) {
 
 const commandQueue = []; // { cmd: "04", ackId: string }
 
-wss.on("connection", (ws) => {
+wss?.on("connection", (ws) => {
   ws.on("message", (raw) => {
     try {
       const msg = JSON.parse(raw.toString());
@@ -306,7 +308,7 @@ function classify({ rpm, speed, coolant, dtcs, connected }) {
 }
 
 /* ───────────── ELM main loop (24/7) ───────────── */
-(async function startElmLoop() {
+async function startElmLoop() {
   let attempt = 0;
 
   while (true) {
@@ -494,7 +496,7 @@ function classify({ rpm, speed, coolant, dtcs, connected }) {
       await sleep(1000);
     }
   }
-})();
+}
 app.post("/auth/register", (req, res) => {
   const { name, email, password, role } = req.body || {};
   if (!email || !password) {
@@ -509,7 +511,15 @@ app.post("/auth/register", (req, res) => {
 });
 
 /* ───────────── Start servers ───────────── */
-httpServer.listen(HTTP_PORT, HTTP_HOST, () => {
-  console.log(`CarVision web server on http://${HTTP_HOST}:${HTTP_PORT}`);
-  console.log(`Bridging to ELM327 at tcp://${ELM_HOST}:${ELM_PORT}`);
-});
+if (!IS_TEST) {
+  startElmLoop();
+}
+
+if (require.main === module) {
+  httpServer.listen(HTTP_PORT, HTTP_HOST, () => {
+    console.log(`CarVision web server on http://${HTTP_HOST}:${HTTP_PORT}`);
+    console.log(`Bridging to ELM327 at tcp://${ELM_HOST}:${ELM_PORT}`);
+  });
+}
+
+module.exports = { app };
