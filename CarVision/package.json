@@ -5,6 +5,7 @@
   "description": "CarVision dashboard (web) + TCP bridge to ELM327 simulator",
   "main": "apps/server/server.js",
   "scripts": {
+    "prestart": "docker compose -f apps/server/docker-compose.yml up -d",
     "start": "node apps/server/server.js",
     "dev": "node apps/server/server.js",
     "db:generate": "prisma generate --schema apps/server/prisma/schema.prisma",
@@ -19,7 +20,7 @@
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
     "multer": "^1.4.5-lts.1",
-    "nodemailer": "^7.0.10",
+    "nodemailer": "^8.0.7",
     "prisma": "^6.18.0",
     "ws": "^8.18.3"
   },
