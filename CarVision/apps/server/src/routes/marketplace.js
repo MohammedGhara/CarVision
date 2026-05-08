@@ -48,18 +48,40 @@ function maybeUploadImage(req, res, next) {
 
 function uploadsLocalPath(imageUrl) {
   if (!imageUrl || typeof imageUrl !== "string") return null;
-  const m = imageUrl.match(/^\/uploads\/(.+)$/);
-  if (!m) return null;
-  const base = path.basename(m[1]);
-  return path.join(UPLOADS_DIR, base);
+  const s = imageUrl.trim();
+  let tail = null;
+  const mAbs = s.match(/\/uploads\/([^/?#\s]+)/);
+  if (mAbs) tail = mAbs[1];
+  else {
+    const mRel = s.match(/^uploads\/([^/?#\s]+)/i);
+    if (mRel) tail = mRel[1];
+  }
+  if (!tail) return null;
+  const base = path.basename(tail);
+  if (!base || base === "." || base === "..") return null;
+  const candidate = path.resolve(path.join(UPLOADS_DIR, base));
+  const root = path.resolve(UPLOADS_DIR);
+  if (candidate !== root && !candidate.startsWith(root + path.sep)) return null;
+  return candidate;
 }
 
 function tryUnlinkUpload(imageUrl) {
   const full = uploadsLocalPath(imageUrl);
-  if (!full) return;
+  if (!full) {
+    if (imageUrl && String(imageUrl).trim()) {
+      console.warn("[marketplace] Could not map imageUrl to uploads dir:", imageUrl);
+    }
+    return false;
+  }
   try {
-    if (fs.existsSync(full)) fs.unlinkSync(full);
-  } catch (_) {}
+    if (fs.existsSync(full)) {
+      fs.unlinkSync(full);
+      return true;
+    }
+  } catch (e) {
+    console.error("[marketplace] Failed to delete upload file:", full, e.message || e);
+  }
+  return false;
 }
 
 function parsePriceCents(body) {

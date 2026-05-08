@@ -39,7 +39,7 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "CarVision uses your location to find nearby garages and to set your garage coordinates in your profile."
+          "locationWhenInUsePermission": "CarVision uses your location to find nearby garages, set garage coordinates on your profile, and optionally share your pin when you message a garage."
         }
       ]
     ]

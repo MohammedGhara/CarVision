@@ -7,7 +7,19 @@ require("events").EventEmitter.defaultMaxListeners = 30;
 
 /* ───────────── Deps ───────────── */
 const path = require("path");
-require("dotenv").config({ path: path.join(__dirname, ".env") });
+const dotenv = require("dotenv");
+// Repo-root .env (where DATABASE_URL usually lives); apps/server/.env overrides on conflicts.
+const repoRootEnv = path.join(__dirname, "..", "..", ".env");
+const serverEnv = path.join(__dirname, ".env");
+dotenv.config({ path: repoRootEnv });
+dotenv.config({ path: serverEnv });
+
+if (!process.env.DATABASE_URL) {
+  console.error(
+    "Missing DATABASE_URL. Add it to .env at the repo root (recommended) or apps/server/.env.",
+  );
+  process.exit(1);
+}
 const http = require("http");
 const fs = require("fs");
 const net = require("net");

@@ -21,9 +21,11 @@ import { getToken, getUser, saveUser, clearAuth } from "../lib/authStore";
 import { getHttpBase } from "../lib/httpBase";
 import { useLanguage } from "../context/LanguageContext";
 import { C } from "../styles/theme";
-import { homeStyles as styles } from "../styles/homeStyles";
+import { HOME_SECTION_ICON, homeStyles as styles } from "../styles/homeStyles";
 
 const HISTORY_STORAGE_KEY = "carvision.history.v1";
+
+const HOME_SCREEN_SHELL = { flex: 1, paddingHorizontal: 0, paddingVertical: 0 };
 
 function formatPrice(cents, t) {
   const n = Number(cents);
@@ -210,7 +212,7 @@ export default function HomeScreen() {
 
   if (checking) {
     return (
-      <AppBackground scrollable={false}>
+      <AppBackground scrollable={false} contentContainerStyle={HOME_SCREEN_SHELL}>
         <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
           <ActivityIndicator size="large" color={C.primary} />
           <Text style={{ color: C.sub, marginTop: 10 }}>Loading…</Text>
@@ -220,14 +222,14 @@ export default function HomeScreen() {
   }
 
   return (
-    <AppBackground scrollable={false}>
+    <AppBackground scrollable={false} contentContainerStyle={HOME_SCREEN_SHELL}>
       <StatusBar barStyle="light-content" />
 
       {/* —— TOP BAR —— */}
       <View style={styles.header}>
           <View style={styles.appIdentity}>
             <View style={styles.logoCircle}>
-              <Ionicons name="car-sport-outline" size={20} color={C.primary} />
+              <Ionicons name="car-sport-outline" size={21} color={C.primary} />
             </View>
             <View>
               <Text style={styles.appTitle}>{t("home.title")}</Text>
@@ -235,14 +237,14 @@ export default function HomeScreen() {
             </View>
           </View>
 
-          <View style={{ flexDirection: "row", gap: 8 }}>
+          <View style={styles.headerActions}>
             <TouchableOpacity
               onPress={() => setShowLanguagePicker(true)}
               style={styles.langChip}
               activeOpacity={0.85}
             >
               <Ionicons name="language-outline" size={18} color={C.text} />
-              <Text style={styles.langChipText}>
+              <Text style={styles.langChipText} numberOfLines={1}>
                 {languages[language]?.nativeName || language.toUpperCase()}
               </Text>
             </TouchableOpacity>
@@ -251,14 +253,14 @@ export default function HomeScreen() {
               style={styles.profileBtn}
               activeOpacity={0.85}
             >
-              <Ionicons name="person-circle-outline" size={20} color={C.text} />
+              <Ionicons name="person-circle-outline" size={21} color={C.text} />
             </TouchableOpacity>
             <TouchableOpacity
               onPress={onLogout}
               style={[styles.profileBtn, { backgroundColor: "rgba(249,115,115,0.12)", borderColor: "rgba(249,115,115,0.35)" }]}
               activeOpacity={0.85}
             >
-              <Ionicons name="log-out-outline" size={20} color={C.red} />
+              <Ionicons name="log-out-outline" size={21} color={C.red} />
             </TouchableOpacity>
           </View>
         </View>
@@ -298,7 +300,6 @@ export default function HomeScreen() {
                   value={vehicleStats.engineHealth || "—"}
                   hint={vehicleStats.engineHealth ? "" : t("home.runScanToAnalyze")}
                 />
-                <View style={{ height: 10 }} />
                 <OverviewMetric
                   label={t("home.activeDTCCodes")}
                   value={vehicleStats.activeDTCs > 0 ? vehicleStats.activeDTCs.toString() : "—"}
@@ -316,7 +317,7 @@ export default function HomeScreen() {
                   onPress={() => router.push("/diagnostics")}
                   activeOpacity={0.9}
                 >
-                  <Ionicons name="flash-outline" size={18} color="#fff" />
+                  <Ionicons name="flash-outline" size={17} color="#fff" />
                   <Text style={styles.overviewButtonText}>{t("home.startScan")}</Text>
                 </TouchableOpacity>
               </View>
@@ -360,74 +361,98 @@ export default function HomeScreen() {
             </View>
           </View>
 
-          {/* SECONDARY TOOLS */}
+          {/* TOOLS — grouped by topic */}
           <View style={styles.block}>
             <View style={styles.blockHeader}>
               <Text style={styles.blockTitle}>{t("home.toolsReports")}</Text>
+              <Text style={styles.blockSubtitle}>{t("home.toolsReportsSubtitle")}</Text>
             </View>
 
-            <View style={styles.secondaryList}>
+            <ToolSection label={t("home.toolsSectionSafety")}>
               <SecondaryRow
                 icon="shield-checkmark-outline"
+                iconColor={HOME_SECTION_ICON.safety}
                 title={t("home.safetyTitle")}
                 description={t("home.safetyDescription")}
                 onPress={() => router.push("/safety-emergency")}
+                isLast
               />
-              <SecondaryRow
-                icon="person-outline"
-                title={t("common.profile")}
-                description={t("home.profileDescription")}
-                onPress={() => router.push("/profile")}
-              />
+            </ToolSection>
+
+            <ToolSection label={t("home.toolsSectionCommunity")}>
               <SecondaryRow
                 icon="chatbubbles-outline"
+                iconColor={HOME_SECTION_ICON.community}
                 title={t("home.aiAssistant")}
                 description={t("home.aiAssistantDescription")}
                 onPress={() => router.push("/ai")}
               />
               <SecondaryRow
                 icon="people-outline"
+                iconColor={HOME_SECTION_ICON.community}
                 title={t("home.communityForum")}
                 description={t("home.communityForumDescription")}
                 onPress={() => router.push("/community-forum")}
+                isLast
               />
+            </ToolSection>
+
+            <ToolSection label={t("home.toolsSectionGarages")}>
               <SecondaryRow
                 icon="location-outline"
+                iconColor={HOME_SECTION_ICON.garages}
                 title={t("nearestGarages.title")}
                 description={t("nearestGarages.homeDescription")}
                 onPress={() => router.push("/nearest-garages")}
               />
               <SecondaryRow
                 icon="map-outline"
+                iconColor={HOME_SECTION_ICON.garages}
                 title={t("mapForGarages.openButton")}
                 description={t("mapForGarages.openButtonDesc")}
                 onPress={() => router.push("/map-for-garages")}
               />
               <SecondaryRow
                 icon="storefront-outline"
+                iconColor={HOME_SECTION_ICON.garages}
                 title={t("marketplace.title")}
                 description={t("marketplace.homeDescription")}
                 onPress={() => router.push("/marketplace")}
               />
               <SecondaryRow
                 icon="chatbubble-ellipses-outline"
+                iconColor={HOME_SECTION_ICON.garages}
                 title={t("home.chatWithGarage")}
                 description={t("home.chatWithGarageDescription")}
                 onPress={() => router.push("/chat-list")}
+                isLast
+              />
+            </ToolSection>
+
+            <ToolSection label={t("home.toolsSectionAccount")}>
+              <SecondaryRow
+                icon="person-outline"
+                iconColor={HOME_SECTION_ICON.account}
+                title={t("common.profile")}
+                description={t("home.profileDescription")}
+                onPress={() => router.push("/profile")}
               />
               <SecondaryRow
                 icon="car-outline"
+                iconColor={HOME_SECTION_ICON.account}
                 title={t("home.myVehicles")}
                 description={t("home.myVehiclesDescription")}
                 onPress={() => router.push("/vehicles")}
               />
               <SecondaryRow
                 icon="settings-outline"
+                iconColor={HOME_SECTION_ICON.account}
                 title={t("common.settings")}
                 description={t("home.settingsDescription")}
                 onPress={() => router.push("/settings")}
+                isLast
               />
-            </View>
+            </ToolSection>
           </View>
 
           {featuredProducts.length > 0 ? (
@@ -548,32 +573,56 @@ function OverviewMetric({ label, value, hint }) {
   );
 }
 
+function primaryAccentBorder(accent) {
+  if (accent === C.green) return "rgba(34,197,94,0.4)";
+  if (accent === C.amber) return "rgba(250,204,21,0.42)";
+  return "rgba(249,115,115,0.42)";
+}
+
 function PrimaryCard({ title, subtitle, icon, accent, onPress }) {
   return (
-    <TouchableOpacity style={styles.primaryCard} onPress={onPress} activeOpacity={0.9}>
-      <View style={[styles.primaryIconWrap, { borderColor: accent, backgroundColor: "rgba(15,23,42,0.95)" }]}>
-        <Ionicons name={icon} size={20} color={accent} />
+    <TouchableOpacity
+      style={[styles.primaryCard, { borderColor: primaryAccentBorder(accent) }]}
+      onPress={onPress}
+      activeOpacity={0.88}
+    >
+      <View style={[styles.primaryIconWrap, { borderColor: accent }]}>
+        <Ionicons name={icon} size={22} color={accent} />
       </View>
       <View style={{ flex: 1 }}>
         <Text style={styles.primaryTitle}>{title}</Text>
         <Text style={styles.primarySubtitle}>{subtitle}</Text>
       </View>
-      <Ionicons name="chevron-forward" size={18} color={C.sub} />
+      <Ionicons name="chevron-forward" size={20} color={C.sub} />
     </TouchableOpacity>
   );
 }
 
-function SecondaryRow({ icon, title, description, onPress }) {
+function ToolSection({ label, children }) {
   return (
-    <TouchableOpacity style={styles.secondaryRow} onPress={onPress} activeOpacity={0.9}>
+    <View style={styles.toolSection}>
+      <Text style={styles.toolSectionLabel}>{label}</Text>
+      <View style={styles.toolSectionCard}>{children}</View>
+    </View>
+  );
+}
+
+function SecondaryRow({ icon, iconColor, title, description, onPress, isLast }) {
+  const tint = iconColor ?? C.primary;
+  return (
+    <TouchableOpacity
+      style={[styles.secondaryRow, isLast && styles.secondaryRowLast]}
+      onPress={onPress}
+      activeOpacity={0.88}
+    >
       <View style={styles.secondaryIconWrap}>
-        <Ionicons name={icon} size={18} color={C.primary} />
+        <Ionicons name={icon} size={22} color={tint} />
       </View>
       <View style={{ flex: 1 }}>
         <Text style={styles.secondaryTitle}>{title}</Text>
         <Text style={styles.secondaryDesc}>{description}</Text>
       </View>
-      <Ionicons name="chevron-forward" size={18} color={C.sub} />
+      <Ionicons name="chevron-forward" size={20} color={C.sub} />
     </TouchableOpacity>
   );
 }

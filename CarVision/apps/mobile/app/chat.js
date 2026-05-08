@@ -15,6 +15,7 @@ import {
   Alert,
   Dimensions,
   LogBox,
+  Linking,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Swipeable, GestureHandlerRootView } from "react-native-gesture-handler";
@@ -26,6 +27,7 @@ import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
 import * as IntentLauncher from "expo-intent-launcher";
+import * as Location from "expo-location";
 import { Video } from "expo-av";
 import { getHttpBase } from "../lib/httpBase";
 
@@ -43,6 +45,20 @@ const { width: SCREEN_WIDTH } = Dimensions.get("window");
 LogBox.ignoreLogs([
   "[expo-image-picker] `ImagePicker.MediaTypeOptions` have been deprecated",
 ]);
+
+/** Matches URLs produced when sharing location from chat (Google Maps search deep link). */
+const SHARED_LOCATION_URL_RE =
+  /https:\/\/www\.google\.com\/maps\/search\/\?api=1&query=(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/;
+
+function parseSharedLocation(content) {
+  if (!content || typeof content !== "string") return null;
+  const m = content.match(SHARED_LOCATION_URL_RE);
+  if (!m) return null;
+  const lat = parseFloat(m[1]);
+  const lng = parseFloat(m[2]);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  return { lat, lng, url: m[0] };
+}
 
 function readRouteParam(value) {
   if (value == null) return "";
@@ -250,6 +266,39 @@ export default function ChatScreen() {
       console.error("Failed to send message:", e);
       setInput(text);
       showCustomAlert(t("common.error"), e.message || t("chat.sendError"));
+    } finally {
+      setSending(false);
+    }
+  }
+
+  async function sendCurrentLocation() {
+    if (!otherUserId || sending || uploading) return;
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        showCustomAlert(t("common.error"), t("chat.locationPermissionDenied"));
+        return;
+      }
+
+      setSending(true);
+      const pos = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+      const { latitude, longitude } = pos.coords;
+      const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
+      const content = `${t("chat.locationSharedTitle")}\n${mapsUrl}`;
+
+      const data = await api.post("/api/messages", {
+        receiverId: otherUserId,
+        content,
+      });
+
+      if (data?.message) {
+        await loadMessages(false);
+      }
+    } catch (e) {
+      console.error("Share location error:", e);
+      showCustomAlert(t("common.error"), e.message || t("chat.locationError"));
     } finally {
       setSending(false);
     }
@@ -479,7 +528,17 @@ export default function ChatScreen() {
             contentContainerStyle={styles.messagesList}
             renderItem={({ item }) => {
               const isMe = item.senderId === user?.id;
-              return <MessageBubble message={item} isMe={isMe} t={t} baseUrl={baseUrl} onViewFile={viewFile} onDelete={deleteMessage} />;
+              return (
+                <MessageBubble
+                  message={item}
+                  isMe={isMe}
+                  t={t}
+                  styles={styles}
+                  baseUrl={baseUrl}
+                  onViewFile={viewFile}
+                  onDelete={deleteMessage}
+                />
+              );
             }}
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
@@ -525,16 +584,13 @@ export default function ChatScreen() {
             <TouchableOpacity
               style={styles.attachBtn}
               onPress={() => {
-                Alert.alert(
-                  t("chat.attachFile"),
-                  t("chat.selectFileType"),
-                  [
-                    { text: t("common.cancel"), style: "cancel" },
-                    { text: t("chat.photo"), onPress: pickImage },
-                    { text: t("chat.video"), onPress: pickVideo },
-                    { text: t("chat.document"), onPress: pickDocument },
-                  ]
-                );
+                Alert.alert(t("chat.attachFile"), t("chat.selectFileType"), [
+                  { text: t("chat.photo"), onPress: pickImage },
+                  { text: t("chat.video"), onPress: pickVideo },
+                  { text: t("chat.document"), onPress: pickDocument },
+                  { text: t("chat.location"), onPress: sendCurrentLocation },
+                  { text: t("common.cancel"), style: "cancel" },
+                ]);
               }}
               disabled={sending || uploading}
             >
@@ -627,7 +683,7 @@ export default function ChatScreen() {
   );
 }
 
-function MessageBubble({ message, isMe, t, baseUrl, onViewFile, onDelete }) {
+function MessageBubble({ message, isMe, t, styles, baseUrl, onViewFile, onDelete }) {
   const time = new Date(message.createdAt).toLocaleTimeString([], {
     hour: "2-digit",
     minute: "2-digit",
@@ -635,6 +691,8 @@ function MessageBubble({ message, isMe, t, baseUrl, onViewFile, onDelete }) {
 
   const hasContent = message.content && message.content.trim().length > 0;
   const hasFile = message.fileUrl && message.type !== "TEXT";
+  const sharedLoc =
+    message.type === "TEXT" && hasContent ? parseSharedLocation(message.content) : null;
   
   const fileUrl = baseUrl && message.fileUrl 
     ? `${baseUrl}${message.fileUrl.startsWith("/") ? "" : "/"}${message.fileUrl}`
@@ -718,11 +776,34 @@ function MessageBubble({ message, isMe, t, baseUrl, onViewFile, onDelete }) {
           </TouchableOpacity>
         )}
 
-        {/* Message Content */}
-        {hasContent && (
-          <Text style={[styles.bubbleText, isMe && styles.bubbleTextMe]}>
-            {message.content}
-          </Text>
+        {/* Shared location (structured message) */}
+        {hasContent && sharedLoc && (
+          <View style={[styles.locationCard, isMe && styles.locationCardMe]}>
+            <View style={styles.locationCardHeader}>
+              <Ionicons name="location" size={20} color={isMe ? "#fff" : C.primary} />
+              <Text style={[styles.locationCardTitle, isMe && styles.locationCardTitleMe]}>
+                {t("chat.locationSharedTitleShort")}
+              </Text>
+            </View>
+            <Text style={[styles.locationCoords, isMe && styles.locationCoordsMe]}>
+              {sharedLoc.lat.toFixed(5)}, {sharedLoc.lng.toFixed(5)}
+            </Text>
+            <TouchableOpacity
+              style={[styles.locationOpenBtn, isMe && styles.locationOpenBtnMe]}
+              onPress={() => Linking.openURL(sharedLoc.url)}
+              activeOpacity={0.85}
+            >
+              <Text style={[styles.locationOpenBtnText, isMe && styles.locationOpenBtnTextMe]}>
+                {t("chat.openInMaps")}
+              </Text>
+              <Ionicons name="open-outline" size={18} color={isMe ? "#fff" : C.primary} />
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Plain text (hide raw URL if already shown as location card) */}
+        {hasContent && !sharedLoc && (
+          <Text style={[styles.bubbleText, isMe && styles.bubbleTextMe]}>{message.content}</Text>
         )}
         
         {/* Show placeholder if no content and no file */}

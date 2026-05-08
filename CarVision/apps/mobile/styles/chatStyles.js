@@ -96,6 +96,65 @@ export const chatStyles = StyleSheet.create({
   bubbleTimeMe: {
     color: "rgba(255,255,255,0.7)",
   },
+  locationCard: {
+    marginTop: 4,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    backgroundColor: "rgba(0,0,0,0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(148,163,184,0.25)",
+  },
+  locationCardMe: {
+    backgroundColor: "rgba(255,255,255,0.12)",
+    borderColor: "rgba(255,255,255,0.28)",
+  },
+  locationCardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  locationCardTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: C.text,
+  },
+  locationCardTitleMe: {
+    color: "#fff",
+  },
+  locationCoords: {
+    fontSize: 13,
+    color: C.sub,
+    marginTop: 6,
+  },
+  locationCoordsMe: {
+    color: "rgba(255,255,255,0.82)",
+  },
+  locationOpenBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    marginTop: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    backgroundColor: "rgba(99,102,241,0.15)",
+    borderWidth: 1,
+    borderColor: "rgba(99,102,241,0.45)",
+  },
+  locationOpenBtnMe: {
+    backgroundColor: "rgba(255,255,255,0.18)",
+    borderColor: "rgba(255,255,255,0.42)",
+  },
+  locationOpenBtnText: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: C.primary,
+  },
+  locationOpenBtnTextMe: {
+    color: "#fff",
+  },
   inputContainer: {
     flexDirection: "row",
     alignItems: "flex-end",
