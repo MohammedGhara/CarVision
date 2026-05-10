@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useLanguage } from "../context/LanguageContext";
 
-export default function FloatingChatButton({ onPress, label }) {
+export default function FloatingChatButton({ onPress, label, showTooltip = true }) {
   const { t } = useLanguage();
   const insets = useSafeAreaInsets();
   const message = t("chatbot.tooltip");
@@ -34,7 +34,7 @@ export default function FloatingChatButton({ onPress, label }) {
 
   return (
     <View style={[styles.container, { bottom: bottomOffset }]} pointerEvents="box-none">
-      {showBubble ? (
+      {showTooltip && showBubble ? (
         <View style={styles.msgWrap} pointerEvents="none">
           <View style={styles.messageBubble}>
             <Text style={styles.messageText}>{message}</Text>

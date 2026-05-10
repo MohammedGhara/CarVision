@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { LinearGradient } from "expo-linear-gradient";
 
 import AppBackground from "../components/layout/AppBackground";
 import { api } from "../lib/api";
@@ -19,6 +20,8 @@ import { getUser } from "../lib/authStore";
 import { useLanguage } from "../context/LanguageContext";
 import { C } from "../styles/theme";
 import { marketplaceStyles as styles } from "../styles/marketplaceStyles";
+
+const SCREEN_SHELL = { flex: 1, paddingHorizontal: 0, paddingVertical: 0 };
 
 function formatPrice(cents, t) {
   const n = Number(cents);
@@ -137,28 +140,37 @@ export default function MarketplaceGarageScreen() {
   const otherListings = listings.filter((item) => !item.isFeatured);
 
   return (
-    <AppBackground scrollable={false}>
+    <AppBackground scrollable={false} contentContainerStyle={SCREEN_SHELL}>
       <StatusBar barStyle="light-content" />
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} accessibilityRole="button">
-          <Ionicons name="arrow-back" size={22} color={C.text} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t("marketplace.garageTitle")}</Text>
-      </View>
 
       <View style={styles.body}>
-        <Text style={styles.subtitle}>{t("marketplace.garageSubtitle")}</Text>
+        <LinearGradient
+          colors={["rgba(99,102,241,0.28)", "rgba(15,23,42,0.98)", "rgba(14,165,233,0.16)"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.garageListingsHero}
+        >
+          <View style={styles.garageListingsHeroGlow} />
+          <View style={styles.garageListingsHeaderRow}>
+            <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} accessibilityRole="button">
+              <Ionicons name="arrow-back" size={22} color={C.text} />
+            </TouchableOpacity>
+            <View style={styles.garageListingsHeaderCopy}>
+              <Text style={styles.garageListingsEyebrow}>Marketplace</Text>
+              <Text style={styles.garageListingsTitle}>{t("marketplace.garageTitle")}</Text>
+              <Text style={styles.garageListingsSubtitle}>{t("marketplace.garageSubtitle")}</Text>
+            </View>
+          </View>
 
-        <View style={styles.fabRow}>
           <TouchableOpacity
-            style={styles.fab}
+            style={styles.garageListingsAddBtn}
             onPress={() => router.push({ pathname: "/marketplace-garage-form", params: {} })}
             activeOpacity={0.9}
           >
-            <Ionicons name="add" size={22} color="#0f172a" />
-            <Text style={styles.fabText}>{t("marketplace.addListing")}</Text>
+            <Ionicons name="add" size={22} color="#fff" />
+            <Text style={styles.garageListingsAddText}>{t("marketplace.addListing")}</Text>
           </TouchableOpacity>
-        </View>
+        </LinearGradient>
 
         {loading ? (
           <ActivityIndicator size="large" color={C.primary} style={{ marginTop: 24 }} />

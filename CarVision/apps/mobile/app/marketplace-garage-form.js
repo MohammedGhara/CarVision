@@ -243,13 +243,14 @@ export default function MarketplaceGarageFormScreen() {
   return (
     <AppBackground scrollable={false}>
       <StatusBar barStyle="light-content" />
-      <View style={styles.header}>
+      <View style={styles.formHeader}>
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} accessibilityRole="button">
           <Ionicons name="arrow-back" size={22} color={C.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>
+        <Text style={styles.formHeaderTitle}>
           {editId ? t("marketplace.editListing") : t("marketplace.newListing")}
         </Text>
+        <View style={styles.formHeaderSpacer} />
       </View>
 
       {loading ? (
@@ -257,95 +258,127 @@ export default function MarketplaceGarageFormScreen() {
           <ActivityIndicator size="large" color={C.primary} />
         </View>
       ) : (
-        <ScrollView style={styles.body} contentContainerStyle={{ paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
-          <Text style={styles.label}>{t("marketplace.fieldTitle")}</Text>
-          <TextInput
-            style={styles.input}
-            value={title}
-            onChangeText={setTitle}
-            placeholder={t("marketplace.fieldTitlePh")}
-            placeholderTextColor={C.sub}
-          />
+        <ScrollView style={styles.body} contentContainerStyle={styles.formContent} keyboardShouldPersistTaps="handled">
+          <View style={styles.formCard}>
+            <Text style={styles.formSectionTitle}>Product details</Text>
 
-          <Text style={styles.label}>{t("marketplace.fieldOriginalPrice")}</Text>
-          <TextInput
-            style={styles.input}
-            value={compareAtPriceText}
-            onChangeText={setCompareAtPriceText}
-            placeholder={t("marketplace.fieldOriginalPricePh")}
-            placeholderTextColor={C.sub}
-            keyboardType="decimal-pad"
-          />
-          <Text style={styles.label}>{t("marketplace.fieldDiscountPrice")}</Text>
-          <TextInput
-            style={styles.input}
-            value={priceText}
-            onChangeText={setPriceText}
-            placeholder={t("marketplace.fieldDiscountPricePh")}
-            placeholderTextColor={C.sub}
-            keyboardType="decimal-pad"
-          />
-          <Text style={styles.subtitle}>{t("marketplace.fieldDiscountPriceHint")}</Text>
+            <Text style={styles.label}>{t("marketplace.fieldTitle")}</Text>
+            <TextInput
+              style={styles.input}
+              value={title}
+              onChangeText={setTitle}
+              placeholder={t("marketplace.fieldTitlePh")}
+              placeholderTextColor={C.sub}
+            />
 
-          <Text style={styles.label}>{t("marketplace.fieldDescription")}</Text>
-          <TextInput
-            style={[styles.input, styles.inputMultiline]}
-            value={description}
-            onChangeText={setDescription}
-            placeholder={t("marketplace.fieldDescriptionPh")}
-            placeholderTextColor={C.sub}
-            multiline
-          />
-
-          {editId ? (
-            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 16 }}>
-              <Text style={[styles.label, { marginTop: 0 }]}>{t("marketplace.fieldActive")}</Text>
-              <Switch value={isActive} onValueChange={setIsActive} trackColor={{ false: "#334155", true: C.primary }} />
+            <View style={styles.priceGrid}>
+              <View style={styles.priceField}>
+                <Text style={styles.label}>{t("marketplace.fieldOriginalPrice")}</Text>
+                <TextInput
+                  style={styles.input}
+                  value={compareAtPriceText}
+                  onChangeText={setCompareAtPriceText}
+                  placeholder={t("marketplace.fieldOriginalPricePh")}
+                  placeholderTextColor={C.sub}
+                  keyboardType="decimal-pad"
+                />
+              </View>
+              <View style={styles.priceField}>
+                <Text style={styles.label}>{t("marketplace.fieldDiscountPrice")}</Text>
+                <TextInput
+                  style={styles.input}
+                  value={priceText}
+                  onChangeText={setPriceText}
+                  placeholder={t("marketplace.fieldDiscountPricePh")}
+                  placeholderTextColor={C.sub}
+                  keyboardType="decimal-pad"
+                />
+              </View>
             </View>
-          ) : null}
-          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 10 }}>
-            <Text style={[styles.label, { marginTop: 0 }]}>{t("marketplace.fieldFeatured")}</Text>
-            <Switch value={isFeatured} onValueChange={setIsFeatured} trackColor={{ false: "#334155", true: C.amber }} />
+            <Text style={styles.fieldHint}>{t("marketplace.fieldDiscountPriceHint")}</Text>
+
+            <Text style={styles.label}>{t("marketplace.fieldDescription")}</Text>
+            <TextInput
+              style={[styles.input, styles.inputMultiline]}
+              value={description}
+              onChangeText={setDescription}
+              placeholder={t("marketplace.fieldDescriptionPh")}
+              placeholderTextColor={C.sub}
+              multiline
+            />
           </View>
 
-          <Text style={styles.label}>{t("marketplace.fieldPhoto")}</Text>
-          {showImg ? (
-            <Image source={{ uri: showImg }} style={styles.previewThumb} resizeMode="cover" />
-          ) : null}
-          <TouchableOpacity style={styles.imagePickerBtn} onPress={pickImage} activeOpacity={0.85}>
-            <Ionicons name="image-outline" size={22} color={C.primary} />
-            <Text style={styles.imagePickerText}>{t("marketplace.pickPhoto")}</Text>
-          </TouchableOpacity>
-          {(existingImageUrl || pickedUri) && !removeImage ? (
+          <View style={styles.formCard}>
+            <Text style={styles.formSectionTitle}>Availability</Text>
+            {editId ? (
+              <View style={styles.switchRow}>
+                <View style={styles.switchCopy}>
+                  <Text style={styles.switchTitle}>{t("marketplace.fieldActive")}</Text>
+                  <Text style={styles.switchHint}>Clients can see this listing.</Text>
+                </View>
+                <Switch value={isActive} onValueChange={setIsActive} trackColor={{ false: "#334155", true: C.primary }} />
+              </View>
+            ) : null}
+            <View style={styles.switchRow}>
+              <View style={styles.switchCopy}>
+                <Text style={styles.switchTitle}>{t("marketplace.fieldFeatured")}</Text>
+                <Text style={styles.switchHint}>Show this product first in your marketplace.</Text>
+              </View>
+              <Switch value={isFeatured} onValueChange={setIsFeatured} trackColor={{ false: "#334155", true: C.primary }} />
+            </View>
+          </View>
+
+          <View style={styles.formCard}>
+            <Text style={styles.formSectionTitle}>{t("marketplace.fieldPhoto")}</Text>
+            <View style={styles.photoRow}>
+              {showImg ? (
+                <Image source={{ uri: showImg }} style={styles.previewThumb} resizeMode="cover" />
+              ) : (
+                <View style={styles.previewThumbPlaceholder}>
+                  <Ionicons name="image-outline" size={28} color={C.primary} />
+                </View>
+              )}
+              <View style={styles.photoActions}>
+                <TouchableOpacity style={styles.imagePickerBtn} onPress={pickImage} activeOpacity={0.85}>
+                  <Ionicons name="image-outline" size={20} color={C.primary} />
+                  <Text style={styles.imagePickerText}>{t("marketplace.pickPhoto")}</Text>
+                </TouchableOpacity>
+                {(existingImageUrl || pickedUri) && !removeImage ? (
+                  <TouchableOpacity
+                    style={styles.removePhotoBtn}
+                    onPress={() => {
+                      setPickedUri(null);
+                      setRemoveImage(true);
+                    }}
+                    activeOpacity={0.85}
+                  >
+                    <Text style={styles.removePhotoText}>{t("marketplace.removePhoto")}</Text>
+                  </TouchableOpacity>
+                ) : null}
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.formActions}>
             <TouchableOpacity
-              onPress={() => {
-                setPickedUri(null);
-                setRemoveImage(true);
-              }}
-              activeOpacity={0.85}
+              style={[styles.primaryBtn, saving && { opacity: 0.6 }]}
+              onPress={onSave}
+              disabled={saving}
+              activeOpacity={0.9}
             >
-              <Text style={[styles.imagePickerText, { color: C.red }]}>{t("marketplace.removePhoto")}</Text>
+              {saving ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.primaryBtnText}>{t("common.save")}</Text>
+              )}
             </TouchableOpacity>
-          ) : null}
 
-          <TouchableOpacity
-            style={[styles.primaryBtn, { marginTop: 20 }, saving && { opacity: 0.6 }]}
-            onPress={onSave}
-            disabled={saving}
-            activeOpacity={0.9}
-          >
-            {saving ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.primaryBtnText}>{t("common.save")}</Text>
-            )}
-          </TouchableOpacity>
-
-          {editId ? (
-            <TouchableOpacity style={[styles.secondaryBtn, styles.dangerBtn]} onPress={onDelete} activeOpacity={0.9}>
-              <Text style={styles.dangerBtnText}>{t("common.delete")}</Text>
-            </TouchableOpacity>
-          ) : null}
+            {editId ? (
+              <TouchableOpacity style={[styles.secondaryBtn, styles.dangerBtn]} onPress={onDelete} activeOpacity={0.9}>
+                <Text style={styles.dangerBtnText}>{t("common.delete")}</Text>
+              </TouchableOpacity>
+            ) : null}
+          </View>
         </ScrollView>
       )}
     </AppBackground>

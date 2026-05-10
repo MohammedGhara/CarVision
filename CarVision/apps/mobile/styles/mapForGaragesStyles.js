@@ -7,11 +7,9 @@ export const MAP_HEIGHT = Math.min(380, Math.round(W * 0.92));
 
 export const mapForGaragesStyles = StyleSheet.create({
   headerOuter: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 18,
     paddingBottom: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(99,102,241,0.12)",
-    backgroundColor: "rgba(2,6,23,0.97)",
+    backgroundColor: "rgba(2,6,23,0.72)",
     overflow: "hidden",
   },
   headerGradientBg: {
@@ -25,12 +23,12 @@ export const mapForGaragesStyles = StyleSheet.create({
     gap: 12,
   },
   backBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
+    width: 46,
+    height: 46,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(15,23,42,0.95)",
+    backgroundColor: "rgba(15,23,42,0.72)",
     borderWidth: 1,
     borderColor: "rgba(148,163,184,0.22)",
   },
@@ -40,7 +38,7 @@ export const mapForGaragesStyles = StyleSheet.create({
   },
   headerEyebrow: {
     fontSize: 10,
-    fontWeight: "800",
+    fontWeight: "900",
     letterSpacing: 2.2,
     color: C.primary,
     marginBottom: 4,
@@ -83,7 +81,7 @@ export const mapForGaragesStyles = StyleSheet.create({
   searchOuter: {
     marginHorizontal: 16,
     marginBottom: 4,
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 1.5,
     overflow: "hidden",
   },
@@ -92,8 +90,8 @@ export const mapForGaragesStyles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 14,
     paddingVertical: Platform.OS === "ios" ? 12 : 10,
-    borderRadius: 15,
-    backgroundColor: "rgba(15,23,42,0.92)",
+    borderRadius: 19,
+    backgroundColor: "rgba(15,23,42,0.78)",
     borderWidth: 1,
     borderColor: "rgba(99,102,241,0.18)",
   },
@@ -123,9 +121,9 @@ export const mapForGaragesStyles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 10,
-    borderRadius: 22,
+    borderRadius: 999,
     marginRight: 8,
-    backgroundColor: "rgba(15,23,42,0.88)",
+    backgroundColor: "rgba(15,23,42,0.72)",
     borderWidth: 1,
     borderColor: "rgba(148,163,184,0.2)",
   },
@@ -160,7 +158,7 @@ export const mapForGaragesStyles = StyleSheet.create({
 
   mapGradientBorder: {
     marginHorizontal: 16,
-    borderRadius: 22,
+    borderRadius: 26,
     padding: 2,
     marginBottom: 4,
   },

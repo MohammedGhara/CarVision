@@ -30,6 +30,7 @@ export default function Login() {
   const [remember, setRemember] = useState(true);
   const [busy, setBusy] = useState(false);
   const [showLanguagePicker, setShowLanguagePicker] = useState(false);
+  const [showHeaderMenu, setShowHeaderMenu] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -187,29 +188,48 @@ export default function Login() {
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={{ flex: 1 }}
       >
-          {/* ─── top bar with settings ─── */}
+          <View style={styles.authOrb} />
           <View style={styles.topbar}>
-            <TouchableOpacity
-              style={styles.langBtn}
-              onPress={() => setShowLanguagePicker(true)}
-            >
-              <Ionicons name="language-outline" size={16} color={C.text} />
-              <Text style={styles.langBtnText}>
-                {languages[language]?.nativeName || language.toUpperCase()}
-              </Text>
-            </TouchableOpacity>
-            <Text style={styles.logo}>CarVision</Text>
-            <TouchableOpacity
-              style={styles.settingsBtn}
-              onPress={() => r.push("/settings")}
-            >
-              <Ionicons name="settings-outline" size={20} color={C.text} />
-            </TouchableOpacity>
+            <View style={styles.logoLockup}>
+              <TouchableOpacity
+                style={styles.settingsBtn}
+                onPress={() => setShowHeaderMenu((visible) => !visible)}
+              >
+                <Ionicons name="settings-outline" size={20} color={C.text} />
+              </TouchableOpacity>
+              <Text style={styles.logo}>CarVision</Text>
+            </View>
+            <Text style={styles.tagline}>Drive smarter. Diagnose faster.</Text>
+            {showHeaderMenu ? (
+              <View style={styles.headerMenu}>
+                <TouchableOpacity
+                  style={styles.headerMenuItem}
+                  onPress={() => {
+                    setShowHeaderMenu(false);
+                    setShowLanguagePicker(true);
+                  }}
+                >
+                  <Ionicons name="language-outline" size={17} color={C.text} />
+                  <Text style={styles.headerMenuText}>
+                    {languages[language]?.nativeName || language.toUpperCase()}
+                  </Text>
+                </TouchableOpacity>
+                <View style={styles.headerMenuDivider} />
+                <TouchableOpacity
+                  style={styles.headerMenuItem}
+                  onPress={() => {
+                    setShowHeaderMenu(false);
+                    r.push("/settings");
+                  }}
+                >
+                  <Ionicons name="settings-outline" size={17} color={C.text} />
+                  <Text style={styles.headerMenuText}>Settings</Text>
+                </TouchableOpacity>
+              </View>
+            ) : null}
           </View>
 
-          <Text style={styles.tagline}>Drive smarter. Diagnose faster.</Text>
-
-          <View style={styles.cardWrap}>
+          <View style={[styles.cardWrap, styles.loginCardWrap]}>
             <View style={styles.card}>
               <Text style={styles.h1}>{t("login.title")}</Text>
               <Text style={styles.h2}>{t("login.subtitle")}</Text>

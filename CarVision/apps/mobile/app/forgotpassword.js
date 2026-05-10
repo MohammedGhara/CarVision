@@ -339,6 +339,7 @@ export default function ForgotPassword() {
         keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
         style={{ flex: 1 }}
       >
+        <View style={styles.authOrb} />
         <ScrollView
           contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }}
           keyboardShouldPersistTaps="handled"
@@ -349,7 +350,12 @@ export default function ForgotPassword() {
               <TouchableOpacity onPress={() => r.back()} style={styles.backBtn}>
                 <Ionicons name="arrow-back" size={20} color={C.text} />
               </TouchableOpacity>
-              <Text style={styles.logo}>CarVision</Text>
+              <View style={styles.logoLockup}>
+                <View style={styles.appMark}>
+                  <Ionicons name="shield-checkmark-outline" size={18} color={C.primary} />
+                </View>
+                <Text style={styles.logo}>CarVision</Text>
+              </View>
               <View style={{ width: 40 }} />
             </View>
 

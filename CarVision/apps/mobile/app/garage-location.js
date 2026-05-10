@@ -14,6 +14,7 @@ import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Location from "expo-location";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { LinearGradient } from "expo-linear-gradient";
 
 import AppBackground from "../components/layout/AppBackground";
 import { api } from "../lib/api";
@@ -31,6 +32,8 @@ import { showCustomAlert } from "../components/CustomAlert";
 import { useLanguage } from "../context/LanguageContext";
 import { C } from "../styles/theme";
 import { garageLocationScreenStyles as styles } from "../styles/garageLocationScreenStyles";
+
+const SCREEN_SHELL = { flex: 1, paddingHorizontal: 0, paddingVertical: 0 };
 
 export default function GarageLocationScreen() {
   const router = useRouter();
@@ -239,22 +242,12 @@ export default function GarageLocationScreen() {
   }
 
   return (
-    <AppBackground scrollable={false}>
+    <AppBackground scrollable={false} contentContainerStyle={SCREEN_SHELL}>
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         keyboardVerticalOffset={Platform.OS === "ios" ? 8 : 0}
       >
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.75}>
-            <Ionicons name="chevron-back" size={26} color={C.text} />
-          </TouchableOpacity>
-          <View style={styles.headerTitleBlock}>
-            <Text style={styles.headerTitle}>{t("garage.listingEditorTitle")}</Text>
-            <Text style={styles.headerSubtitle}>{t("garage.listingEditorSubtitle")}</Text>
-          </View>
-        </View>
-
         <ScrollView
           style={styles.scroll}
           contentContainerStyle={[
@@ -264,11 +257,26 @@ export default function GarageLocationScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <Text style={styles.pageIntro}>{t("garage.listingEditorIntro")}</Text>
+          <LinearGradient
+            colors={["rgba(99,102,241,0.26)", "rgba(15,23,42,0.98)", "rgba(14,165,233,0.12)"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.heroPanel}
+          >
+            <View style={styles.heroGlow} />
+            <View style={styles.header}>
+              <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.75}>
+                <Ionicons name="chevron-back" size={26} color={C.text} />
+              </TouchableOpacity>
+              <View style={styles.headerTitleBlock}>
+                <Text style={styles.headerEyebrow}>Garage profile</Text>
+                <Text style={styles.headerTitle}>{t("garage.listingEditorTitle")}</Text>
+              </View>
+            </View>
+          </LinearGradient>
 
           <View style={styles.sectionCard}>
             <Text style={styles.sectionTitle}>{t("garage.listingSectionMap")}</Text>
-            <Text style={styles.sectionHint}>{t("garage.listingSectionMapHint")}</Text>
 
             <Text style={styles.fieldLabel}>{t("profile.addressLabel")}</Text>
             <TextInput
@@ -319,10 +327,6 @@ export default function GarageLocationScreen() {
               <Text style={styles.secondaryActionText}>{t("profile.applyFromMapLink")}</Text>
             </TouchableOpacity>
 
-            <View style={styles.helpBox}>
-              <Text style={styles.helpBoxText}>{t("profile.coordinatesHelp")}</Text>
-            </View>
-
             <View style={styles.row2}>
               <View style={styles.row2Item}>
                 <Text style={styles.fieldLabel}>{t("profile.latitudeLabel")}</Text>
@@ -357,7 +361,6 @@ export default function GarageLocationScreen() {
 
           <View style={styles.sectionCard}>
             <Text style={styles.sectionTitle}>{t("garage.listingSectionPublic")}</Text>
-            <Text style={styles.sectionHint}>{t("garage.listingSectionPublicHint")}</Text>
 
             <Text style={styles.fieldLabel}>{t("profile.garageDescriptionLabel")}</Text>
             <TextInput

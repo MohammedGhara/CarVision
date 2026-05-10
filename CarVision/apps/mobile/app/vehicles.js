@@ -16,6 +16,7 @@ import {
 import { useRouter } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import { LinearGradient } from "expo-linear-gradient";
 import AppBackground from "../components/layout/AppBackground";
 
 import { api } from "../lib/api";
@@ -180,30 +181,40 @@ export default function VehiclesScreen() {
   return (
     <AppBackground scrollable={false}>
         {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity
-            onPress={() => router.back()}
-            style={styles.backBtn}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="chevron-back" size={22} color={C.text} />
-          </TouchableOpacity>
-
-          <View style={{ flex: 1, alignItems: "center" }}>
-            <Text style={styles.headerTitle}>{t("vehicles.title")}</Text>
-          </View>
-
-          {user?.role === "GARAGE" && (
+        <LinearGradient
+          colors={["rgba(99,102,241,0.26)", "rgba(15,23,42,0.98)", "rgba(14,165,233,0.12)"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.heroHeader}
+        >
+          <View style={styles.heroGlow} />
+          <View style={styles.header}>
             <TouchableOpacity
-              onPress={openAddModal}
-              style={styles.addBtn}
+              onPress={() => router.back()}
+              style={styles.backBtn}
               activeOpacity={0.8}
             >
-              <Ionicons name="add" size={24} color={C.primary} />
+              <Ionicons name="chevron-back" size={22} color={C.text} />
             </TouchableOpacity>
-          )}
-          {user?.role !== "GARAGE" && <View style={{ width: 40 }} />}
-        </View>
+
+            <View style={styles.headerTitleWrap}>
+              <Text style={styles.headerEyebrow}>Garage Fleet</Text>
+              <Text style={styles.headerTitle} numberOfLines={1}>{t("vehicles.title")}</Text>
+            </View>
+
+            {user?.role === "GARAGE" ? (
+              <TouchableOpacity
+                onPress={openAddModal}
+                style={styles.addBtn}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="add" size={24} color="#fff" />
+              </TouchableOpacity>
+            ) : (
+              <View style={styles.headerSpacer} />
+            )}
+          </View>
+        </LinearGradient>
 
         {loading ? (
           <View style={styles.center}>
@@ -261,14 +272,27 @@ export default function VehiclesScreen() {
         >
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
-              <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>
-                  {editingVehicle ? t("vehicles.editVehicle") : t("vehicles.addVehicle")}
-                </Text>
-                <TouchableOpacity onPress={() => setShowModal(false)}>
-                  <Ionicons name="close" size={24} color={C.text} />
-                </TouchableOpacity>
-              </View>
+              <LinearGradient
+                colors={["rgba(99,102,241,0.22)", "rgba(15,23,42,0.98)", "rgba(14,165,233,0.1)"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.modalHero}
+              >
+                <View style={styles.modalHeroGlow} />
+                <View style={styles.modalHeader}>
+                  <View style={styles.modalTitleRow}>
+                    <View style={styles.modalIconWrap}>
+                      <MaterialCommunityIcons name="car-cog" size={22} color={C.primary} />
+                    </View>
+                    <Text style={styles.modalTitle}>
+                      {editingVehicle ? t("vehicles.editVehicle") : t("vehicles.addVehicle")}
+                    </Text>
+                  </View>
+                  <TouchableOpacity onPress={() => setShowModal(false)} style={styles.modalCloseBtn}>
+                    <Ionicons name="close" size={22} color={C.text} />
+                  </TouchableOpacity>
+                </View>
+              </LinearGradient>
 
               <ScrollView 
                 style={styles.modalBody} 
@@ -276,133 +300,139 @@ export default function VehiclesScreen() {
                 keyboardShouldPersistTaps="handled"
                 contentContainerStyle={{ paddingBottom: 20 }}
               >
-              {/* Client Selection (for garages only, when creating) */}
-              {user?.role === "GARAGE" && !editingVehicle && (
-                <View style={styles.inputGroup}>
-                  <Text style={styles.label}>{t("vehicles.selectClient")} *</Text>
-                  <TouchableOpacity
-                    style={styles.picker}
-                    onPress={async () => {
-                      if (clients.length === 0) {
-                        try {
-                          const clientsData = await api.get("/api/messages/users/CLIENT");
-                          if (clientsData?.users && clientsData.users.length > 0) {
-                            setClients(clientsData.users);
-                            setShowModal(false);
-                            setTimeout(() => {
-                              setShowClientPicker(true);
-                            }, 300);
-                          } else {
-                            showCustomAlert(t("common.error"), t("vehicles.noClientsAvailable"));
+              <View style={styles.formSection}>
+                <Text style={styles.formSectionTitle}>Vehicle details</Text>
+                {/* Client Selection (for garages only, when creating) */}
+                {user?.role === "GARAGE" && !editingVehicle && (
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.label}>{t("vehicles.selectClient")} *</Text>
+                    <TouchableOpacity
+                      style={styles.picker}
+                      onPress={async () => {
+                        if (clients.length === 0) {
+                          try {
+                            const clientsData = await api.get("/api/messages/users/CLIENT");
+                            if (clientsData?.users && clientsData.users.length > 0) {
+                              setClients(clientsData.users);
+                              setShowModal(false);
+                              setTimeout(() => {
+                                setShowClientPicker(true);
+                              }, 300);
+                            } else {
+                              showCustomAlert(t("common.error"), t("vehicles.noClientsAvailable"));
+                            }
+                          } catch (e) {
+                            console.error("Failed to load clients:", e);
+                            showCustomAlert(t("common.error"), e.message || t("vehicles.loadClientsError"));
                           }
-                        } catch (e) {
-                          console.error("Failed to load clients:", e);
-                          showCustomAlert(t("common.error"), e.message || t("vehicles.loadClientsError"));
+                        } else {
+                          setShowModal(false);
+                          setTimeout(() => {
+                            setShowClientPicker(true);
+                          }, 300);
                         }
-                      } else {
-                        setShowModal(false);
-                        setTimeout(() => {
-                          setShowClientPicker(true);
-                        }, 300);
-                      }
-                    }}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={formData.ownerId ? styles.pickerText : styles.pickerPlaceholder}>
-                      {formData.ownerId 
-                        ? clients.find(c => c.id === formData.ownerId)?.name || t("vehicles.clientSelected")
-                        : t("vehicles.selectClientPlaceholder")}
-                    </Text>
-                    <Ionicons name="chevron-down" size={20} color={C.sub} />
-                  </TouchableOpacity>
-                </View>
-              )}
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={formData.ownerId ? styles.pickerText : styles.pickerPlaceholder}>
+                        {formData.ownerId 
+                          ? clients.find(c => c.id === formData.ownerId)?.name || t("vehicles.clientSelected")
+                          : t("vehicles.selectClientPlaceholder")}
+                      </Text>
+                      <Ionicons name="chevron-down" size={20} color={C.sub} />
+                    </TouchableOpacity>
+                  </View>
+                )}
 
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>{t("vehicles.make")} *</Text>
-                <TextInput
-                  style={styles.input}
-                  value={formData.make}
-                  onChangeText={(text) => setFormData({ ...formData, make: text })}
-                  placeholder={t("vehicles.makePlaceholder")}
-                  placeholderTextColor={C.sub}
-                />
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>{t("vehicles.model")} *</Text>
-                <TextInput
-                  style={styles.input}
-                  value={formData.model}
-                  onChangeText={(text) => setFormData({ ...formData, model: text })}
-                  placeholder={t("vehicles.modelPlaceholder")}
-                  placeholderTextColor={C.sub}
-                />
-              </View>
-
-              <View style={styles.inputRow}>
-                <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
-                  <Text style={styles.label}>{t("vehicles.year")}</Text>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>{t("vehicles.make")} *</Text>
                   <TextInput
                     style={styles.input}
-                    value={formData.year}
-                    onChangeText={(text) => setFormData({ ...formData, year: text.replace(/[^0-9]/g, "") })}
-                    placeholder="2020"
+                    value={formData.make}
+                    onChangeText={(text) => setFormData({ ...formData, make: text })}
+                    placeholder={t("vehicles.makePlaceholder")}
+                    placeholderTextColor={C.sub}
+                  />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>{t("vehicles.model")} *</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={formData.model}
+                    onChangeText={(text) => setFormData({ ...formData, model: text })}
+                    placeholder={t("vehicles.modelPlaceholder")}
+                    placeholderTextColor={C.sub}
+                  />
+                </View>
+
+                <View style={styles.inputRow}>
+                  <View style={styles.inputHalf}>
+                    <Text style={styles.label}>{t("vehicles.year")}</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={formData.year}
+                      onChangeText={(text) => setFormData({ ...formData, year: text.replace(/[^0-9]/g, "") })}
+                      placeholder="2020"
+                      placeholderTextColor={C.sub}
+                      keyboardType="number-pad"
+                    />
+                  </View>
+
+                  <View style={styles.inputHalf}>
+                    <Text style={styles.label}>{t("vehicles.color")}</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={formData.color}
+                      onChangeText={(text) => setFormData({ ...formData, color: text })}
+                      placeholder={t("vehicles.colorPlaceholder")}
+                      placeholderTextColor={C.sub}
+                    />
+                  </View>
+                </View>
+              </View>
+
+              <View style={styles.formSection}>
+                <Text style={styles.formSectionTitle}>Registration</Text>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>{t("vehicles.vin")}</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={formData.vin}
+                    onChangeText={(text) => setFormData({ ...formData, vin: text.toUpperCase() })}
+                    placeholder={t("vehicles.vinPlaceholder")}
+                    placeholderTextColor={C.sub}
+                    autoCapitalize="characters"
+                  />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>{t("vehicles.licensePlate")}</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={formData.licensePlate}
+                    onChangeText={(text) => setFormData({ ...formData, licensePlate: text.toUpperCase() })}
+                    placeholder={t("vehicles.licensePlatePlaceholder")}
+                    placeholderTextColor={C.sub}
+                    autoCapitalize="characters"
+                  />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>{t("vehicles.mileage")}</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={formData.mileage}
+                    onChangeText={(text) => setFormData({ ...formData, mileage: text.replace(/[^0-9]/g, "") })}
+                    placeholder="50000"
                     placeholderTextColor={C.sub}
                     keyboardType="number-pad"
                   />
                 </View>
-
-                <View style={[styles.inputGroup, { flex: 1 }]}>
-                  <Text style={styles.label}>{t("vehicles.color")}</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={formData.color}
-                    onChangeText={(text) => setFormData({ ...formData, color: text })}
-                    placeholder={t("vehicles.colorPlaceholder")}
-                    placeholderTextColor={C.sub}
-                  />
-                </View>
               </View>
 
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>{t("vehicles.vin")}</Text>
-                <TextInput
-                  style={styles.input}
-                  value={formData.vin}
-                  onChangeText={(text) => setFormData({ ...formData, vin: text.toUpperCase() })}
-                  placeholder={t("vehicles.vinPlaceholder")}
-                  placeholderTextColor={C.sub}
-                  autoCapitalize="characters"
-                />
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>{t("vehicles.licensePlate")}</Text>
-                <TextInput
-                  style={styles.input}
-                  value={formData.licensePlate}
-                  onChangeText={(text) => setFormData({ ...formData, licensePlate: text.toUpperCase() })}
-                  placeholder={t("vehicles.licensePlatePlaceholder")}
-                  placeholderTextColor={C.sub}
-                  autoCapitalize="characters"
-                />
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>{t("vehicles.mileage")}</Text>
-                <TextInput
-                  style={styles.input}
-                  value={formData.mileage}
-                  onChangeText={(text) => setFormData({ ...formData, mileage: text.replace(/[^0-9]/g, "") })}
-                  placeholder="50000"
-                  placeholderTextColor={C.sub}
-                  keyboardType="number-pad"
-                />
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>{t("vehicles.notes")}</Text>
+              <View style={styles.formSection}>
+                <Text style={styles.formSectionTitle}>{t("vehicles.notes")}</Text>
                 <TextInput
                   style={[styles.input, styles.textArea]}
                   value={formData.notes}
@@ -523,10 +553,13 @@ function VehicleCard({ vehicle, userRole, onEdit, onDelete, onStatusUpdate, t })
 
   return (
     <View style={styles.card}>
+      <View style={styles.cardGlow} />
       <View style={styles.cardHeader}>
         <View style={styles.cardTitleRow}>
-          <MaterialCommunityIcons name="car" size={24} color={C.primary} />
-          <View style={{ flex: 1, marginLeft: 12 }}>
+          <View style={styles.vehicleIconWrap}>
+            <MaterialCommunityIcons name="car" size={23} color={C.primary} />
+          </View>
+          <View style={styles.vehicleTitleWrap}>
             <Text style={styles.cardTitle}>
               {vehicle.make} {vehicle.model}
             </Text>

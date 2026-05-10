@@ -396,6 +396,7 @@ export default {
     subtitle: "سجل للبدء",
     email: "البريد الإلكتروني",
     name: "الاسم",
+    phone: "رقم الهاتف",
     password: "كلمة المرور",
     role: "الدور",
     client: "عميل",

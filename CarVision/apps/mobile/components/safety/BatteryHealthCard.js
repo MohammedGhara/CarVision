@@ -54,17 +54,17 @@ export default function BatteryHealthCard({ t, classification, voltageDisplay, e
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 20,
-    padding: 18,
+    borderRadius: 24,
+    padding: 19,
     borderWidth: 1,
     borderColor: "rgba(99,102,241,0.22)",
-    marginBottom: 14,
+    marginBottom: 16,
   },
   row: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 10 },
   iconWrap: {
     width: 48,
     height: 48,
-    borderRadius: 14,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "rgba(15,23,42,0.9)",
@@ -72,8 +72,8 @@ const styles = StyleSheet.create({
   },
   title: {
     color: C.text,
-    fontSize: 16,
-    fontWeight: "800",
+    fontSize: 17,
+    fontWeight: "900",
     letterSpacing: -0.2,
   },
   status: {

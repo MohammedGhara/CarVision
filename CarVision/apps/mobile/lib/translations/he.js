@@ -397,6 +397,7 @@ export default {
     subtitle: "הירשם כדי להתחיל",
     email: "אימייל",
     name: "שם",
+    phone: "מספר טלפון",
     password: "סיסמה",
     role: "תפקיד",
     client: "לקוח",

@@ -11,6 +11,7 @@ import {
 import { useRouter } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import { LinearGradient } from "expo-linear-gradient";
 import AppBackground from "../components/layout/AppBackground";
 
 import { api } from "../lib/api";
@@ -20,6 +21,8 @@ import { useLanguage } from "../context/LanguageContext";
 import LanguagePickerModal from "../components/LanguagePickerModal";
 import { C } from "../styles/theme";
 import { garageStyles as styles } from "../styles/garageStyles";
+
+const SCREEN_SHELL = { flex: 1, paddingHorizontal: 0, paddingVertical: 0 };
 
 export default function GarageScreen() {
   const router = useRouter();
@@ -169,30 +172,20 @@ export default function GarageScreen() {
   }
 
   return (
-    <AppBackground scrollable={false}>
+    <AppBackground scrollable={false} contentContainerStyle={SCREEN_SHELL}>
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.appIdentity}>
             <View style={styles.logoCircle}>
-              <MaterialCommunityIcons name="garage" size={20} color={C.amber} />
+              <MaterialCommunityIcons name="garage" size={22} color={C.primary} />
             </View>
-            <View>
+            <View style={styles.appTitleWrap}>
               <Text style={styles.appTitle}>{t("garage.title")}</Text>
               <Text style={styles.appSubtitle}>{t("garage.subtitle")}</Text>
             </View>
           </View>
 
-          <View style={{ flexDirection: "row", gap: 8 }}>
-            <TouchableOpacity
-              onPress={() => setShowLanguagePicker(true)}
-              style={styles.langChip}
-              activeOpacity={0.85}
-            >
-              <Ionicons name="language-outline" size={18} color={C.text} />
-              <Text style={styles.langChipText}>
-                {languages[language]?.nativeName || language.toUpperCase()}
-              </Text>
-            </TouchableOpacity>
+          <View style={styles.headerActions}>
             <TouchableOpacity
               onPress={() => router.push("/profile")}
               style={styles.profileBtn}
@@ -202,7 +195,7 @@ export default function GarageScreen() {
             </TouchableOpacity>
             <TouchableOpacity
               onPress={onLogout}
-              style={[styles.profileBtn, { backgroundColor: "rgba(249,115,115,0.12)", borderColor: "rgba(249,115,115,0.35)" }]}
+              style={[styles.profileBtn, styles.logoutBtn]}
               activeOpacity={0.85}
             >
               <Ionicons name="log-out-outline" size={20} color={C.red} />
@@ -216,40 +209,61 @@ export default function GarageScreen() {
           showsVerticalScrollIndicator={false}
         >
           {/* Welcome Section */}
-          <View style={styles.welcomeCard}>
-            <Text style={styles.welcomeTitle}>
-              {t("garage.welcome")}, {user?.name || user?.email?.split("@")[0] || "Garage Owner"}
-            </Text>
-            <Text style={styles.welcomeText}>{t("garage.welcomeMessage")}</Text>
-          </View>
+          <LinearGradient
+            colors={["rgba(99,102,241,0.28)", "rgba(15,23,42,0.98)", "rgba(14,165,233,0.16)"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.heroPanel}
+          >
+            <View style={styles.heroGlow} />
+            <View style={styles.heroTopRow}>
+              <View style={styles.heroCopy}>
+                <Text style={styles.welcomeEyebrow}>{t("garage.subtitle")}</Text>
+                <Text style={styles.welcomeTitle}>
+                  {t("garage.welcome")}, {user?.name || user?.email?.split("@")[0] || "Garage Owner"}
+                </Text>
+                <Text style={styles.welcomeText}>{t("garage.welcomeMessage")}</Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setShowLanguagePicker(true)}
+                style={styles.langChip}
+                activeOpacity={0.85}
+              >
+                <Ionicons name="language-outline" size={17} color={C.text} />
+                <Text style={styles.langChipText} numberOfLines={1}>
+                  {languages[language]?.nativeName || language.toUpperCase()}
+                </Text>
+              </TouchableOpacity>
+            </View>
 
-          {/* Quick Stats */}
-          <View style={styles.statsGrid}>
-            <StatCard
-              icon="car-multiple"
-              label={t("garage.totalVehicles")}
-              value={stats.totalVehicles.toString()}
-              color={C.blue}
-            />
-            <StatCard
-              icon="wrench"
-              label={t("garage.activeRepairs")}
-              value={stats.activeRepairs.toString()}
-              color={C.amber}
-            />
-            <StatCard
-              icon="check-circle"
-              label={t("garage.completed")}
-              value={stats.completed.toString()}
-              color={C.green}
-            />
-            <StatCard
-              icon="account-group"
-              label={t("garage.clients")}
-              value={stats.clients.toString()}
-              color={C.primary}
-            />
-          </View>
+            {/* Quick Stats */}
+            <View style={styles.statsGrid}>
+              <StatCard
+                icon="car-multiple"
+                label={t("garage.totalVehicles")}
+                value={stats.totalVehicles.toString()}
+                color={C.blue}
+              />
+              <StatCard
+                icon="wrench"
+                label={t("garage.activeRepairs")}
+                value={stats.activeRepairs.toString()}
+                color={C.primary}
+              />
+              <StatCard
+                icon="check-circle"
+                label={t("garage.completed")}
+                value={stats.completed.toString()}
+                color={C.green}
+              />
+              <StatCard
+                icon="account-group"
+                label={t("garage.clients")}
+                value={stats.clients.toString()}
+                color={C.primary}
+              />
+            </View>
+          </LinearGradient>
 
           {/* Main Actions */}
           <View style={styles.section}>
@@ -267,7 +281,7 @@ export default function GarageScreen() {
                 title={t("marketplace.garageTitle")}
                 subtitle={t("marketplace.garageSubtitle")}
                 onPress={() => router.push("/marketplace-garage")}
-                accent={C.amber}
+                accent={C.blue}
               />
               <ActionCard
                 icon="forum-outline"
@@ -306,7 +320,7 @@ export default function GarageScreen() {
                 title={t("garage.analytics")}
                 subtitle={t("garage.analyticsDesc")}
                 onPress={() => showCustomAlert(t("common.comingSoon"), t("garage.comingSoonMessage"))}
-                accent={C.amber}
+                accent={C.primary}
               />
             </View>
           </View>

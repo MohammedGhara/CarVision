@@ -8,16 +8,17 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 
+import AppBackground from "../components/layout/AppBackground";
 import { getWsUrl, setWsUrl } from "../lib/wsConfig";
 import { useLanguage } from "../context/LanguageContext";
 import { settingsStyles as s } from "../styles/settingsStyles";
 import { colors } from "../styles/theme";
 
 const C = colors.settings;
+const SCREEN_SHELL = { flex: 1, paddingHorizontal: 0, paddingVertical: 0 };
 
 export default function Settings() {
   const router = useRouter();
@@ -77,7 +78,7 @@ export default function Settings() {
   const uniquePresets = Array.from(new Set(presets.filter(Boolean)));
 
   return (
-    <SafeAreaView style={s.wrap}>
+    <AppBackground scrollable={false} contentContainerStyle={SCREEN_SHELL}>
       <KeyboardAvoiding shimBehavior={Platform.OS === "ios" ? "padding" : "height"}>
         <View style={s.topbar}>
           <TouchableOpacity style={s.backBtn} onPress={() => router.back()}>
@@ -138,7 +139,7 @@ export default function Settings() {
           </TouchableOpacity>
         </View>
       </KeyboardAvoiding>
-    </SafeAreaView>
+    </AppBackground>
   );
 }
 

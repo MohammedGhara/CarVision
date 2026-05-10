@@ -712,7 +712,7 @@ export default function CarData() {
                 onRefresh={onRefresh}
               />
             }
-            contentContainerStyle={{ paddingBottom: 80 }}
+            contentContainerStyle={{ paddingBottom: 150 }}
             showsVerticalScrollIndicator={false}
           >
             {/* Key Vitals */}

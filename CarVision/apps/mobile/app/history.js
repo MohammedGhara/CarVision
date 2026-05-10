@@ -8,18 +8,19 @@ import {
   ActivityIndicator,
   Alert,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
+import AppBackground from "../components/layout/AppBackground";
 import { useLanguage } from "../context/LanguageContext";
 import { colors } from "../styles/theme";
 import { historyStyles as styles } from "../styles/historyStyles";
 
 const C = colors.repairs; // Same theme as repairs
+const SCREEN_SHELL = { flex: 1, paddingHorizontal: 0, paddingVertical: 0 };
 
 // ⚠️ مهم: هذا هو نفس الـ key الموجود في repairs.js
 // حتى نستخدم نفس الـ history الذي يسجّله كود الـ Repairs
@@ -239,7 +240,7 @@ export default function HistoryScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
+    <AppBackground scrollable={false} contentContainerStyle={SCREEN_SHELL}>
       {/* Top bar */}
       <View style={styles.topbar}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
@@ -281,7 +282,7 @@ export default function HistoryScreen() {
         <FlatList
           data={items}
           keyExtractor={(it) => it.id}
-          contentContainerStyle={{ padding: 12, paddingBottom: 24, gap: 10 }}
+          contentContainerStyle={styles.listContent}
           renderItem={({ item }) => (
             <View style={styles.card}>
               <View
@@ -330,7 +331,7 @@ export default function HistoryScreen() {
           )}
         />
       )}
-    </SafeAreaView>
+    </AppBackground>
   );
 }
 

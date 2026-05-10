@@ -12,6 +12,7 @@ import {
 import { useRouter } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { LinearGradient } from "expo-linear-gradient";
 import AppBackground from "../components/layout/AppBackground";
 import FloatingChatButton from "../components/FloatingChatButton";
 import LanguagePickerModal from "../components/LanguagePickerModal";
@@ -227,105 +228,110 @@ export default function HomeScreen() {
 
       {/* —— TOP BAR —— */}
       <View style={styles.header}>
-          <View style={styles.appIdentity}>
-            <View style={styles.logoCircle}>
-              <Ionicons name="car-sport-outline" size={21} color={C.primary} />
-            </View>
-            <View>
-              <Text style={styles.appTitle}>{t("home.title")}</Text>
-              <Text style={styles.appSubtitle}>{t("home.subtitle")}</Text>
-            </View>
+        <View style={styles.appIdentity}>
+          <View style={styles.logoCircle}>
+            <Ionicons name="car-sport-outline" size={22} color={C.primary} />
           </View>
-
-          <View style={styles.headerActions}>
-            <TouchableOpacity
-              onPress={() => setShowLanguagePicker(true)}
-              style={styles.langChip}
-              activeOpacity={0.85}
-            >
-              <Ionicons name="language-outline" size={18} color={C.text} />
-              <Text style={styles.langChipText} numberOfLines={1}>
-                {languages[language]?.nativeName || language.toUpperCase()}
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => router.push("/profile")}
-              style={styles.profileBtn}
-              activeOpacity={0.85}
-            >
-              <Ionicons name="person-circle-outline" size={21} color={C.text} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={onLogout}
-              style={[styles.profileBtn, { backgroundColor: "rgba(249,115,115,0.12)", borderColor: "rgba(249,115,115,0.35)" }]}
-              activeOpacity={0.85}
-            >
-              <Ionicons name="log-out-outline" size={21} color={C.red} />
-            </TouchableOpacity>
+          <View style={styles.appTitleWrap}>
+            <Text style={styles.appTitle}>{t("home.title")}</Text>
+            <Text style={styles.appSubtitle}>{t("home.subtitle")}</Text>
           </View>
         </View>
+
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            onPress={() => router.push("/profile")}
+            style={styles.profileBtn}
+            activeOpacity={0.85}
+          >
+            <Ionicons name="person-circle-outline" size={21} color={C.text} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={onLogout}
+            style={[styles.profileBtn, styles.logoutBtn]}
+            activeOpacity={0.85}
+          >
+            <Ionicons name="log-out-outline" size={21} color={C.red} />
+          </TouchableOpacity>
+        </View>
+      </View>
 
       {/* —— MAIN CONTENT —— */}
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-          {/* Greeting + small pills */}
-          <View style={styles.greetingBlock}>
-            <View>
-              <Text style={styles.greetingLabel}>{t("home.greeting")}</Text>
-              <Text style={styles.greetingName}>{displayName}</Text>
+          <LinearGradient
+            colors={["rgba(99,102,241,0.26)", "rgba(15,23,42,0.98)", "rgba(14,165,233,0.12)"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.heroPanel}
+          >
+            <View style={styles.heroGlow} />
+            <View style={styles.heroTopRow}>
+              <View style={styles.heroGreeting}>
+                <Text style={styles.greetingLabel}>{t("home.greeting")}</Text>
+                <Text style={styles.greetingName} numberOfLines={1}>{displayName}</Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setShowLanguagePicker(true)}
+                style={styles.langChip}
+                activeOpacity={0.85}
+              >
+                <Ionicons name="language-outline" size={17} color={C.text} />
+                <Text style={styles.langChipText} numberOfLines={1}>
+                  {languages[language]?.nativeName || language.toUpperCase()}
+                </Text>
+              </TouchableOpacity>
             </View>
 
-            <View style={styles.greetingPills}>
+            <View style={styles.heroStatusRow}>
               <InfoPill icon="radio-outline" label={t("home.obdStatus")} value={t("home.ready")} color={C.green} />
               <InfoPill icon="document-text-outline" label={t("home.history")} value={t("home.available")} color={C.primary} />
             </View>
-          </View>
 
-          {/* Vehicle Overview Panel */}
-          <View style={styles.sectionPanel}>
-            <View style={styles.sectionHeader}>
+            <View style={styles.heroSectionHeader}>
               <Text style={styles.sectionTitle}>{t("home.vehicleOverview")}</Text>
-              <View style={styles.sectionHeaderRight}>
+              <View style={styles.connectionChip}>
                 <View style={styles.statusDot} />
                 <Text style={styles.sectionStatusText}>{t("home.awaitingConnection")}</Text>
               </View>
             </View>
 
-            <View style={styles.overviewRow}>
-              <View style={{ flex: 1 }}>
+            <View style={styles.overviewMetricsGrid}>
+              <View style={styles.metricSlot}>
                 <OverviewMetric
                   label={t("home.engineHealth")}
                   value={vehicleStats.engineHealth || "—"}
                   hint={vehicleStats.engineHealth ? "" : t("home.runScanToAnalyze")}
                 />
+              </View>
+              <View style={styles.metricSlot}>
                 <OverviewMetric
                   label={t("home.activeDTCCodes")}
                   value={vehicleStats.activeDTCs > 0 ? vehicleStats.activeDTCs.toString() : "—"}
                   hint={vehicleStats.activeDTCs > 0 ? "" : t("home.shownAfterFirstScan")}
                 />
               </View>
+            </View>
 
-              <View style={styles.overviewCard}>
+            <View style={styles.overviewCard}>
+              <View style={styles.overviewCardCopy}>
                 <Text style={styles.overviewCardTitle}>{t("home.quickScan")}</Text>
                 <Text style={styles.overviewCardText}>
                   {t("home.quickScanDescription")}
                 </Text>
-                <TouchableOpacity
-                  style={styles.overviewButton}
-                  onPress={() => router.push("/diagnostics")}
-                  activeOpacity={0.9}
-                >
-                  <Ionicons name="flash-outline" size={17} color="#fff" />
-                  <Text style={styles.overviewButtonText}>{t("home.startScan")}</Text>
-                </TouchableOpacity>
               </View>
+              <TouchableOpacity
+                style={styles.overviewButton}
+                onPress={() => router.push("/diagnostics")}
+                activeOpacity={0.9}
+              >
+                <Ionicons name="flash-outline" size={18} color="#fff" />
+                <Text style={styles.overviewButtonText}>{t("home.startScan")}</Text>
+              </TouchableOpacity>
             </View>
-          </View>
-
-          {/* Divider line */}
-          <View style={styles.divider} />
+          </LinearGradient>
 
           {/* PRIMARY ACTIONS */}
           <View style={styles.block}>
@@ -535,7 +541,7 @@ export default function HomeScreen() {
       </ScrollView>
 
       {/* Global floating AI button */}
-      <FloatingChatButton onPress={() => router.push("/ai")} />
+      <FloatingChatButton onPress={() => router.push("/ai")} showTooltip={false} />
 
       <LanguagePickerModal
         visible={showLanguagePicker}
@@ -574,9 +580,9 @@ function OverviewMetric({ label, value, hint }) {
 }
 
 function primaryAccentBorder(accent) {
-  if (accent === C.green) return "rgba(34,197,94,0.4)";
-  if (accent === C.amber) return "rgba(250,204,21,0.42)";
-  return "rgba(249,115,115,0.42)";
+  if (accent === C.green) return "rgba(34,197,94,0.32)";
+  if (accent === C.amber) return "rgba(250,204,21,0.34)";
+  return "rgba(249,115,115,0.34)";
 }
 
 function PrimaryCard({ title, subtitle, icon, accent, onPress }) {
@@ -586,8 +592,8 @@ function PrimaryCard({ title, subtitle, icon, accent, onPress }) {
       onPress={onPress}
       activeOpacity={0.88}
     >
-      <View style={[styles.primaryIconWrap, { borderColor: accent }]}>
-        <Ionicons name={icon} size={22} color={accent} />
+      <View style={[styles.primaryIconWrap, { borderColor: primaryAccentBorder(accent) }]}>
+        <Ionicons name={icon} size={21} color={accent} />
       </View>
       <View style={{ flex: 1 }}>
         <Text style={styles.primaryTitle}>{title}</Text>

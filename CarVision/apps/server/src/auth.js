@@ -59,19 +59,18 @@ function authRequired(req, res, next) {
   }
 }
 
-/* POST /api/auth/signup  {email, name?, password, role?} */
-/* POST /api/auth/signup  {email, name?, password, role?} */
-/* POST /api/auth/signup  {email, name?, password, role?} */
+/* POST /api/auth/signup  {email, name?, phone?, password, role?} */
 router.post("/signup", async (req, res) => {
   console.log("📥 Signup request received:", { 
     email: req.body?.email, 
     name: req.body?.name ? "***" : null, 
+    hasPhone: !!req.body?.phone,
     role: req.body?.role,
     hasPassword: !!req.body?.password 
   });
   
   try {
-    const { email, name, password, role } = (req.body || {});
+    const { email, name, phone, password, role } = (req.body || {});
     
     // Validate email format
     if (!email) {
@@ -112,16 +111,21 @@ router.post("/signup", async (req, res) => {
 
     // Provide default name if not provided (since schema requires it)
     const userName = name && name.trim() ? name.trim() : emailNorm.split("@")[0]; // Use email prefix as fallback
+    const phoneTrim = phone != null ? String(phone).trim() : "";
+    if (phoneTrim.length > 40) {
+      return res.status(400).json({ ok: false, error: "Phone number must be at most 40 characters" });
+    }
     console.log("👤 Creating user with name:", userName);
 
     const user = await prisma.user.create({
       data: {
         email: emailNorm,
         name: userName, // Always provide a name
+        phone: phoneTrim || null,
         role: role || "CLIENT",
         passwordHash
       },
-      select: { id: true, email: true, name: true, role: true, createdAt: true, updatedAt: true }
+      select: { id: true, email: true, name: true, phone: true, role: true, createdAt: true, updatedAt: true }
     });
 
     console.log("✅ User created:", user.id);
@@ -226,6 +230,7 @@ router.post("/login", async (req, res) => {
       email: user.email,
       name: user.name,
       role: user.role,
+      phone: user.phone ?? null,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
       address: user.address ?? null,

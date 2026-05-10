@@ -26,6 +26,7 @@ export default function Signup() {
   const { t } = useLanguage();
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
   const [role, setRole] = useState("CLIENT");
   const [password, setPassword] = useState("");
   const [showPwd, setShowPwd] = useState(false);
@@ -80,10 +81,15 @@ async function onSignup() {
     showCustomAlert("Weak Password", "Password must be at least 6 characters long.");
     return;
   }
+
+  if (phone.trim().length > 40) {
+    showCustomAlert("Invalid Phone", "Phone number must be at most 40 characters.");
+    return;
+  }
   
   setBusy(true);
   
-  console.log("🔵 Starting signup...", { email, name, role, passwordLength: password.length });
+  console.log("🔵 Starting signup...", { email, name, role, hasPhone: !!phone.trim(), passwordLength: password.length });
   
   try {
     let base;
@@ -104,7 +110,7 @@ async function onSignup() {
     const url = `${base}/api/auth/signup`;
     console.log("📤 Sending request to:", url);
     
-    const requestBody = { email, name: name.trim() || null, role, password };
+    const requestBody = { email, name: name.trim() || null, phone: phone.trim() || null, role, password };
     console.log("📤 Request body:", { ...requestBody, password: "***" });
     
     const resp = await fetch(url, {
@@ -167,8 +173,30 @@ async function onSignup() {
     console.log("✅ Signup successful!");
     
     try {
+      let savedUser = {
+        ...data.user,
+        phone: data.user.phone ?? requestBody.phone ?? null,
+      };
       await saveToken(data.token);
-      await saveUser(data.user);
+      if (requestBody.phone && !data.user.phone) {
+        try {
+          const phoneResp = await fetch(`${base}/api/auth/update-profile`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${data.token}`,
+            },
+            body: JSON.stringify({ phone: requestBody.phone }),
+          });
+          const phoneData = await phoneResp.json().catch(() => null);
+          if (phoneResp.ok && phoneData?.user) {
+            savedUser = phoneData.user;
+          }
+        } catch (phoneSaveError) {
+          console.log("⚠️ Phone profile sync failed:", phoneSaveError.message || phoneSaveError);
+        }
+      }
+      await saveUser(savedUser);
       console.log("✅ Credentials saved");
     } catch (saveError) {
       // Use console.log for expected errors (handled gracefully)
@@ -227,8 +255,12 @@ async function onSignup() {
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={{ flex: 1 }}
       >
+          <View style={styles.authOrb} />
           <View style={styles.brandWrap}>
-            <Text style={styles.logo}> CarVision</Text>
+            <View style={styles.appMark}>
+              <Ionicons name="car-sport-outline" size={19} color={C.primary} />
+            </View>
+            <Text style={styles.logo}>CarVision</Text>
             <Text style={styles.tagline}>Join the smarter driving community</Text>
           </View>
 
@@ -260,6 +292,20 @@ async function onSignup() {
                   keyboardType="email-address"
                   value={email}
                   onChangeText={setEmail}
+                />
+              </View>
+
+              {/* Phone */}
+              <View style={styles.inputWrap}>
+                <Ionicons name="call-outline" size={20} color={C.sub} style={styles.iconLeft} />
+                <TextInput
+                  style={styles.input}
+                  placeholder={t("signup.phone")}
+                  placeholderTextColor={C.sub}
+                  keyboardType="phone-pad"
+                  value={phone}
+                  onChangeText={setPhone}
+                  maxLength={40}
                 />
               </View>
 

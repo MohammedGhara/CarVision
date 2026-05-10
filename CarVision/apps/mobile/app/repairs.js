@@ -3,12 +3,12 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   View, Text, TouchableOpacity, FlatList, ActivityIndicator, Alert, AppState
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+import AppBackground from "../components/layout/AppBackground";
 import { getWsUrl, checkNetworkChange } from "../lib/wsConfig";
 import { api } from "../lib/api";
 import { describeDtc } from "../lib/dtcDescriptions";
@@ -17,6 +17,7 @@ import { colors } from "../styles/theme";
 import { repairsStyles as styles } from "../styles/repairsStyles";
 
 const C = colors.repairs;
+const SCREEN_SHELL = { flex: 1, paddingHorizontal: 0, paddingVertical: 0 };
 
 const STORAGE_KEY = "carvision.history.v1";
 const DEDUP_COOLDOWN_MS = 60 * 1000; // re-log same key only after 60s
@@ -374,7 +375,7 @@ export default function RepaiScreen() {
   [link, answers]);
 
   return (
-    <SafeAreaView style={{ flex:1, backgroundColor: C.bg }}>
+    <AppBackground scrollable={false} contentContainerStyle={SCREEN_SHELL}>
       {/* top bar */}
       <View style={styles.topbar}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
@@ -390,14 +391,15 @@ export default function RepaiScreen() {
       </View>
 
       {issues.length === 0 ? (
-        <View style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 20 }}>
-          <Text style={{ color: C.sub, fontSize: 16 }}>{t("repairs.noIssues")}</Text>
+        <View style={styles.emptyState}>
+          <MaterialCommunityIcons name="shield-check-outline" size={34} color={C.ok} />
+          <Text style={styles.emptyTitle}>{t("repairs.noIssues")}</Text>
         </View>
       ) : (
       <FlatList
         data={issues}
         keyExtractor={(it)=>it.id}
-        contentContainerStyle={{ padding:12, paddingBottom:24, gap:12 }}
+        contentContainerStyle={styles.listContent}
         renderItem={({ item }) => (
           <View style={styles.card}>
             <View style={{ flexDirection:"row", alignItems:"center", gap:10, marginBottom:8 }}>
@@ -443,7 +445,7 @@ export default function RepaiScreen() {
           </View>
         )}
       />)}
-    </SafeAreaView>
+    </AppBackground>
   );
 }
 

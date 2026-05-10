@@ -8,12 +8,12 @@ import {
   Alert,
   AppState,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 
+import AppBackground from "../components/layout/AppBackground";
 import { getWsUrl, checkNetworkChange } from "../lib/wsConfig";
 import { pushTelemetrySlice } from "../lib/liveTelemetryBridge";
 import { describeDtc } from "../lib/dtcDescriptions";
@@ -32,6 +32,8 @@ const C = {
   warn: "#FACC15",
   crit: "#F97373",
 };
+
+const SCREEN_SHELL = { flex: 1, paddingHorizontal: 0, paddingVertical: 0 };
 
 export default function Diagnostics() {
   const router = useRouter();
@@ -317,7 +319,7 @@ export default function Diagnostics() {
   const ign = data.monitors?.ignition || "Unknown";
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
+    <AppBackground scrollable={false} contentContainerStyle={SCREEN_SHELL}>
       {/* Top bar */}
       <View style={styles.topbar}>
         <TouchableOpacity
@@ -360,7 +362,7 @@ export default function Diagnostics() {
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingBottom: 28 }}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
         {/* Summary card */}
         <View style={styles.card}>
           <View style={styles.row}>
@@ -450,7 +452,7 @@ export default function Diagnostics() {
         </View>
       </ScrollView>
       <EmergencySOSModal visible={sosOpen} onClose={() => setSosOpen(false)} t={t} />
-    </SafeAreaView>
+    </AppBackground>
   );
 }
 

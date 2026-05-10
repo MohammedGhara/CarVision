@@ -77,64 +77,67 @@ export default function CommunityForumScreen() {
 
   return (
     <AppBackground scrollable={false}>
-      <View style={[styles.topbar, { paddingTop: insets.top + 6 }]}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} accessibilityRole="button">
-          <Ionicons name="chevron-back" size={24} color="#E5E7EB" />
-        </TouchableOpacity>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.eyebrow}>{t("forum.eyebrow")}</Text>
-          <Text style={styles.headerTitle}>{t("forum.title")}</Text>
-          <Text style={styles.headerSub}>{t("forum.subtitle")}</Text>
-        </View>
-      </View>
-
       <LinearGradient
-        colors={["rgba(99,102,241,0.2)", "transparent"]}
+        colors={["rgba(99,102,241,0.26)", "rgba(15,23,42,0.98)", "rgba(14,165,233,0.12)"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={styles.searchOuter}
+        style={[styles.forumHero, { marginTop: insets.top + 8 }]}
       >
-        <View style={styles.searchInner}>
-          <Ionicons name="search-outline" size={20} color="#6366F1" />
-          <TextInput
-            style={styles.searchInput}
-            placeholder={t("forum.searchPlaceholder")}
-            placeholderTextColor="#64748B"
-            value={search}
-            onChangeText={setSearch}
-          />
+        <View style={styles.heroGlow} />
+        <View style={styles.topbar}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} accessibilityRole="button">
+            <Ionicons name="chevron-back" size={24} color="#E5E7EB" />
+          </TouchableOpacity>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.eyebrow}>{t("forum.eyebrow")}</Text>
+            <Text style={styles.headerTitle}>{t("forum.title")}</Text>
+            <Text style={styles.headerSub}>{t("forum.subtitle")}</Text>
+          </View>
+        </View>
+
+        <View style={styles.searchOuter}>
+          <View style={styles.searchInner}>
+            <Ionicons name="search-outline" size={20} color="#818CF8" />
+            <TextInput
+              style={styles.searchInput}
+              placeholder={t("forum.searchPlaceholder")}
+              placeholderTextColor="#7C849D"
+              value={search}
+              onChangeText={setSearch}
+            />
+          </View>
+        </View>
+
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
+          {categoryOptions.map((c) => {
+            const active = category === c;
+            const label =
+              c === ALL ? t("forum.allCategories") : t(`forum.${forumCategoryKey(c)}`);
+            return (
+              <TouchableOpacity
+                key={c}
+                style={[styles.chip, active && styles.chipActive]}
+                onPress={() => setCategory(c)}
+              >
+                <Text style={[styles.chipText, active && styles.chipTextActive]} numberOfLines={1}>
+                  {label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+
+        <View style={styles.sortRow}>
+          {FORUM_SORT_KEYS.map((k) => {
+            const active = sort === k;
+            return (
+              <TouchableOpacity key={k} style={[styles.sortChip, active && styles.sortChipActive]} onPress={() => setSort(k)}>
+                <Text style={[styles.sortChipText, active && styles.sortChipTextActive]}>{t(`forum.sort_${k}`)}</Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
       </LinearGradient>
-
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
-        {categoryOptions.map((c) => {
-          const active = category === c;
-          const label =
-            c === ALL ? t("forum.allCategories") : t(`forum.${forumCategoryKey(c)}`);
-          return (
-            <TouchableOpacity
-              key={c}
-              style={[styles.chip, active && styles.chipActive]}
-              onPress={() => setCategory(c)}
-            >
-              <Text style={[styles.chipText, active && styles.chipTextActive]} numberOfLines={1}>
-                {label}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
-
-      <View style={styles.sortRow}>
-        {FORUM_SORT_KEYS.map((k) => {
-          const active = sort === k;
-          return (
-            <TouchableOpacity key={k} style={[styles.sortChip, active && styles.sortChipActive]} onPress={() => setSort(k)}>
-              <Text style={[styles.sortChipText, active && styles.sortChipTextActive]}>{t(`forum.sort_${k}`)}</Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
 
       {error ? (
         <View style={styles.centerMsg}>

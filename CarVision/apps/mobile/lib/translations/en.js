@@ -409,6 +409,7 @@ export default {
     subtitle: "Sign up to get started",
     email: "Email",
     name: "Name",
+    phone: "Phone number",
     password: "Password",
     role: "Role",
     client: "Client",

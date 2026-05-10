@@ -12,6 +12,12 @@ const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:8081"; // Exp
 
 // Create reusable transporter
 let transporter = null;
+let emailConfigStatus = null;
+let emailConfigPromise = null;
+
+function hasEmailCredentials() {
+  return Boolean(EMAIL_USER && EMAIL_PASS);
+}
 
 function getTransporter() {
   if (!transporter) {
@@ -30,20 +36,38 @@ function getTransporter() {
 
 // Verify email configuration
 async function verifyEmailConfig() {
-  try {
-    const trans = getTransporter();
-    if (!EMAIL_USER || !EMAIL_PASS) {
+  if (!hasEmailCredentials()) {
+    if (emailConfigStatus !== false) {
       console.warn("⚠️  Email credentials not configured. Emails will not be sent.");
-      return false;
     }
-    await trans.verify();
-    console.log("✅ Email service configured and verified");
-    return true;
-  } catch (error) {
-    console.warn("⚠️  Email service verification failed:", error.message);
-    console.warn("   Emails will not be sent. Check your EMAIL_* environment variables.");
+    emailConfigStatus = false;
     return false;
   }
+  if (emailConfigStatus === true) {
+    return true;
+  }
+  if (emailConfigPromise) {
+    return emailConfigPromise;
+  }
+
+  emailConfigPromise = (async () => {
+    try {
+      const trans = getTransporter();
+      await trans.verify();
+      console.log("✅ Email service configured and verified");
+      emailConfigStatus = true;
+      return true;
+    } catch (error) {
+      console.warn("⚠️  Email service verification failed:", error.message);
+      console.warn("   Emails will not be sent. Check your EMAIL_* environment variables.");
+      emailConfigStatus = false;
+      return false;
+    } finally {
+      emailConfigPromise = null;
+    }
+  })();
+
+  return emailConfigPromise;
 }
 
 // Send welcome email on signup
@@ -246,6 +270,9 @@ This is an automated email. Please do not reply.
 
 // Verify email config on module load (skip in tests to avoid async log noise)
 if (process.env.NODE_ENV !== "test") {
+  if (hasEmailCredentials()) {
+    console.log("✅ Email service configured");
+  }
   verifyEmailConfig().catch(console.error);
 }
 

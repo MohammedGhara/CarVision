@@ -76,13 +76,19 @@ export default function ProfileScreen() {
         try {
           const me = await api.get("/api/auth/me");
           if (me?.user) {
-            setUser(me.user);
+            const freshUser = {
+              ...(cachedUser || {}),
+              ...me.user,
+              phone: me.user.phone ?? cachedUser?.phone ?? null,
+            };
+            setUser(freshUser);
+            await saveUser(freshUser);
             
             // Set memberSince from database
-            if (me.user.createdAt) {
+            if (freshUser.createdAt) {
               setStats(prev => ({
                 ...prev,
-                memberSince: me.user.createdAt,
+                memberSince: freshUser.createdAt,
               }));
             }
           }
@@ -266,8 +272,18 @@ export default function ProfileScreen() {
     () => user?.name || user?.email?.split("@")[0] || "User",
     [user]
   );
+  const displayPhone = useMemo(() => {
+    if (user?.phone == null) return "";
+    return String(user.phone).trim();
+  }, [user?.phone]);
 
-  const roleBadgeColor = user?.role === "GARAGE" ? C.amber : C.primary;
+  const roleBadgeColor = C.primary;
+  const openEditProfile = () => {
+    setEditName(user?.name || "");
+    setEditEmail(user?.email || "");
+    setEditPhone(user?.phone ? String(user.phone) : "");
+    setShowEditModal(true);
+  };
 
   // If no user data after loading, redirect to login
   if (!loading && !user) {
@@ -341,7 +357,13 @@ export default function ProfileScreen() {
           showsVerticalScrollIndicator={false}
         >
           {/* Profile Header Card */}
-          <View style={styles.profileCard}>
+          <LinearGradient
+            colors={["rgba(99,102,241,0.26)", "rgba(15,23,42,0.98)", "rgba(14,165,233,0.12)"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.profileCard}
+          >
+            <View style={styles.profileGlow} />
             <View style={styles.avatarContainer}>
               <LinearGradient
                 colors={[C.primary, "#8B5CF6"]}
@@ -358,6 +380,7 @@ export default function ProfileScreen() {
 
             <Text style={styles.name}>{displayName}</Text>
             <Text style={styles.email}>{user?.email || ""}</Text>
+            <Text style={styles.phoneText}>{displayPhone || t("profile.phone") + ": —"}</Text>
 
             {user?.createdAt && (
               <View style={styles.memberSince}>
@@ -367,7 +390,7 @@ export default function ProfileScreen() {
                 </Text>
               </View>
             )}
-          </View>
+          </LinearGradient>
 
           {/* Statistics Grid */}
           <View style={styles.statsGrid}>
@@ -405,12 +428,7 @@ export default function ProfileScreen() {
                 icon="create-outline"
                 title={t("profile.editProfile")}
                 subtitle={t("profile.editProfileSubtitle")}
-                onPress={() => {
-                  setEditName(user?.name || "");
-                  setEditEmail(user?.email || "");
-                  setEditPhone(user?.phone ? String(user.phone) : "");
-                  setShowEditModal(true);
-                }}
+                onPress={openEditProfile}
               />
               <ActionRow
                 icon="key-outline"
@@ -436,30 +454,18 @@ export default function ProfileScreen() {
               <InfoRow
                 icon="call-outline"
                 label={t("profile.phone")}
-                value={user?.phone?.trim() ? String(user.phone).trim() : "—"}
+                value={displayPhone || "—"}
               />
               <InfoRow
                 icon="shield-checkmark-outline"
                 label={t("profile.accountType")}
                 value={user?.role || "CLIENT"}
               />
-              <InfoRow
-                icon="id-card-outline"
-                label={t("profile.userId")}
-                value={user?.id ? user.id.substring(0, 8) + "..." : "—"}
-              />
               {user?.createdAt && (
                 <InfoRow
                   icon="calendar-outline"
                   label={t("profile.accountCreated")}
                   value={formatFullDate(user.createdAt)}
-                />
-              )}
-              {user?.updatedAt && (
-                <InfoRow
-                  icon="time-outline"
-                  label={t("profile.lastUpdated")}
-                  value={formatFullDate(user.updatedAt)}
                 />
               )}
             </View>
@@ -611,8 +617,25 @@ function EditProfileModal({
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>{t("profile.editProfileTitle")}</Text>
-            <Text style={styles.modalSubtitle}>{t("profile.editProfileDescription")}</Text>
+            <LinearGradient
+              colors={["rgba(99,102,241,0.22)", "rgba(15,23,42,0.98)", "rgba(14,165,233,0.08)"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.modalHero}
+            >
+              <View style={styles.modalHeroGlow} />
+              <View style={styles.modalTitleRow}>
+                <View style={styles.modalIconWrap}>
+                  <Ionicons name="person-outline" size={22} color={C.primary} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.modalTitle}>{t("profile.editProfileTitle")}</Text>
+                  <Text style={styles.modalSubtitle}>{t("profile.editProfileDescription")}</Text>
+                </View>
+              </View>
+            </LinearGradient>
+            <View style={styles.modalFormCard}>
+            <Text style={styles.modalFieldLabel}>{t("profile.name")}</Text>
             <TextInput
               style={styles.modalInput}
               value={value}
@@ -620,8 +643,9 @@ function EditProfileModal({
               placeholder={t("profile.namePlaceholder")}
               placeholderTextColor="rgba(148,163,184,0.8)"
             />
+            <Text style={styles.modalFieldLabel}>{t("profile.email")}</Text>
             <TextInput
-              style={[styles.modalInput, { marginTop: 12 }]}
+              style={styles.modalInput}
               value={emailValue}
               onChangeText={onChangeEmail}
               placeholder={t("profile.emailPlaceholder")}
@@ -629,8 +653,9 @@ function EditProfileModal({
               keyboardType="email-address"
               autoCapitalize="none"
             />
+            <Text style={styles.modalFieldLabel}>{t("profile.phone")}</Text>
             <TextInput
-              style={[styles.modalInput, { marginTop: 12 }]}
+              style={styles.modalInput}
               value={phoneValue}
               onChangeText={onChangePhone}
               placeholder={t("profile.phonePlaceholder")}
@@ -638,6 +663,7 @@ function EditProfileModal({
               keyboardType="phone-pad"
               maxLength={40}
             />
+            </View>
             <View style={styles.modalActions}>
               <TouchableOpacity
                 style={[styles.modalButton, styles.modalButtonGhost]}
