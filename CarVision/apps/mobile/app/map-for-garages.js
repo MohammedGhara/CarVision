@@ -1,17 +1,8 @@
 // apps/mobile/app/map-for-garages.js — Client: Map For Garages (premium layout)
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  TextInput,
-  ActivityIndicator,
-  Platform,
-  StatusBar,
-  KeyboardAvoidingView,
-  Modal,
-} from "react-native";
+import { View, TouchableOpacity, ScrollView, ActivityIndicator, Platform, StatusBar, KeyboardAvoidingView, Modal } from "react-native"
+import { LocalizedText as Text } from "../components/ui/LocalizedText";
+import { LocalizedTextInput as TextInput } from "../components/ui/LocalizedTextInput";
 import { useRouter } from "expo-router";
 import * as Location from "expo-location";
 import Ionicons from "@expo/vector-icons/Ionicons";

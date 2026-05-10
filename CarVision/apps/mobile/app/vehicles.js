@@ -1,18 +1,8 @@
 // apps/mobile/app/vehicles.js
 import React, { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  FlatList,
-  ActivityIndicator,
-  Modal,
-  TextInput,
-  Alert,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-} from "react-native";
+import { View, TouchableOpacity, FlatList, ActivityIndicator, Modal, Alert, ScrollView, KeyboardAvoidingView, Platform } from "react-native"
+import { LocalizedText as Text } from "../components/ui/LocalizedText";
+import { LocalizedTextInput as TextInput } from "../components/ui/LocalizedTextInput";
 import { useRouter } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";

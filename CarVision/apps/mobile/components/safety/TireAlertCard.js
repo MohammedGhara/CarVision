@@ -1,6 +1,7 @@
 // apps/mobile/components/safety/TireAlertCard.js
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, StyleSheet } from "react-native"
+import { LocalizedText as Text } from "../ui/LocalizedText";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { LinearGradient } from "expo-linear-gradient";
 

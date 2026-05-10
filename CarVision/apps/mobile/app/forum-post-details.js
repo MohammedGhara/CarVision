@@ -1,16 +1,8 @@
 // apps/mobile/app/forum-post-details.js
 import React, { useCallback, useState, useMemo, useEffect } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  ScrollView,
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  Image,
-} from "react-native";
+import { View, TouchableOpacity, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform, Image } from "react-native"
+import { LocalizedText as Text } from "../components/ui/LocalizedText";
+import { LocalizedTextInput as TextInput } from "../components/ui/LocalizedTextInput";
 import { useRouter, useLocalSearchParams, useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";

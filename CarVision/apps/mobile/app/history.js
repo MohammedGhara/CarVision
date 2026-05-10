@@ -1,13 +1,7 @@
 // apps/mobile/app/history.js
 import React, { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  ActivityIndicator,
-  Alert,
-} from "react-native";
+import { View, FlatList, TouchableOpacity, ActivityIndicator, Alert } from "react-native"
+import { LocalizedText as Text } from "../components/ui/LocalizedText";
 import { useRouter } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";

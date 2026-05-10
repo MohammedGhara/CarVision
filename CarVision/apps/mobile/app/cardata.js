@@ -1,14 +1,7 @@
 // apps/mobile/app/cardata.js
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  ScrollView,
-  RefreshControl,
-  Alert,
-} from "react-native";
+import { View, FlatList, TouchableOpacity, ScrollView, RefreshControl, Alert } from "react-native"
+import { LocalizedText as Text } from "../components/ui/LocalizedText";
 import { useRouter } from "expo-router";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import Ionicons from "@expo/vector-icons/Ionicons";

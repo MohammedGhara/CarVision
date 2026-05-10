@@ -1,14 +1,7 @@
 // apps/mobile/app/marketplace-detail.js — listing detail + contact seller
 import React, { useCallback, useState } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  ActivityIndicator,
-  Image,
-  StatusBar,
-} from "react-native";
+import { View, TouchableOpacity, ScrollView, ActivityIndicator, Image, StatusBar } from "react-native"
+import { LocalizedText as Text } from "../components/ui/LocalizedText";
 import { useRouter, useLocalSearchParams, useFocusEffect } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 

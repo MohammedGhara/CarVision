@@ -1,14 +1,7 @@
 import React, { useState } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  Alert,
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-} from "react-native";
+import { View, TouchableOpacity, Alert, ActivityIndicator, KeyboardAvoidingView, Platform } from "react-native"
+import { LocalizedText as Text } from "../components/ui/LocalizedText";
+import { LocalizedTextInput as TextInput } from "../components/ui/LocalizedTextInput";
 import { useRouter } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import AppBackground from "../components/layout/AppBackground";

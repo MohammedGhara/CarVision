@@ -1,14 +1,7 @@
 // apps/mobile/app/safety-emergency.js
 import React, { useEffect, useState, useCallback } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  Switch,
-  StyleSheet,
-  Platform,
-} from "react-native";
+import { View, TouchableOpacity, ScrollView, Switch, StyleSheet, Platform } from "react-native"
+import { LocalizedText as Text } from "../components/ui/LocalizedText";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";

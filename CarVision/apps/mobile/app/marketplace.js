@@ -1,6 +1,8 @@
 // apps/mobile/app/marketplace.js — client: browse marketplace listings
 import React, { useEffect, useMemo, useState } from "react";
-import { View, Text, TouchableOpacity, FlatList, ActivityIndicator, TextInput, Image, RefreshControl, StatusBar } from "react-native";
+import { View, TouchableOpacity, FlatList, ActivityIndicator, Image, RefreshControl, StatusBar } from "react-native"
+import { LocalizedText as Text } from "../components/ui/LocalizedText";
+import { LocalizedTextInput as TextInput } from "../components/ui/LocalizedTextInput";
 import { useRouter } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 

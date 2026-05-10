@@ -1,17 +1,8 @@
 // apps/mobile/app/marketplace-garage-form.js — garage: create / edit listing
 import React, { useCallback, useState } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  TextInput,
-  ActivityIndicator,
-  Image,
-  Switch,
-  StatusBar,
-  Alert,
-} from "react-native";
+import { View, TouchableOpacity, ScrollView, ActivityIndicator, Image, Switch, StatusBar, Alert } from "react-native"
+import { LocalizedText as Text } from "../components/ui/LocalizedText";
+import { LocalizedTextInput as TextInput } from "../components/ui/LocalizedTextInput";
 import { useRouter, useLocalSearchParams, useFocusEffect } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import * as ImagePicker from "expo-image-picker";

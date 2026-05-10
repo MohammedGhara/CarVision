@@ -1,14 +1,8 @@
 // apps/mobile/app/diagnostics.js
 import React, { useEffect, useRef, useState, useMemo } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  Alert,
-  AppState,
-  TextInput,
-} from "react-native";
+import { View, ScrollView, TouchableOpacity, Alert, AppState } from "react-native"
+import { LocalizedText as Text } from "../components/ui/LocalizedText";
+import { LocalizedTextInput as TextInput } from "../components/ui/LocalizedTextInput";
 import { useRouter } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import * as Print from "expo-print";

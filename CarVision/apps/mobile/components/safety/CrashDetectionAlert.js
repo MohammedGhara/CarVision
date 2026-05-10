@@ -1,6 +1,7 @@
 // apps/mobile/components/safety/CrashDetectionAlert.js
 import React, { useEffect, useState } from "react";
-import { Modal, View, Text, TouchableOpacity, ScrollView, StyleSheet, Platform } from "react-native";
+import { Modal, View, TouchableOpacity, ScrollView, StyleSheet, Platform } from "react-native"
+import { LocalizedText as Text } from "../ui/LocalizedText";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import Ionicons from "@expo/vector-icons/Ionicons";

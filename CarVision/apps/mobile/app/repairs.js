@@ -1,8 +1,7 @@
 // apps/mobile/app/repairs.js
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import {
-  View, Text, TouchableOpacity, FlatList, ActivityIndicator, Alert, AppState
-} from "react-native";
+import { View, TouchableOpacity, FlatList, ActivityIndicator, Alert, AppState } from "react-native"
+import { LocalizedText as Text } from "../components/ui/LocalizedText";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { useRouter } from "expo-router";

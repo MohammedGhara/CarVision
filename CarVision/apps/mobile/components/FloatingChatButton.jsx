@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState } from "react";
-import { TouchableOpacity, View, Text, StyleSheet, Animated } from "react-native";
+import { TouchableOpacity, View, StyleSheet, Animated } from "react-native"
+import { LocalizedText as Text } from "./ui/LocalizedText";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";

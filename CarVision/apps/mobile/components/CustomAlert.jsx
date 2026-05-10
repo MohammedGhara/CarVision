@@ -1,5 +1,6 @@
 import React from "react";
-import { Modal, View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { Modal, View, TouchableOpacity, StyleSheet } from "react-native"
+import { LocalizedText as Text } from "./ui/LocalizedText";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLanguage } from "../context/LanguageContext";
 

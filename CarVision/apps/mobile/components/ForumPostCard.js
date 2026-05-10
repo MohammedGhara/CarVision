@@ -1,6 +1,7 @@
 // apps/mobile/components/ForumPostCard.js
 import React, { useEffect, useState } from "react";
-import { View, Text, TouchableOpacity, Image } from "react-native";
+import { View, TouchableOpacity, Image } from "react-native"
+import { LocalizedText as Text } from "./ui/LocalizedText";
 import Ionicons from "@expo/vector-icons/Ionicons";
 
 import { forumCategoryKey } from "../constants/forumCategories";

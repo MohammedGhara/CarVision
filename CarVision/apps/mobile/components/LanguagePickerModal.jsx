@@ -1,6 +1,7 @@
 
 import React from "react";
-import { Modal, View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { Modal, View, TouchableOpacity, StyleSheet } from "react-native"
+import { LocalizedText as Text } from "./ui/LocalizedText";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useLanguage } from "../context/LanguageContext";
 import { C } from "../styles/theme";

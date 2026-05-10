@@ -1,6 +1,7 @@
 // apps/mobile/components/ForumRoleBadge.js
 import React from "react";
-import { View, Text } from "react-native";
+import { View } from "react-native"
+import { LocalizedText as Text } from "./ui/LocalizedText";
 
 import { useLanguage } from "../context/LanguageContext";
 import { forumStyles as styles } from "../styles/forumStyles";

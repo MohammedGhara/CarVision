@@ -1,6 +1,7 @@
 // apps/mobile/app/doctor-car-ai.js — DoctorCar Agent AI — premium cockpit UI
 import React, { useEffect, useMemo, useState, useCallback } from "react";
-import { View, Text, ScrollView, TouchableOpacity, Alert, Platform } from "react-native";
+import { View, ScrollView, TouchableOpacity, Alert, Platform } from "react-native"
+import { LocalizedText as Text } from "../components/ui/LocalizedText";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -9,7 +10,7 @@ import { MotiView } from "moti";
 
 import AppBackground from "../components/layout/AppBackground";
 import { useLanguage } from "../context/LanguageContext";
-import { subscribeDoctorCarTelemetry, getDoctorCarTelemetryState } from "../ai/services/telemetryHub";
+import { getDoctorCarTelemetryState } from "../ai/services/telemetryHub";
 import { runDoctorCarAgent } from "../ai/doctorCarAgent";
 import { doctorCarStyles as styles, DC } from "../styles/doctorCarStyles";
 import { DRIVE_ADVICE } from "../ai/services/recommendationService";
@@ -24,6 +25,9 @@ import {
 import { buildSupervisedExportPayload } from "../ai/training/exportDataset.js";
 import * as FileSystem from "expo-file-system";
 import * as Sharing from "expo-sharing";
+import * as Print from "expo-print";
+
+import { buildDoctorCarPdfHtml, buildDtcBlockHtml } from "../ai/reports/doctorCarPdfHtml.js";
 
 function fmt(v, suffix = "") {
   if (v == null || Number.isNaN(v)) return "—";
@@ -64,6 +68,9 @@ const VITAL_ICONS = {
   map: "analytics-outline",
 };
 
+/** UI reads from hub at this cadence (hub still ingests every telemetry frame). */
+const DOCTORCAR_DISPLAY_INTERVAL_MS = 10000;
+
 function bandPillColors(band) {
   switch (band) {
     case "excellent":
@@ -103,7 +110,12 @@ export default function DoctorCarAIScreen() {
   const insets = useSafeAreaInsets();
   const [feed, setFeed] = useState(() => getDoctorCarTelemetryState());
 
-  useEffect(() => subscribeDoctorCarTelemetry(setFeed), []);
+  useEffect(() => {
+    const pull = () => setFeed(getDoctorCarTelemetryState());
+    pull();
+    const id = setInterval(pull, DOCTORCAR_DISPLAY_INTERVAL_MS);
+    return () => clearInterval(id);
+  }, []);
 
   const [learnRev, setLearnRev] = useState(0);
   const [learnStats, setLearnStats] = useState({ n0: 0, n1: 0, total: 0 });
@@ -226,6 +238,111 @@ export default function DoctorCarAIScreen() {
       ? Math.round(analysis.mlAugmentation.blendedFaultRisk * 100)
       : null;
 
+  const onExportPdf = useCallback(async () => {
+    try {
+      const ag = runDoctorCarAgent({
+        snapshot: feed.snapshot,
+        history: feed.history,
+      });
+      const snap = ag.snapshot;
+      const sessionStr =
+        feed.updatedAt != null ? new Date(feed.updatedAt).toLocaleString() : null;
+
+      const bandKeyAg = `doctorCar.band.${ag.health.band}`;
+      const bandLabelAg = t(bandKeyAg);
+      const summaryAg = t(`doctorCar.summary.${ag.summaryBand}`);
+      const recA = ag.recommendations;
+      const riskAg = t(`doctorCar.risk.${recA?.riskLevel ?? "low"}`);
+      const driveKeyAg =
+        recA?.driveAdvice === DRIVE_ADVICE.STOP
+          ? "doctorCar.drive.stop"
+          : recA?.driveAdvice === DRIVE_ADVICE.CAUTION
+            ? "doctorCar.drive.caution"
+            : "doctorCar.drive.continue";
+      const guidanceAg = t(driveKeyAg);
+
+      const analysisLines = ag.analysisLineKeys.map((k) => t(`doctorCar.analysisLine.${k}`));
+      const primaryRec = t(`doctorCar.${recA?.primaryActionKey ?? "action.continue_monitor"}`);
+      const secondaryRecs = (recA?.secondaryActionKeys ?? []).map((key) => t(`doctorCar.${key}`));
+      const mlP =
+        ag.mlAugmentation?.blendedFaultRisk != null
+          ? Math.round(ag.mlAugmentation.blendedFaultRisk * 100)
+          : null;
+      const mlLine =
+        mlP != null
+          ? t("doctorCar.mlEstimateBody", {
+              pct: String(mlP),
+            })
+          : null;
+
+      const maintenanceLines =
+        ag.maintenance.outlookItems.length === 0
+          ? [t("doctorCar.predictiveIdle")]
+          : ag.maintenance.outlookItems.map((m) => maintLabel(m.id, t));
+
+      const vitalRows = [
+        [t("doctorCar.vitals.coolant"), fmt(snap.coolant, " °C")],
+        [
+          t("doctorCar.vitals.rpm"),
+          snap.rpm != null && Number.isFinite(snap.rpm) ? String(Math.round(snap.rpm)) : "—",
+        ],
+        [t("doctorCar.vitals.battery"), fmt(snap.battery, " V")],
+        [t("doctorCar.vitals.stft"), fmt(snap.stft, " %")],
+        [t("doctorCar.vitals.ltft"), fmt(snap.ltft, " %")],
+        [t("doctorCar.vitals.map"), fmt(snap.map, " kPa")],
+      ];
+
+      const warningLines =
+        ag.ruleFindings.length === 0
+          ? [t("doctorCar.noneDetected")]
+          : ag.ruleFindings.map((f) => findingLabel(f.id, t));
+      const anomalyLines =
+        ag.anomalies.length === 0
+          ? [t("doctorCar.noneDetected")]
+          : ag.anomalies.map((f) => findingLabel(f.id, t));
+      const predictiveLines =
+        ag.predictive.length === 0
+          ? [t("doctorCar.predictiveIdle")]
+          : ag.predictive.map((p) => findingLabel(p.id, t));
+
+      const dtcHtml = ag.dtcInsights
+        .map((d) => buildDtcBlockHtml(d, (u) => t(`doctorCar.dtcUrgency.${u}`)))
+        .join("");
+
+      const html = buildDoctorCarPdfHtml({
+        reportTitle: t("doctorCar.pdfReportTitle"),
+        subtitle: t("doctorCar.subtitle"),
+        generatedAt: new Date().toLocaleString(),
+        sessionUpdated: sessionStr,
+        healthScoreLine: `${t("doctorCar.healthScore")}: ${ag.health.score} / 100`,
+        healthBandLine: bandLabelAg !== bandKeyAg ? bandLabelAg : ag.health.band,
+        summaryLine: summaryAg,
+        riskLine: riskAg,
+        guidanceLine: guidanceAg,
+        analysisLines,
+        primaryRecommendation: primaryRec,
+        secondaryRecommendations: secondaryRecs,
+        mlLine,
+        maintenanceLines,
+        vitalRows,
+        warningLines,
+        anomalyLines,
+        predictiveLines,
+        dtcBlocksHtml: dtcHtml,
+        footerDisclaimer: ag.fleetDisclaimer || "",
+      });
+
+      const file = await Print.printToFileAsync({ html });
+      await Sharing.shareAsync(file.uri, {
+        mimeType: "application/pdf",
+        dialogTitle: t("doctorCar.sharePdfTitle"),
+      });
+    } catch (e) {
+      console.log("DoctorCar PDF export failed:", e);
+      Alert.alert(t("common.error"), t("doctorCar.exportPdfFailed"));
+    }
+  }, [feed, learnRev, t]);
+
   return (
     <AppBackground scrollable={false}>
       <LinearGradient
@@ -248,6 +365,14 @@ export default function DoctorCarAIScreen() {
           <Text style={styles.titleXL}>{t("doctorCar.title")}</Text>
           <Text style={styles.subtitleSm}>{t("doctorCar.subtitle")}</Text>
         </View>
+        <TouchableOpacity
+          style={styles.backBtn}
+          onPress={onExportPdf}
+          accessibilityRole="button"
+          accessibilityLabel={t("doctorCar.exportPdf")}
+        >
+          <Ionicons name="document-text-outline" size={22} color="#93C5FD" />
+        </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={{ paddingBottom: 48 }} showsVerticalScrollIndicator={false}>
@@ -410,7 +535,7 @@ export default function DoctorCarAIScreen() {
           )}
         </View>
 
-        <SectionHeader icon="radar-outline" title={t("doctorCar.sectionAnomalies")} />
+        <SectionHeader icon="pulse-outline" title={t("doctorCar.sectionAnomalies")} />
         <View style={styles.chipRow}>
           {analysis.anomalies.length === 0 ? (
             <Text style={{ color: DC.sub, marginLeft: 4 }}>{t("doctorCar.noneDetected")}</Text>

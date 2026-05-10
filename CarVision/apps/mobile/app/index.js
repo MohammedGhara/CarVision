@@ -1,14 +1,7 @@
 // apps/mobile/app/index.js
 import React, { useEffect, useMemo, useState } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  StatusBar,
-  ActivityIndicator,
-  Image,
-} from "react-native";
+import { View, TouchableOpacity, ScrollView, StatusBar, ActivityIndicator, Image } from "react-native"
+import { LocalizedText as Text } from "../components/ui/LocalizedText";
 import { useRouter } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import AsyncStorage from "@react-native-async-storage/async-storage";

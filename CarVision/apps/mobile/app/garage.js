@@ -1,13 +1,7 @@
 // apps/mobile/app/garage.js
 import React, { useEffect, useState, useCallback } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  ActivityIndicator,
-  AppState,
-} from "react-native";
+import { View, TouchableOpacity, ScrollView, ActivityIndicator, AppState } from "react-native"
+import { LocalizedText as Text } from "../components/ui/LocalizedText";
 import { useRouter } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";

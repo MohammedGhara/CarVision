@@ -1,15 +1,7 @@
 // apps/mobile/app/nearest-garages.js — client: nearest garages by current location (V1)
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  FlatList,
-  ActivityIndicator,
-  Linking,
-  StatusBar,
-  RefreshControl,
-} from "react-native";
+import { View, TouchableOpacity, FlatList, ActivityIndicator, Linking, StatusBar, RefreshControl } from "react-native"
+import { LocalizedText as Text } from "../components/ui/LocalizedText";
 import { useRouter, useFocusEffect } from "expo-router";
 import * as Location from "expo-location";
 import Ionicons from "@expo/vector-icons/Ionicons";

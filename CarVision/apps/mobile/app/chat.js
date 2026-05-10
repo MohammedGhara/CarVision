@@ -1,22 +1,8 @@
 // apps/mobile/app/chat.js
 import React, { useEffect, useState, useRef } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  FlatList,
-  KeyboardAvoidingView,
-  Platform,
-  ActivityIndicator,
-  Image,
-  Modal,
-  ScrollView,
-  Alert,
-  Dimensions,
-  LogBox,
-  Linking,
-} from "react-native";
+import { View, TouchableOpacity, FlatList, KeyboardAvoidingView, Platform, ActivityIndicator, Image, Modal, ScrollView, Alert, Dimensions, LogBox, Linking } from "react-native"
+import { LocalizedText as Text } from "../components/ui/LocalizedText";
+import { LocalizedTextInput as TextInput } from "../components/ui/LocalizedTextInput";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Swipeable, GestureHandlerRootView } from "react-native-gesture-handler";
 import Ionicons from "@expo/vector-icons/Ionicons";
