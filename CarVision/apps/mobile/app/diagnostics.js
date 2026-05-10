@@ -1,5 +1,5 @@
 // apps/mobile/app/diagnostics.js
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Alert,
   AppState,
+  TextInput,
 } from "react-native";
 import { useRouter } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -17,6 +18,8 @@ import AppBackground from "../components/layout/AppBackground";
 import { getWsUrl, checkNetworkChange } from "../lib/wsConfig";
 import { pushTelemetrySlice } from "../lib/liveTelemetryBridge";
 import { describeDtc } from "../lib/dtcDescriptions";
+import { lookupDtcKnowledge } from "../ai/dtcKnowledge";
+import { dtcMatchesQuery, dtcMatchesCategory } from "../lib/dtcDatabase";
 import { useLanguage } from "../context/LanguageContext";
 import { diagnosticsStyles as styles } from "../styles/diagnosticsStyles";
 import EmergencySOSModal from "../components/safety/EmergencySOSModal";
@@ -51,6 +54,10 @@ export default function Diagnostics() {
     permanent: [],
     adapter: null,
   });
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [expandedCode, setExpandedCode] = useState(null);
 
   // Load WS URL and detect network changes
   useEffect(() => {
@@ -318,6 +325,32 @@ export default function Diagnostics() {
 
   const ign = data.monitors?.ignition || "Unknown";
 
+  const categoryOptions = useMemo(
+    () => ["all", "Powertrain", "Body", "Chassis", "Network", "Other"],
+    []
+  );
+
+  const filteredCurrent = useMemo(() => {
+    return (data.dtcs || []).filter((code) => {
+      const row = lookupDtcKnowledge(code);
+      return dtcMatchesQuery(code, searchQuery, row) && dtcMatchesCategory(categoryFilter, code, row);
+    });
+  }, [data.dtcs, searchQuery, categoryFilter]);
+
+  const filteredPending = useMemo(() => {
+    return (data.pending || []).filter((code) => {
+      const row = lookupDtcKnowledge(code);
+      return dtcMatchesQuery(code, searchQuery, row) && dtcMatchesCategory(categoryFilter, code, row);
+    });
+  }, [data.pending, searchQuery, categoryFilter]);
+
+  const filteredPermanent = useMemo(() => {
+    return (data.permanent || []).filter((code) => {
+      const row = lookupDtcKnowledge(code);
+      return dtcMatchesQuery(code, searchQuery, row) && dtcMatchesCategory(categoryFilter, code, row);
+    });
+  }, [data.permanent, searchQuery, categoryFilter]);
+
   return (
     <AppBackground scrollable={false} contentContainerStyle={SCREEN_SHELL}>
       {/* Top bar */}
@@ -421,18 +454,54 @@ export default function Diagnostics() {
 
         {/* Trouble Codes card */}
         <Text style={styles.sectionLabel}>{t("cardata.troubleCodes")}</Text>
+
+        <View style={[styles.card, styles.filterCard]}>
+          <Text style={styles.filterHelp}>{t("diagnostics.dtcLibraryHint")}</Text>
+          <TextInput
+            style={styles.searchInput}
+            placeholder={t("diagnostics.searchPlaceholder")}
+            placeholderTextColor="rgba(148,163,184,0.65)"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            autoCapitalize="characters"
+            autoCorrect={false}
+          />
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipScrollContent}>
+            {categoryOptions.map((cat) => (
+              <TouchableOpacity
+                key={cat}
+                onPress={() => setCategoryFilter(cat)}
+                style={[styles.filterChip, categoryFilter === cat && styles.filterChipActive]}
+              >
+                <Text style={[styles.filterChipText, categoryFilter === cat && styles.filterChipTextActive]}>
+                  {cat === "all" ? t("diagnostics.categoryAll") : cat}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+
         <View style={styles.card}>
           <CodeSection
             title={t("diagnostics.currentCodes")}
-            values={data.dtcs}
+            values={filteredCurrent}
+            expandedCode={expandedCode}
+            onToggleExpand={(code) => setExpandedCode((c) => (c === code ? null : code))}
+            t={t}
           />
           <CodeSection
             title={t("diagnostics.pendingCodes")}
-            values={data.pending}
+            values={filteredPending}
+            expandedCode={expandedCode}
+            onToggleExpand={(code) => setExpandedCode((c) => (c === code ? null : code))}
+            t={t}
           />
           <CodeSection
             title={t("diagnostics.permanentCodes")}
-            values={data.permanent}
+            values={filteredPermanent}
+            expandedCode={expandedCode}
+            onToggleExpand={(code) => setExpandedCode((c) => (c === code ? null : code))}
+            t={t}
           />
         </View>
 
@@ -458,8 +527,22 @@ export default function Diagnostics() {
 
 // ----- Subcomponents -----
 
-function CodeSection({ title, values }) {
-  const { t } = useLanguage();
+function severityBadgeColors(sev) {
+  switch (String(sev || "").toLowerCase()) {
+    case "critical":
+      return { bg: "rgba(239,68,68,0.18)", border: "rgba(239,68,68,0.45)", color: "#FCA5A5" };
+    case "high":
+      return { bg: "rgba(249,115,22,0.16)", border: "rgba(249,115,22,0.42)", color: "#FDBA74" };
+    case "medium":
+      return { bg: "rgba(250,204,21,0.14)", border: "rgba(250,204,21,0.38)", color: "#FDE047" };
+    case "low":
+      return { bg: "rgba(52,211,153,0.14)", border: "rgba(52,211,153,0.38)", color: "#6EE7B7" };
+    default:
+      return { bg: "rgba(129,140,248,0.14)", border: "rgba(129,140,248,0.35)", color: "#C7D2FE" };
+  }
+}
+
+function CodeSection({ title, values, expandedCode, onToggleExpand, t }) {
   const list = values && values.length ? values : [];
 
   return (
@@ -473,15 +556,124 @@ function CodeSection({ title, values }) {
       ) : (
         <View style={{ marginTop: 8, gap: 8 }}>
           {list.map((code, idx) => {
+            const row = lookupDtcKnowledge(code);
             const desc = describeDtc(code) || t("diagnostics.noDescription");
+            const open = expandedCode === code;
+            const sev = row?.severity || "unknown";
+            const colors = severityBadgeColors(sev);
+
             return (
               <View key={`${code}-${idx}`} style={styles.codeRow}>
-                <View style={{ flexDirection: "row", alignItems: "center" }}>
-                  <View style={styles.codeBadge}>
-                    <Text style={styles.codeBadgeText}>{code}</Text>
+                <TouchableOpacity
+                  activeOpacity={0.85}
+                  onPress={() => onToggleExpand(code)}
+                  accessibilityRole="button"
+                  accessibilityLabel={t("diagnostics.expandCodeDetails", { code })}
+                >
+                  <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
+                    <View style={styles.codeBadge}>
+                      <Text style={styles.codeBadgeText}>{code}</Text>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.codeTitle}>{desc}</Text>
+                      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
+                        <View
+                          style={[
+                            styles.severityPill,
+                            { backgroundColor: colors.bg, borderColor: colors.border },
+                          ]}
+                        >
+                          <Text style={[styles.severityPillText, { color: colors.color }]}>
+                            {(sev || "unknown").toUpperCase()}
+                          </Text>
+                        </View>
+                        {row?.category ? (
+                          <View style={styles.categoryPill}>
+                            <Text style={styles.categoryPillText}>{row.category}</Text>
+                          </View>
+                        ) : null}
+                      </View>
+                    </View>
+                    <Ionicons
+                      name={open ? "chevron-up" : "chevron-down"}
+                      size={18}
+                      color={C.sub}
+                      style={{ marginTop: 2 }}
+                    />
                   </View>
-                  <Text style={styles.codeTitle}>{desc}</Text>
-                </View>
+                </TouchableOpacity>
+
+                {open ? (
+                  <View style={styles.codeDetail}>
+                    {row?.aiSummary ? (
+                      <View style={styles.aiSummaryBox}>
+                        <Text style={styles.detailSectionLabel}>{t("diagnostics.aiSummary")}</Text>
+                        <Text style={styles.aiSummaryText}>{row.aiSummary}</Text>
+                      </View>
+                    ) : null}
+
+                    {row?.explanation ? (
+                      <View style={{ marginBottom: 10 }}>
+                        <Text style={styles.detailSectionLabel}>{t("diagnostics.description")}</Text>
+                        <Text style={styles.detailBody}>{row.explanation}</Text>
+                      </View>
+                    ) : null}
+
+                    {row?.symptoms?.length ? (
+                      <View style={{ marginBottom: 10 }}>
+                        <Text style={styles.detailSectionLabel}>{t("diagnostics.symptoms")}</Text>
+                        {row.symptoms.map((s, i) => (
+                          <Text key={i} style={styles.bulletLine}>
+                            • {s}
+                          </Text>
+                        ))}
+                      </View>
+                    ) : null}
+
+                    {(row?.possibleCauses?.length || row?.causes?.length) ? (
+                      <View style={{ marginBottom: 10 }}>
+                        <Text style={styles.detailSectionLabel}>{t("diagnostics.possibleCauses")}</Text>
+                        {(row.possibleCauses || row.causes || []).map((s, i) => (
+                          <Text key={i} style={styles.bulletLine}>
+                            • {s}
+                          </Text>
+                        ))}
+                      </View>
+                    ) : null}
+
+                    {row?.canDrive ? (
+                      <View style={{ marginBottom: 10 }}>
+                        <Text style={styles.detailSectionLabel}>{t("diagnostics.canDrive")}</Text>
+                        <Text style={styles.detailBodyStrong}>{row.canDrive}</Text>
+                      </View>
+                    ) : null}
+
+                    {row?.recommendedAction ? (
+                      <View style={{ marginBottom: 10 }}>
+                        <Text style={styles.detailSectionLabel}>{t("diagnostics.recommendedAction")}</Text>
+                        <Text style={styles.detailBody}>{row.recommendedAction}</Text>
+                      </View>
+                    ) : null}
+
+                    {row?.estimatedRepairCost ? (
+                      <View style={{ marginBottom: 4 }}>
+                        <Text style={styles.detailSectionLabel}>{t("diagnostics.estimatedCost")}</Text>
+                        <Text style={styles.detailBody}>{row.estimatedRepairCost}</Text>
+                      </View>
+                    ) : null}
+
+                    {row?.recommendations?.length ? (
+                      <View style={{ marginTop: 8 }}>
+                        <Text style={styles.detailSectionLabel}>{t("diagnostics.repairSuggestions")}</Text>
+                        {row.recommendations.map((r, i) => (
+                          <Text key={i} style={styles.bulletLine}>
+                            • {r}
+                          </Text>
+                        ))}
+                      </View>
+                    ) : null}
+                  </View>
+                ) : null}
               </View>
             );
           })}

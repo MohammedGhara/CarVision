@@ -394,6 +394,13 @@ export default function HomeScreen() {
                 onPress={() => router.push("/ai")}
               />
               <SecondaryRow
+                icon="pulse-outline"
+                iconColor={HOME_SECTION_ICON.community}
+                title={t("doctorCar.title")}
+                description={t("doctorCar.homeDescription")}
+                onPress={() => router.push("/doctor-car-ai")}
+              />
+              <SecondaryRow
                 icon="people-outline"
                 iconColor={HOME_SECTION_ICON.community}
                 title={t("home.communityForum")}

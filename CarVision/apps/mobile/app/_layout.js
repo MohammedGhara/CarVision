@@ -1,7 +1,12 @@
 // apps/mobile/app/_layout.js
+import { useEffect } from "react";
 import { Stack } from "expo-router";
 import { LogBox } from "react-native";
 import { AuthProvider } from "../context/AuthContext";
+import {
+  initObdWebSocketService,
+  shutdownObdWebSocketService,
+} from "../lib/obdWebSocketService";
 import { SafetySettingsProvider } from "../context/SafetySettingsContext";
 import { CustomAlertProvider } from "../components/CustomAlert";
 import SafetyEmergencyHost from "../components/SafetyEmergencyHost";
@@ -20,6 +25,11 @@ if (typeof LogBox !== "undefined") {
 }
 
 export default function Layout() {
+  useEffect(() => {
+    initObdWebSocketService();
+    return () => shutdownObdWebSocketService();
+  }, []);
+
   return (
     <LanguageProvider>
       <SafetySettingsProvider>

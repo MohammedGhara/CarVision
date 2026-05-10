@@ -8,7 +8,6 @@ import {
   ScrollView,
   RefreshControl,
   Alert,
-  AppState,
 } from "react-native";
 import { useRouter } from "expo-router";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
@@ -17,8 +16,12 @@ import AppBackground from "../components/layout/AppBackground";
 import * as Sharing from "expo-sharing";
 import * as Print from "expo-print";
 
-import { getWsUrl, checkNetworkChange } from "../lib/wsConfig";
-import { pushTelemetrySlice } from "../lib/liveTelemetryBridge";
+import {
+  reconnectObdWebSocket,
+  sendObdMessage,
+  subscribeObdSnapshot,
+  subscribeTelemetryFrames,
+} from "../lib/obdWebSocketService";
 import EmergencySOSModal from "../components/safety/EmergencySOSModal";
 import { useLanguage } from "../context/LanguageContext";
 import { colors } from "../styles/theme";
@@ -33,11 +36,9 @@ const C = colors.cardata;
 export default function CarData() {
   const router = useRouter();
   const { t } = useLanguage();
-  const wsRef = useRef(null);
-  const samplesRef = useRef([]); // logged samples (current session only)
+  const samplesRef = useRef([]);
+  const isLoggingRef = useRef(false);
 
-  const [wsUrl, setWsUrl] = useState(null);
-  const [link, setLink] = useState({ status: "down", message: "Connecting..." });
   const [queued, setQueued] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [isLogging, setIsLogging] = useState(false);
@@ -64,143 +65,45 @@ export default function CarData() {
     status: { level: "NORMAL", reason: "" },
   });
 
-  // ----- Load WebSocket URL and detect network changes -----
+  const [link, setLink] = useState({ status: "down", message: "Connecting..." });
+
   useEffect(() => {
-    (async () => {
-      const url = await getWsUrl();
-      setWsUrl(url);
-      console.log("📡 WebSocket URL loaded:", url);
-    })();
-    
-    // Check for network changes periodically and when app becomes active
-    const checkNetwork = async () => {
-      try {
-        const changed = await checkNetworkChange();
-        if (changed) {
-          console.log("🔄 Network changed, re-detecting server...");
-          const newUrl = await getWsUrl(); // This will auto-detect new network
-          setWsUrl(newUrl);
-        }
-      } catch (e) {
-        // Ignore errors
-      }
-    };
-    
-    // Check every 30 seconds
-    const interval = setInterval(checkNetwork, 30000);
-    
-    // Check when app becomes active
-    const subscription = AppState.addEventListener("change", (nextAppState) => {
-      if (nextAppState === "active") {
-        setTimeout(checkNetwork, 1000); // Delay slightly
-      }
+    isLoggingRef.current = isLogging;
+  }, [isLogging]);
+
+  useEffect(() => {
+    const unsub = subscribeObdSnapshot(({ telemetry: tel, link: lk, queued: q }) => {
+      setTelemetry(tel);
+      setLink(lk);
+      setQueued(q);
     });
-    
-    return () => {
-      clearInterval(interval);
-      subscription?.remove();
-    };
+    return unsub;
   }, []);
 
-  // ----- WebSocket connection -----
   useEffect(() => {
-    if (!wsUrl) return;
-
-    let ws;
-    let retryTimer;
-    let failureCount = 0;
-    const MAX_FAILURES_BEFORE_REDETECT = 3;
-
-    async function connect() {
-
-      ws = new WebSocket(wsUrl);
-      wsRef.current = ws;
-
-      ws.onopen = () => {
-        setLink({ status: "up", message: "Connected" });
-        failureCount = 0; // Reset on successful connection
-        if (retryTimer) {
-          clearTimeout(retryTimer);
-          retryTimer = null;
-        }
-      };
-
-      ws.onmessage = (ev) => {
-        try {
-          const msg = JSON.parse(ev.data);
-
-          if (msg.type === "link") {
-            setLink({ status: msg.status, message: msg.message });
-          }
-
-          if (msg.type === "telemetry") {
-            pushTelemetrySlice(msg.data);
-            setTelemetry((prev) => {
-              const next = { ...prev, ...msg.data };
-
-              // logging: save samples only while isLogging === true
-              if (isLogging) {
-                samplesRef.current.push({
-                  t: Date.now(),
-                  rpm: next.rpm,
-                  speed: next.speed,
-                  coolant: next.coolant,
-                  load: next.load,
-                  throttle: next.throttle,
-                  fuel: next.fuel,
-                  iat: next.iat,
-                  maf: next.maf,
-                  map: next.map,
-                  baro: next.baro,
-                  stft: next.stft,
-                  ltft: next.ltft,
-                });
-
-                // keep at most MAX_SAMPLES
-                if (samplesRef.current.length > MAX_SAMPLES) {
-                  samplesRef.current.shift(); // drop oldest
-                }
-              }
-
-              return next;
-            });
-          }
-
-          if (msg.type === "queued") setQueued(true);
-          if (msg.type === "ack") setQueued(false);
-        } catch {
-          // ignore bad messages
-        }
-      };
-
-      ws.onerror = () => {
-        failureCount++;
-        setLink({ status: "down", message: "Connection error" });
-        try {
-          ws.close();
-        } catch {}
-      };
-
-      ws.onclose = () => {
-        failureCount++;
-        if (failureCount < MAX_FAILURES_BEFORE_REDETECT) {
-          setLink({ status: "down", message: "Disconnected - retrying..." });
-        } else {
-          setLink({ status: "down", message: "Network changed - re-detecting..." });
-        }
-        if (!retryTimer) retryTimer = setTimeout(connect, 2000);
-      };
-    }
-
-    connect();
-
-    return () => {
-      if (retryTimer) clearTimeout(retryTimer);
-      try {
-        ws && ws.close();
-      } catch {}
-    };
-  }, [wsUrl, isLogging]);
+    const unsub = subscribeTelemetryFrames((next) => {
+      if (!isLoggingRef.current) return;
+      samplesRef.current.push({
+        t: Date.now(),
+        rpm: next.rpm,
+        speed: next.speed,
+        coolant: next.coolant,
+        load: next.load,
+        throttle: next.throttle,
+        fuel: next.fuel,
+        iat: next.iat,
+        maf: next.maf,
+        map: next.map,
+        baro: next.baro,
+        stft: next.stft,
+        ltft: next.ltft,
+      });
+      if (samplesRef.current.length > MAX_SAMPLES) {
+        samplesRef.current.shift();
+      }
+    });
+    return unsub;
+  }, []);
 
   // ---------- Helpers ----------
   const fmt = (v, unit = "", digits = 0) =>
@@ -251,9 +154,7 @@ export default function CarData() {
   }, [telemetry]);
 
   const onClear = () => {
-    if (wsRef.current && wsRef.current.readyState === 1) {
-      wsRef.current.send(JSON.stringify({ type: "clearDTCs" }));
-    }
+    sendObdMessage({ type: "clearDTCs" });
   };
 
   // ----- Start/Stop logging (fresh session) -----
@@ -402,9 +303,7 @@ export default function CarData() {
   }
 
   const onReconnect = () => {
-    try {
-      if (wsRef.current) wsRef.current.close();
-    } catch {}
+    reconnectObdWebSocket();
   };
 
   const onRefresh = () => {

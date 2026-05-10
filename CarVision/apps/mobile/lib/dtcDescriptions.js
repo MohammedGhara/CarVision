@@ -1,4 +1,6 @@
-// apps/mobile/lib/dtcDescriptions.js
+// apps/mobile/lib/dtcDescriptions.js — short titles for lists / PDF (delegates to knowledge base)
+import { lookupDtcKnowledge } from "../ai/dtcKnowledge.js";
+
 const MAP = {
   P0100: "Mass or Volume Air Flow (MAF) Circuit Malfunction",
   P0101: "MAF Circuit Range/Performance",
@@ -20,18 +22,22 @@ const MAP = {
   P0455: "EVAP Large Leak Detected",
   P0500: "Vehicle Speed Sensor (VSS) Malfunction",
   P0560: "System Voltage Malfunction",
-  // הוסף כאן לפי הצורך...
 };
 
 export function describeDtc(code) {
   if (!code) return "";
   const up = String(code).toUpperCase().trim();
+  const row = lookupDtcKnowledge(up);
+  if (row?.title) return row.title;
+  if (row?.explanation) {
+    const first = row.explanation.split(/[—\-]/)[0]?.trim();
+    if (first && first.length < 120) return first;
+    return row.explanation.length > 100 ? `${row.explanation.slice(0, 97)}…` : row.explanation;
+  }
   if (MAP[up]) return MAP[up];
 
-  // היסק כללי ל־P0xxx
   if (/^P0\d{3}$/.test(up)) {
     return "Generic powertrain DTC";
   }
-  // Fallback
   return "Unknown DTC";
 }
