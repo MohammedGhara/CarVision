@@ -74,6 +74,9 @@ app.use("/api/forum", forumRouter);
 const messagesRouter = require("./src/routes/messages");
 app.use("/api/messages", messagesRouter);
 
+const visionScanRouter = require("./src/routes/visionScan");
+app.use("/api/vision", visionScanRouter);
+
 // Serve uploaded files
 app.use("/uploads", express.static(UPLOADS_DIR));
 

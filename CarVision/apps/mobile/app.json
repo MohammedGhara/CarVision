@@ -35,6 +35,12 @@
     "plugins": [
       "expo-router",
       "expo-barcode-scanner",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "CarVision Vision AI uses the camera to photograph vehicle concerns for on-device triage and garage documentation."
+        }
+      ],
       "expo-font",
       [
         "expo-location",

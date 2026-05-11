@@ -394,6 +394,13 @@ export default function HomeScreen() {
                 onPress={() => router.push("/doctor-car-ai")}
               />
               <SecondaryRow
+                icon="scan-outline"
+                iconColor={HOME_SECTION_ICON.community}
+                title={t("visionAI.title")}
+                description={t("visionAI.homeDescription")}
+                onPress={() => router.push("/vision-ai")}
+              />
+              <SecondaryRow
                 icon="people-outline"
                 iconColor={HOME_SECTION_ICON.community}
                 title={t("home.communityForum")}

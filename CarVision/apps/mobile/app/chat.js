@@ -1,6 +1,6 @@
 // apps/mobile/app/chat.js
 import React, { useEffect, useState, useRef } from "react";
-import { View, TouchableOpacity, FlatList, KeyboardAvoidingView, Platform, ActivityIndicator, Image, Modal, ScrollView, Alert, Dimensions, LogBox, Linking } from "react-native"
+import { View, TouchableOpacity, FlatList, KeyboardAvoidingView, Platform, ActivityIndicator, Image, Modal, ScrollView, Alert, Dimensions, Linking } from "react-native"
 import { LocalizedText as Text } from "../components/ui/LocalizedText";
 import { LocalizedTextInput as TextInput } from "../components/ui/LocalizedTextInput";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -25,12 +25,6 @@ import { chatStyles as styles } from "../styles/chatStyles";
 import { showCustomAlert } from "../components/CustomAlert";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
-
-// Suppress expo-image-picker deprecation warning (MediaTypeOptions -> MediaType)
-// The new MediaType API isn't available in expo-image-picker ~17.0.8
-LogBox.ignoreLogs([
-  "[expo-image-picker] `ImagePicker.MediaTypeOptions` have been deprecated",
-]);
 
 /** Matches URLs produced when sharing location from chat (Google Maps search deep link). */
 const SHARED_LOCATION_URL_RE =
@@ -153,7 +147,7 @@ export default function ChatScreen() {
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ["images"],
         allowsEditing: false,
         quality: 0.8,
       });
@@ -180,7 +174,7 @@ export default function ChatScreen() {
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+        mediaTypes: ["videos"],
         allowsEditing: false,
         quality: 1,
       });
